@@ -5,6 +5,7 @@ var player_hp := 0
 var balls_per_round := 0
 var current_battle_index := 0
 var kills := 0
+var started_at_msec := 0
 var unlocked_balls: Array[String] = []
 
 
@@ -17,6 +18,7 @@ func reset_new_run() -> void:
 	balls_per_round = int(player_config["balls_per_round"])
 	current_battle_index = 0
 	kills = 0
+	started_at_msec = Time.get_ticks_msec()
 	unlocked_balls.clear()
 	unlocked_balls.append(String(player_config["starting_ball_id"]))
 
@@ -36,3 +38,9 @@ func heal_player(amount: int) -> void:
 
 func is_player_dead() -> bool:
 	return player_hp <= 0
+
+
+func get_elapsed_seconds() -> float:
+	if started_at_msec <= 0:
+		return 0.0
+	return float(Time.get_ticks_msec() - started_at_msec) / 1000.0

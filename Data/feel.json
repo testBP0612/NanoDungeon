@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "description": "Pinball feel / presentation constants. Gameplay rules remain in pegs, balls, enemies, and player data.",
+    "version": "0.1.0"
+  },
+  "feel": {
+    "peg_rehit_cooldown_seconds": 0.2,
+    "shake": {
+      "hit_strength": 2.5,
+      "hit_duration": 0.1,
+      "enemy_attack_strength": 4.0,
+      "enemy_attack_duration": 0.16
+    },
+    "particles": {
+      "launch_amount": 8,
+      "launch_lifetime": 0.18,
+      "hit_amount": 14,
+      "hit_lifetime": 0.25,
+      "cleanup_extra_delay": 0.15,
+      "emission_radius": 4.0,
+      "direction_x": 0.0,
+      "direction_y": -1.0,
+      "spread_degrees": 180.0,
+      "gravity_y": 180.0,
+      "initial_velocity_min": 60.0,
+      "initial_velocity_max": 130.0,
+      "scale_min": 2.0,
+      "scale_max": 4.0
+    },
+    "trail": {
+      "amount": 14,
+      "lifetime": 0.22,
+      "radius_multiplier": 0.35,
+      "direction_x": 0.0,
+      "direction_y": 0.0,
+      "spread_degrees": 180.0,
+      "gravity_x": 0.0,
+      "gravity_y": 0.0,
+      "initial_velocity_min": 8.0,
+      "initial_velocity_max": 18.0,
+      "scale_min": 1.0,
+      "scale_max": 2.0
+    },
+    "floating_text": {
+      "duration": 0.55,
+      "font_size": 20,
+      "width": 140.0,
+      "height": 30.0,
+      "rise_x": -20.0,
+      "rise_y": -42.0
+    },
+    "sfx": {
+      "enabled": true,
+      "mix_rate": 22050.0,
+      "buffer_length": 0.08,
+      "duration": 0.055,
+      "cleanup_delay": 0.12,
+      "volume_db": -16.0,
+      "amplitude": 0.18,
+      "frequencies": {
+        "launch": 660.0,
+        "hit": 920.0,
+        "wall": 420.0,
+        "drop": 240.0,
+        "settle": 520.0,
+        "enemy_attack": 180.0
+      }
+    },
+    "hp_tween_duration": 0.18,
+    "reward_advance_delay_seconds": 1.0
+  }
+}

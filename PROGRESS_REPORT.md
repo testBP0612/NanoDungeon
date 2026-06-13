@@ -33,6 +33,55 @@
 ## 最新報告
 
 # Summary
+完成 Phase 3 Enemy System，並先併入 Phase 2 Review 前置：`BattleFX` 抽離、`Data/feel.json` 手感資料化、peg re-hit cooldown 0.2 秒、正式戰鬥移除 Phase 2 測試球序列副作用。戰鬥現在可依 `enemies.json` 載入 5 場敵人，跑完整回合循環、敵人攻擊、Boss 週期強攻擊、HP UI、死亡與勝利結算。未實作 Phase 4 升級三選一。
+
+# Completed
+- `Data/feel.json`：新增 feel / presentation 常數，包含 shake、粒子、拖尾、浮動文字、SFX、HP tween、peg re-hit cooldown、換場等待。
+- `Scripts/BattleFX.gd`：集中處理發射 / 命中粒子、screen shake、浮動文字與 placeholder SFX，`Battle.gd` 只呼叫表現 API。
+- `Scripts/Ball.gd`：新增 per-ball / per-peg re-hit cooldown，讀取 `feel.json` 的 0.2 秒設定；拖尾參數也改由 `feel.json` 驅動。
+- `Scripts/DataLoader.gd`：新增 `feel.json` 載入與基本驗證。
+- `Scripts/Battle.gd`：實作 Phase 3 FSM、5 場敵人載入、敵人攻擊、Boss 每 3 回合強攻擊、非 Boss 擊敗後場次推進、Boss 擊敗進 Victory、玩家死亡進 GameOver。
+- `Scenes/Battle.tscn`：新增 `BattleFX` 節點、玩家 / 敵人 HP bar、敵人占位圖、場次 / 類型 / dialogue UI。
+- `Scenes/GameOver.tscn` / `Scripts/GameOver.gd`：死亡結算、擊殺 / 場次 / HP 摘要、重來、回主選單。
+- `Scenes/Victory.tscn` / `Scripts/Victory.gd`：勝利結算、剩餘 HP / 擊殺 / 用時 / build 占位、重來、回主選單。
+- `Scripts/RunState.gd`：補上擊殺數與用時統計。
+- `Data/player.json`：移除 `phase2_test_ball_sequence` 與 `sfx_enabled`，正式戰鬥預設只依 `RunState.unlocked_balls` 發球。
+- `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md` 已更新。
+
+# Validation Results
+- ✅ 前置 1 BattleFX 抽離：靜態檢查 `Battle.gd` 無 `CPUParticles2D`、`AudioStreamGenerator`、`randf_range`，粒子 / shake / 跳字 / SFX 已移至 `BattleFX.gd`。
+- ✅ 前置 2 feel 資料化：`Data/feel.json` 已建立，手感常數由 `DataLoader.get_feel_config()` 提供給 `Battle.gd`、`Ball.gd`、`BattleFX.gd`。
+- ✅ 前置 3 peg re-hit cooldown：`Ball.gd` 對同一顆球、同一顆 peg 以 0.2 秒 cooldown 擋重複計分，不同球仍各自計算。
+- ✅ 前置 4 移除 Phase 2 測試序列副作用：`phase2_test_ball_sequence` 已自 `Data/player.json` 移除，正式戰鬥球種來源為 `RunState.unlocked_balls`。
+- ✅ E1 5 場敵人依序載入，數值來自 `enemies.json`：`RunState.current_battle_index` 推進並重新載入敵人定義。
+- ✅ E2 完整回合循環：發射 → 結算 → 敵人攻擊 → CHECK → 下一回合 / 下一場。
+- ✅ E3 敵人攻擊扣血；Shield 減免生效：敵人攻擊仍經 `EffectResolver.resolve_enemy_attack()` 套用 `RoundContext` 的 Shield reduction。
+- ✅ E4 Boss 強攻擊：Boss 每 3 回合依 enemy special 設定使用 `special.attack`。
+- ✅ E5 HP UI 顯示與更新：玩家 / 敵人 HP label 與 ProgressBar 會隨狀態更新，bar 使用 Tween 過渡。
+- ✅ E6 玩家死 → GameOver；擊敗 Boss → Victory：兩個結算場景可載入且含重來 / 回主選單。
+- ✅ E7 結算可重來 / 回主選單，重來後狀態乾淨：按鈕會呼叫 `RunState.reset_new_run()` 後切場。
+- ⚠️ E8 從第 1 場打到第 5 場不崩潰：headless 場景載入與靜態流程檢查通過；完整可視化連打仍建議人類實機驗收。
+- ✅ JSON 驗證：`Data/*.json` 全部可由 PowerShell `ConvertFrom-Json` 解析。
+- ✅ Godot 驗證：Godot 4.6.3 headless 載入 main scene、`Scenes/Battle.tscn`、`Scenes/GameOver.tscn`、`Scenes/Victory.tscn` 皆無腳本解析或場景載入錯誤。
+- ✅ H. 禁止偏離：未改 Peg / Ball / Enemy 種類數量，未實作連鎖釘 / 連射球，未實作升級三選一，未改 ROADMAP 或核心設計文件。
+
+# Open Questions
+- 無新增。
+- Q-003：Shield 減免維持 Phase 2 暫行假設，每回合不疊加。
+- Q-005：精英 / Boss 後獎勵仍未實作，本圈非 Boss 擊敗後只做下一場切換，占位到 Phase 4。
+- Q-010 / Q-011 / Q-012：已依決議處理或保留既有規則。
+
+# Risks
+- 目前 Phase 3 預設正式戰鬥只有 Normal Ball，因 Phase 4 尚未接升級解鎖；Shield / Blast 效果仍保留在 resolver，但正式流程要到 Phase 4 才會自然出現。
+- Boss / 第 5 場可達性尚未以人類完整遊玩驗證；目前完成 headless 與靜態檢查。
+- `Battle.gd` 已能支撐 Phase 3，但 Phase 4 接升級畫面時應避免把 upgrade 抽取與套用 inline 回 Battle。
+
+# Recommended Next Task
+- 建議下一張任務卡：`Codex/04_ROGUELITE_BUILD.md`。Phase 3 已有 5 場流程與勝敗結算，下一圈應把非 Boss 勝利後的占位換成三選一升級，並讓 Blast / Shield 透過解鎖自然進入球池。
+
+## 歷史報告 — Phase 2 Pinball Feel
+
+# Summary
 完成 Phase 2 Pinball Feel 第一版：在 Phase 1.5 的 EffectResolver / RoundContext 架構上接上 4 種 Peg 與 3 種 Ball 的既定效果，並加入命中粒子、球拖尾、Peg 閃光、screen shake、浮動傷害數字、結算總傷害顯示與可關閉 placeholder SFX。未改 Peg / Ball / Enemy 種類數量，未實作連鎖釘、連射球、升級三選一或完整敵人流程。
 
 # Completed

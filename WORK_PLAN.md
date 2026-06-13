@@ -39,37 +39,44 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 First Playable 已完成並經人類實機驗證。
-- Phase 1.5 Architecture Refactor 已完成並經人類實機驗證行為等價；`EffectResolver`、`RoundContext`、場景節點化 Battle 已可供 Phase 2 擴充。
-- 進入 Phase 2 前已提交並推送 Phase 1.5 驗收紀錄與 `Data/balls.json` 格式整理。
+- Phase 1 / 1.5 / 2 皆已完成並經人類實機驗證。
+- Phase 2 已完成 Pinball Feel、4 種 Peg、3 種 Ball、傷害數字、粒子、screen shake 與 placeholder SFX。
+- Phase 2 Review 已產出並決議 Q-010 / Q-011 / Q-012，並已併入 `Codex/03_ENEMY_SYSTEM.md` 前置。
 
 # Current Phase
-- **Phase 2 — Pinball Feel**。
+- **Phase 3 — Enemy System**（含 Phase 2 Review 前置）。
 
 # Recommended Task
-- 執行 `Codex/02_PINBALL_FEEL.md`：強化發射 / 命中 / 結算回饋，實作 4 種 Peg 與 3 種 Ball 既定效果，並加入傷害數字、screen shake、粒子 / 閃光與可關閉的 placeholder SFX。
+- 執行 `Codex/03_ENEMY_SYSTEM.md`。
+- 先完成前置：抽出 `BattleFX`、新增 `Data/feel.json`、實作 peg re-hit cooldown 0.2s、移除 `phase2_test_ball_sequence` 對正式戰鬥的影響。
+- 再完成 5 場敵人流程、完整回合制、Boss 強攻擊、HP UI、GameOver / Victory 結算畫面。
 
 # Why
-- ROADMAP 顯示 Phase 1.5 已完成，下一個未完成目標是 Phase 2。
-- Phase 1.5 已建立 EffectResolver / RoundContext，適合把 4 釘 3 球效果集中接上，不再把效果邏輯 inline 回 `Battle.gd`。
+- ROADMAP 顯示 Phase 2 已完成，下一個未完成目標是 Phase 3。
+- Phase 2 Review 的前置若不先做，Battle.gd 會繼續累積 presentation 職責，且 feel 常數仍不符合資料驅動原則。
+- 完整 5 場敵人流程是 Phase 4 升級三選一之前的必要戰鬥骨架。
 
 # Risks
-- 範圍蔓延：不得做升級三選一、完整敵人流程、Boss、正式解鎖流程或 Phase 5 美術定稿。
-- 特效過量可能影響穩定性；粒子與 shake 需克制，先保持可運行。
-- Q-001 / Q-002 / Q-003 仍是暫行假設，實作需嚴格遵守。
+- 前置重構需保持 Phase 2 行為等價，不能改特效結果、數值或手感。
+- 移除測試球序列後預設正式戰鬥只會發 Normal Ball；Shield / Blast 效果保留但本圈預設不靠測試序列影響節奏。
+- 5 場流程可能拉長測試時間，需保證重新開始 / 回主選單狀態乾淨。
+- 升級三選一不可在本圈實作，只能用「下一場」或 reward placeholder 推進。
 
 # Dependencies
 - 無阻斷性前置。
-- Q-001：Double Peg 每回合 1 次、倍率 ×2。
-- Q-002：Blast Ball 取本回合所有命中中「單次最高傷害值」，含倍傷後數值。
-- Q-003：Shield Ball 敵人攻擊 -30%，多顆不疊加。
+- Q-003：Shield Ball 減傷百分比 -30%、多顆不疊加，敵人攻擊不得繞過。
+- Q-005：精英怪獎勵規則仍待決策；本圈不實作升級，敵人死後先推進下一場。
+- Q-010：Peg per-peg re-hit cooldown 採 0.2 秒並資料化。
+- Q-011：新增 `Data/feel.json` 資料化 feel 常數。
+- Q-012：多顆 Blast Ball 可疊加，保留既有 resolver 行為。
 
 # Estimated Scope
-- 中到大。會修改 `Battle.gd`、`EffectResolver.gd`、`RoundContext.gd`、`Peg.gd`、`Ball.gd`、`Battle.tscn`，可能新增傷害數字 / SFX / 視覺回饋腳本或節點；必要時在 `Data/player.json` 加入 Phase 2 測試球序列與音效開關。
+- 大。會新增 / 修改 `BattleFX.gd`、`Data/feel.json`、`DataLoader.gd`、`Battle.gd`、`Ball.gd`、`RunState.gd`、`Battle.tscn`、`GameOver.tscn`、`Victory.tscn` 與對應腳本；更新 CHANGELOG / PROGRESS_REPORT。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` **D. Pinball Feel** 全項自驗。
-- 同步回歸 **C. First Playable** 核心流程與 **H. 禁止偏離**。
+- `Codex/VALIDATION_CHECKLIST.md` **E. Enemy System** 全項自驗。
+- 同步回歸 Phase 2 Review 前置：BattleFX 抽出、feel.json、Peg cooldown、正式戰鬥不受測試球序列影響。
+- 同步檢查 **H. 禁止偏離**。
 
 ---
 

@@ -39,6 +39,36 @@
 
 ---
 
+## [Phase 3 / 0.5.0] - 2026-06-13 — 完成敵人系統與 5 場戰鬥流程
+
+- 執行者：Codex
+- 任務卡：`Codex/03_ENEMY_SYSTEM.md`
+
+### Added
+- 新增 `Data/feel.json`，集中管理 Phase 2 手感與表現常數：shake、粒子、拖尾、浮動文字、SFX、HP tween、peg re-hit cooldown、換場等待。
+- 新增 `Scripts/BattleFX.gd`，承接命中 / 發射粒子、screen shake、浮動文字與 placeholder SFX。
+- `Ball.gd` 新增 per-ball / per-peg re-hit cooldown，預設 0.2 秒，讀自 `Data/feel.json`。
+- `Battle.gd` 實作 5 場敵人依序載入、完整回合 FSM、敵人攻擊、Boss 週期強攻擊、場次推進、HP bar 更新與勝敗切場。
+- 新增 `Scenes/GameOver.tscn` / `Scripts/GameOver.gd` 與 `Scenes/Victory.tscn` / `Scripts/Victory.gd`，提供死亡 / 勝利結算、重來與回主選單。
+
+### Changed
+- `DataLoader.gd` 新增 `feel.json` 載入與基本驗證。
+- `RunState.gd` 新增擊殺數與用時統計所需狀態。
+- `Battle.tscn` 新增 `BattleFX` 節點、玩家 / 敵人 HP bar、敵人占位顯示、場次 / 類型 / dialogue UI。
+- 正式戰鬥球種來源改回 `RunState.unlocked_balls`，預設只發 Normal Ball。
+
+### Removed
+- 移除 `Data/player.json` 的 `phase2_test_ball_sequence` 與 `sfx_enabled`，避免 Phase 2 測試序列影響正式戰鬥節奏。
+- `Battle.gd` 不再 inline 粒子、screen shake、浮動文字或 SFX 產生邏輯。
+
+### 驗收
+- Godot 4.6.3 headless 載入主場景、`Scenes/Battle.tscn`、`Scenes/GameOver.tscn`、`Scenes/Victory.tscn` 皆通過。
+- `Data/*.json` 解析通過。
+- 靜態檢查確認 `Battle.gd` 無 `CPUParticles2D` / `AudioStreamGenerator` / `randf_range` / `phase2_test_ball_sequence`，正式戰鬥不再讀取測試球序列。
+
+### 未解問題
+- 無新增。遵守 Q-003 / Q-005 暫行假設；Q-010 / Q-011 / Q-012 已依決議實作或保留既有規則。
+
 ## [Phase 2 / 0.4.0] - 2026-06-13 — 實作 Pinball Feel 與 4 釘 3 球效果
 
 - 執行者：Codex

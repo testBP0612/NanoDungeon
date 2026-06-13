@@ -5,6 +5,7 @@ var balls_by_id: Dictionary = {}
 var enemies: Array = []
 var upgrades: Array = []
 var player_config: Dictionary = {}
+var feel_config: Dictionary = {}
 var loaded := false
 
 
@@ -18,12 +19,14 @@ func load_all() -> void:
 	var enemies_data := _load_json("res://Data/enemies.json")
 	var upgrades_data := _load_json("res://Data/upgrades.json")
 	var player_data := _load_json("res://Data/player.json")
+	var feel_data := _load_json("res://Data/feel.json")
 
 	pegs_by_id = _index_collection(pegs_data, "pegs", ["id", "name", "base_damage", "effect_type", "effect_value"])
 	balls_by_id = _index_collection(balls_data, "balls", ["id", "name", "effect_type", "effect_value"])
 	enemies = _validate_collection(enemies_data, "enemies", ["id", "name", "type", "hp", "attack", "description", "dialogue"])
 	upgrades = _validate_collection(upgrades_data, "upgrades", ["id", "name", "target_type", "target_id", "effect_type", "effect_value", "rarity"])
 	player_config = _validate_player_config(player_data)
+	feel_config = _validate_feel_config(feel_data)
 	loaded = true
 
 
@@ -44,6 +47,10 @@ func get_enemy(index: int) -> Dictionary:
 
 func get_player_config() -> Dictionary:
 	return player_config.duplicate(true)
+
+
+func get_feel_config() -> Dictionary:
+	return feel_config.duplicate(true)
 
 
 func _load_json(path: String) -> Dictionary:
@@ -114,3 +121,27 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 			push_error("Missing player config field: %s" % field)
 
 	return (config as Dictionary).duplicate(true)
+
+
+func _validate_feel_config(data: Dictionary) -> Dictionary:
+	var config: Dictionary = data.get("feel", {})
+	var required_fields := [
+		"peg_rehit_cooldown_seconds",
+		"shake",
+		"particles",
+		"trail",
+		"floating_text",
+		"sfx",
+		"hp_tween_duration",
+		"reward_advance_delay_seconds",
+	]
+
+	if typeof(config) != TYPE_DICTIONARY:
+		push_error("Missing feel config in Data/feel.json")
+		return {}
+
+	for field in required_fields:
+		if not config.has(field):
+			push_error("Missing feel config field: %s" % field)
+
+	return config.duplicate(true)

@@ -10,6 +10,9 @@ var radius := 10.0
 var _recovered := false
 var _launch_speed := 0.0
 var _ball_color := Color(1.0, 0.86, 0.25)
+var _peg_rehit_cooldown := 0.0
+var _peg_hit_times: Dictionary = {}
+var _feel_config: Dictionary = {}
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -21,9 +24,11 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
-func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dictionary) -> void:
+func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dictionary, feel_config: Dictionary) -> void:
 	ball_id = new_ball_id
 	ball_def = new_ball_def.duplicate(true)
+	_feel_config = feel_config.duplicate(true)
+	_peg_rehit_cooldown = float(_feel_config["peg_rehit_cooldown_seconds"])
 	_ball_color = _color_for_ball(ball_id)
 	radius = float(player_config["ball_radius"])
 	gravity_scale = float(player_config["ball_gravity_scale"])
@@ -62,6 +67,8 @@ func _on_body_entered(body: Node) -> void:
 	if _recovered:
 		return
 	if body.has_method("get_peg_id"):
+		if not _can_hit_peg(body):
+			return
 		if body.has_method("play_hit_feedback"):
 			body.play_hit_feedback()
 		var hit_color := Color(0.2, 0.85, 1.0)
@@ -73,22 +80,33 @@ func _on_body_entered(body: Node) -> void:
 
 
 func _add_trail() -> void:
+	var trail: Dictionary = _feel_config.get("trail", {})
 	var particles := CPUParticles2D.new()
 	particles.name = "Trail"
-	particles.amount = 14
-	particles.lifetime = 0.22
+	particles.amount = int(trail["amount"])
+	particles.lifetime = float(trail["lifetime"])
 	particles.local_coords = false
 	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	particles.emission_sphere_radius = radius * 0.35
-	particles.direction = Vector2.ZERO
-	particles.spread = 180.0
-	particles.gravity = Vector2.ZERO
-	particles.initial_velocity_min = 8.0
-	particles.initial_velocity_max = 18.0
-	particles.scale_amount_min = 1.0
-	particles.scale_amount_max = 2.0
+	particles.emission_sphere_radius = radius * float(trail["radius_multiplier"])
+	particles.direction = Vector2(float(trail["direction_x"]), float(trail["direction_y"]))
+	particles.spread = float(trail["spread_degrees"])
+	particles.gravity = Vector2(float(trail["gravity_x"]), float(trail["gravity_y"]))
+	particles.initial_velocity_min = float(trail["initial_velocity_min"])
+	particles.initial_velocity_max = float(trail["initial_velocity_max"])
+	particles.scale_amount_min = float(trail["scale_min"])
+	particles.scale_amount_max = float(trail["scale_max"])
 	particles.color = _ball_color
 	add_child(particles)
+
+
+func _can_hit_peg(peg: Node) -> bool:
+	var peg_key := str(peg.get_instance_id())
+	var now := Time.get_ticks_msec() / 1000.0
+	var last_hit := float(_peg_hit_times.get(peg_key, -9999.0))
+	if now - last_hit < _peg_rehit_cooldown:
+		return false
+	_peg_hit_times[peg_key] = now
+	return true
 
 
 func _color_for_ball(id: String) -> Color:
