@@ -33,6 +33,45 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/07_PROCEDURAL_PEGBOARD.md`：釘盤由手列座標改為 `Data/field.json` 參數化 generator，新增 `FieldGenerator.gd` 以公式生成固定位置骨架，並在每次 ROUND_START 只重抽動態 peg 類型。新增底部固定 `bounce_peg` 反彈排，場地與 viewport 拉高至 1024×1024。未做漸變特效、未擾動位置骨架、未新增除 bounce_peg 以外的種類，也未改既有傷害 / 升級 / 敵人規則。
+
+# Completed
+- `Data/field.json`：改為 `generator + bottom_row` schema，包含 rows / spacing / columns / type weights / special radius / seed / bounce row。
+- `Scripts/FieldGenerator.gd`：新增純資料生成器，負責建動態 peg 骨架、底排座標與依權重抽類型。
+- `Scripts/Battle.gd`：READY 建立固定 peg 節點與底排；每次 ROUND_START 呼叫 generator 重抽動態 peg 類型並 reconfigure 節點，位置不變。
+- `Data/pegs.json`：新增 `bounce_peg`，`effect_type: none`，只用底部固定排。
+- `Scripts/EffectResolver.gd`：支援 `none`，回傳空 peg 結果，不加傷害 / 回血 / 倍率 / 浮動傷害。
+- `Scripts/DataLoader.gd`：驗證 generator / bottom_row、權重 id、special radius、bounds、bottom row 必須為 `bounce_peg` 且 radius > 0。
+- `project.godot` / `Scenes/Battle.tscn`：viewport / 場地拉高至 1024×1024，牆、field fill / border、BottomSensor、BattleCamera、StatusLabel、結束按鈕位置同步調整。
+- Windows Desktop Export 已重新產出，`Data/field.json` 與 `FieldGenerator.gd` 已打包。
+
+# Validation Results
+- ✅ 位置由公式生成：`field.json` 無手列 `layout`，骨架由 `FieldGenerator.build_dynamic_slots()` 依 generator 參數計算。
+- ✅ 每回合只重抽類型：`Battle._begin_round()` 呼叫 `_reroll_dynamic_pegs()`，只 `configure()` 動態 peg 的 id / radius，位置不變。
+- ✅ 底部固定 bounce row：`FieldGenerator.build_bottom_slots()` 依 `bottom_row` 生成，Battle 建好後不參與 reroll。
+- ✅ `bounce_peg` 無效果：`EffectResolver` 對 `none` 回空結果；命中只有物理反彈 / 命中粒子 / SFX，無傷害數字。
+- ✅ 視窗 / 場地 1024×1024：`project.godot` 設 viewport 1024×1024；Battle field bottom=960，BottomSensor y=986，BattleCamera y=512。
+- ✅ seed 支援：`FieldGenerator.configure()` 若 `seed` 為整數則設定 RNG seed；`null` 則 randomize。
+- ✅ 物理安全：位置骨架固定，底部 bounce row 固定，8 秒 timeout 保留。
+- ✅ Godot 驗證：main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` headless 載入通過。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ Export 驗證：Windows Desktop Export 成功；匯出 exe 可 `--headless --quit` 獨立啟動。
+- ⚠️ 一整局可視化穩定性：程式 / 場景 / export 驗證通過；因每回合重抽 + 新高度是手感敏感改動，仍需人類實機驗收漏球率、輸出、Boss 可達性。
+
+# Open Questions
+- 無新增。
+- Q-015 / Q-016 / Q-017 已依決議實作。
+
+# Risks
+- 新高度與每回合類型重抽會改變輸出曲線與球路，可能需要人類後續只調 `Data/field.json` 的 weights / rows / spacing / bottom_row 來平衡。
+- `bounce_peg` 不進隨機池，但底排數量與位置會影響漏球率；建議實機觀察後微調 `bottom_row.count` 或 `bottom_row.y`。
+
+# Recommended Next Task
+- 建議人類用 export 版實機跑 2–3 局，觀察：每回合重抽是否有明顯變化、底排 bounce 是否降低全漏、Boss 是否仍可達；若需要，下一圈只做 `Data/field.json` 參數微調。
+
+## 歷史報告 — Field Layout
+
+# Summary
 完成 `Codex/06_FIELD_LAYOUT.md` 可玩性增量：釘子位置與半徑已由 `Battle.gd` / `Peg.gd` 搬到 `Data/field.json`。初版 field layout 沿用既有 8 顆 peg 的座標與類型，半徑預設 18，作為行為等價起點；後續人類可直接調 JSON 來改佈局與逐顆大小。本卡未新增任何玩法 / 種類，也未實作每層不同佈局。
 
 # Completed

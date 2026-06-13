@@ -179,3 +179,38 @@
 - 決議日期：2026-06-13（Phase 4 後最終確認）
 - 影響範圍：Data/player.json、Scripts/DataLoader.gd、Scripts/RunState.gd
 - 狀態：✅ 已決議
+
+### Q-015：釘盤改為程序生成、每回合機率重組
+- 提出者：Claude（Phase 7 規劃）
+- 日期：2026-06-13
+- 背景：人類希望釘盤改為「用算的」程序生成，並在每個玩家回合機率性改變場上釘子，增加趣味性與賽博主題感。
+- 結論（人類決議）：
+  - 佈局改為**參數化格點公式生成**（rows / spacing / 錯位 / 類型權重 / 保留底排），由產生器算座標，取代手列座標。
+  - **每回合只重抽「類型」、位置骨架固定**（選項 A）。骨架穩定 → 物理可預期、不會生成卡球 / 全漏的爛盤，仍有視覺亂感。
+  - 類型隨機池僅含 Normal / Heal / Burst / Double（Bounce 不進池，見 Q-016）。
+  - 允許可選 `seed` 以利展示可重現，但預設每回合隨機。
+- 決議日期：2026-06-13
+- 影響範圍：Data/field.json（參數化）、Scripts（FieldGenerator / Battle ROUND_START 重抽）、Codex/07_PROCEDURAL_PEGBOARD.md
+- 狀態：✅ 已決議
+
+### Q-016：新增純反彈釘 bounce_peg（鎖定 4 釘 → 5 釘）
+- 提出者：Claude（Phase 7 規劃）
+- 日期：2026-06-13
+- 背景：人類要求「底部固定一排純反彈、無效果的釘子」。實現此需求必須新增一種無效果釘；此舉擴充自 MVP 鎖定的「4 種 Peg」不變量。
+- 結論（人類決議）：
+  - **新增 `bounce_peg`**（`effect_type: "none"`，無傷無效果，只反彈）。
+  - **僅用於底部固定排**，不納入每回合隨機類型池（見 Q-015）。
+  - 釘子種類正式由 4 → **5**；同步更新 `Docs/02_GAME_DESIGN.md` 與 `Codex/VALIDATION_CHECKLIST.md` 的「4 釘」描述。
+  - 仍**不**實作連鎖釘（維持非目標）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/pegs.json、Data/field.json、Docs/02_GAME_DESIGN.md、Codex/VALIDATION_CHECKLIST.md、Codex/07_PROCEDURAL_PEGBOARD.md
+- 狀態：✅ 已決議
+
+### Q-017：場地高度拉高至 1024×1024
+- 提出者：Claude（Phase 7 規劃）
+- 日期：2026-06-13
+- 背景：為容納更多釘子與隨機趣味性，需要更高的場地。
+- 結論（人類決議）：**視窗 / viewport 加高為 1024×1024**（維持寬度）。連動調整 launcher、牆、落底感測器、BattleUI 錨點、BattleCamera 與 export preset。場地內部高度相應拉高以多容納數排釘子。
+- 決議日期：2026-06-13
+- 影響範圍：project.godot（viewport）、Scenes/Battle.tscn、Scripts/Battle.gd、Data/field.json（bounds）、export_presets.cfg、Codex/07_PROCEDURAL_PEGBOARD.md
+- 狀態：✅ 已決議

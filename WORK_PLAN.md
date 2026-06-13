@@ -40,37 +40,39 @@
 
 # Current State
 - MVP Phase 1 ~ 5 已完成並經人類驗收，Demo 可獨立匯出與展示。
-- 目前彈珠場釘子位置仍寫死在 `Battle.gd._spawn_pegs()`，釘子半徑仍寫死在 `Peg.gd`，不利於後續可玩性調整。
-- 新任務卡 `Codex/06_FIELD_LAYOUT.md` 已指定：把釘子位置與大小搬進 `Data/field.json`，Q-014 採「單一基礎佈局套用全部場次」。
+- Phase 6 已將 peg 位置 / 半徑資料化到 `Data/field.json`。
+- 新任務卡 `Codex/07_PROCEDURAL_PEGBOARD.md` 已指定：field 改參數化 generator + bottom_row、每回合重抽類型、新增底排 bounce_peg、場地拉高至 1024×1024。
 
 # Current Phase
-- **Post-MVP Playability Increment — Field Layout**。
+- **Post-MVP Playability Increment — Procedural Pegboard**。
 
 # Recommended Task
-- 執行 `Codex/06_FIELD_LAYOUT.md`。
-- 新增 `Data/field.json`，沿用目前 8 顆 peg 的座標 / 類型作為行為等價起點，並支援每顆選填 radius。
-- `DataLoader` 載入與驗證 field layout；`Battle.gd` 改讀資料生成 peg；`Peg.gd` 改為逐顆獨立 `CircleShape2D` 與繪製半徑。
+- 執行 `Codex/07_PROCEDURAL_PEGBOARD.md`。
+- 將 `Data/field.json` 改為 `generator + bottom_row`，新增 `FieldGenerator.gd` 算骨架與抽類型。
+- `Battle.gd` 在 ROUND_START 重抽動態 peg 類型，位置骨架固定；底排 `bounce_peg` 固定存在。
+- 調整 1024×1024 viewport / Battle 場地 / UI / export preset。
 
 # Why
-- 佈局與半徑資料化後，人類可不改程式反覆調整可玩性。
-- 逐顆 radius 是策略性布局的必要基礎，但不新增任何玩法機制或種類。
-- 初版沿用現有座標，可保持行為等價並降低回歸風險。
+- Q-015 / Q-016 / Q-017 已決議，下一個可玩性目標是柏青哥式程序釘盤與每回合重組。
+- 參數化骨架比手列座標更適合反覆調整密度、高度與權重。
+- 場地加高到 1024×1024 是容納更多釘排與底部 bounce row 的前置。
 
 # Risks
-- `Peg.tscn` 的 `CircleShape2D` 是共用 sub-resource，若直接改 shape radius 會造成所有 peg 連動；必須在 `Peg.configure()` 為每顆 new 獨立 shape。
-- `field.json` 驗證需在 pegs index 建好後執行，避免 id 驗證誤判。
-- 移除寫死座標時要避免改變現有 8 顆初始布局與流程。
+- 每回合重抽類型會影響輸出波動，需要確保底排 bounce 與 8 秒 timeout 保持穩定。
+- 新增 `bounce_peg` 是已決議的第 5 種 peg，但不可順手新增其他種類或效果。
+- 1024×1024 調整涉及場景座標、camera、UI 和 export，需 headless/export 回歸。
 
 # Dependencies
-- Q-014 採預設：單一基礎佈局套用全部場次；schema 可預留擴充，但本卡不實作每層變化。
-- 不新增 Peg / Ball / Enemy / upgrade 種類，不改傷害 / 效果規則。
+- Q-015：程序生成骨架，每回合只重抽類型，位置固定，seed 可選。
+- Q-016：新增 `bounce_peg`，只用底排，不進隨機池。
+- Q-017：viewport / 場地加高至 1024×1024。
 
 # Estimated Scope
-- 中。新增 `Data/field.json`，修改 `Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/Peg.gd`，必要時調整 `Scenes/Peg.tscn` 的預設；更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 大。會修改 `Data/field.json`、`Data/pegs.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/EffectResolver.gd`、新增 `Scripts/FieldGenerator.gd`，調整 `project.godot`、`Scenes/Battle.tscn`、`export_presets.cfg`，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/06_FIELD_LAYOUT.md` DoD：位置 / 半徑全來自 `Data/field.json`、逐顆 radius 獨立、DataLoader 驗證、Godot 場景載入與 JSON parse 通過。
-- 同步檢查禁止事項：不新增玩法 / 種類、不保留寫死 peg 座標 / 半徑、不使用共用 shape 套逐顆半徑。
+- 對照 `Codex/07_PROCEDURAL_PEGBOARD.md` DoD：公式生成骨架、ROUND_START 類型重抽、底排 bounce 固定、bounce 無效果、1024×1024 場地、seed 支援、Godot / JSON / export 驗證。
+- 同步檢查禁止事項：不做漸變特效、不擾動位置骨架、不把 bounce 放進隨機池、不加其他種類、不改既有規則。
 
 ---
 

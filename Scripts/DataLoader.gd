@@ -199,15 +199,17 @@ func _validate_field_config(data: Dictionary) -> Dictionary:
 		return {}
 
 	var bounds: Dictionary = config.get("bounds", {})
-	var layout: Array = config.get("layout", [])
 	var default_radius := float(config.get("default_peg_radius", 0.0))
+	var generator: Dictionary = config.get("generator", {})
+	var bottom_row: Dictionary = config.get("bottom_row", {})
 	var required_bounds := ["left", "right", "top", "bottom"]
 
 	if typeof(bounds) != TYPE_DICTIONARY:
 		push_error("Missing field bounds in Data/field.json")
-	if typeof(layout) != TYPE_ARRAY:
-		push_error("Missing field layout in Data/field.json")
-		layout = []
+	if typeof(generator) != TYPE_DICTIONARY:
+		push_error("Missing field generator in Data/field.json")
+	if typeof(bottom_row) != TYPE_DICTIONARY:
+		push_error("Missing field bottom_row in Data/field.json")
 	for field in required_bounds:
 		if not bounds.has(field):
 			push_error("Missing field bounds value: %s" % field)
@@ -218,31 +220,85 @@ func _validate_field_config(data: Dictionary) -> Dictionary:
 	var right := float(bounds.get("right", 0.0))
 	var top := float(bounds.get("top", 0.0))
 	var bottom := float(bounds.get("bottom", 0.0))
-	var normalized_layout := []
-
-	for item in layout:
-		if typeof(item) != TYPE_DICTIONARY:
-			push_error("Invalid field layout item")
-			continue
-		var slot := (item as Dictionary).duplicate(true)
-		var peg_id := String(slot.get("id", ""))
-		var x := float(slot.get("x", NAN))
-		var y := float(slot.get("y", NAN))
-		var radius := float(slot.get("radius", default_radius))
-		if not pegs_by_id.has(peg_id):
-			push_error("Field layout peg id not found: %s" % peg_id)
-		if is_nan(x) or is_nan(y):
-			push_error("Field layout item missing x/y: %s" % peg_id)
-		elif x < left or x > right or y < top or y > bottom:
-			push_error("Field layout position out of bounds: %s (%s, %s)" % [peg_id, x, y])
-		if radius <= 0.0:
-			push_error("Field layout radius must be > 0: %s" % peg_id)
-		slot["radius"] = radius
-		normalized_layout.append(slot)
+	_validate_field_generator(generator, left, right, top, bottom)
+	_validate_bottom_row(bottom_row, left, right, top, bottom)
 
 	var normalized := config.duplicate(true)
-	normalized["layout"] = normalized_layout
 	return normalized
+
+
+func _validate_field_generator(generator: Dictionary, left: float, right: float, top: float, bottom: float) -> void:
+	var required_fields := [
+		"top_y",
+		"row_count",
+		"row_spacing",
+		"wide_cols",
+		"narrow_cols",
+		"col_spacing",
+		"center_x",
+		"type_weights",
+		"special_radius",
+		"reroll_each_round",
+		"seed",
+	]
+	for field in required_fields:
+		if not generator.has(field):
+			push_error("Missing field generator value: %s" % field)
+
+	var type_weights: Dictionary = generator.get("type_weights", {})
+	for peg_id in type_weights.keys():
+		var id := String(peg_id)
+		if id == "bounce_peg":
+			push_error("bounce_peg must not be in generator type_weights")
+		if not pegs_by_id.has(id):
+			push_error("Field generator peg id not found: %s" % id)
+		if int(type_weights[peg_id]) <= 0:
+			push_error("Field generator weight must be > 0: %s" % id)
+
+	var special_radius: Dictionary = generator.get("special_radius", {})
+	for peg_id in special_radius.keys():
+		if not pegs_by_id.has(String(peg_id)):
+			push_error("Field special_radius peg id not found: %s" % String(peg_id))
+		if float(special_radius[peg_id]) <= 0.0:
+			push_error("Field special_radius must be > 0: %s" % String(peg_id))
+
+	var top_y := float(generator.get("top_y", 0.0))
+	var row_count := int(generator.get("row_count", 0))
+	var row_spacing := float(generator.get("row_spacing", 0.0))
+	var wide_cols := int(generator.get("wide_cols", 0))
+	var narrow_cols := int(generator.get("narrow_cols", 0))
+	var col_spacing := float(generator.get("col_spacing", 0.0))
+	var center_x := float(generator.get("center_x", 0.0))
+	if row_count <= 0 or wide_cols <= 0 or narrow_cols <= 0:
+		push_error("Field generator rows and columns must be > 0")
+	if row_spacing <= 0.0 or col_spacing <= 0.0:
+		push_error("Field generator spacing must be > 0")
+	if top_y < top or top_y + float(max(0, row_count - 1)) * row_spacing > bottom:
+		push_error("Field generator y range out of bounds")
+	for columns in [wide_cols, narrow_cols]:
+		var min_x := center_x - float(columns - 1) * 0.5 * col_spacing
+		var max_x := center_x + float(columns - 1) * 0.5 * col_spacing
+		if min_x < left or max_x > right:
+			push_error("Field generator x range out of bounds")
+
+
+func _validate_bottom_row(bottom_row: Dictionary, left: float, right: float, top: float, bottom: float) -> void:
+	var peg_id := String(bottom_row.get("id", ""))
+	var count := int(bottom_row.get("count", 0))
+	var y := float(bottom_row.get("y", NAN))
+	var radius := float(bottom_row.get("radius", 0.0))
+	if peg_id != "bounce_peg":
+		push_error("Field bottom_row must use bounce_peg")
+	if not pegs_by_id.has(peg_id):
+		push_error("Field bottom_row peg id not found: %s" % peg_id)
+	if count <= 0:
+		push_error("Field bottom_row count must be > 0")
+	if is_nan(y) or y < top or y > bottom:
+		push_error("Field bottom_row y out of bounds")
+	if radius <= 0.0:
+		push_error("Field bottom_row radius must be > 0")
+	if count > 1 and right <= left:
+		push_error("Field bottom_row bounds are invalid")
 
 
 func _validate_upgrades(data: Dictionary) -> void:

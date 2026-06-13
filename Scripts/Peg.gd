@@ -51,6 +51,8 @@ func _color_for_peg(id: String) -> Color:
 			return Color(0.22, 1.0, 0.08)
 		"double_peg":
 			return Color(1.0, 0.78, 0.24)
+		"bounce_peg":
+			return Color(0.72, 0.78, 0.9)
 		_:
 			return Color(0.2, 0.85, 1.0)
 

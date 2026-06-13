@@ -6,6 +6,7 @@ const BALL_SCENE := preload("res://Scenes/Ball.tscn")
 const PEG_SCENE := preload("res://Scenes/Peg.tscn")
 const ROUND_CONTEXT_SCRIPT := preload("res://Scripts/RoundContext.gd")
 const EFFECT_RESOLVER_SCRIPT := preload("res://Scripts/EffectResolver.gd")
+const FIELD_GENERATOR_SCRIPT := preload("res://Scripts/FieldGenerator.gd")
 
 var state := BattleState.INIT
 var player_config: Dictionary = {}
@@ -18,8 +19,13 @@ var launcher_position := Vector2(512, 118)
 var sfx_enabled := true
 var _last_player_hp := -1
 var _last_enemy_hp := -1
+var field_config: Dictionary = {}
+var dynamic_peg_slots: Array = []
+var dynamic_peg_nodes: Array[Node] = []
+var bottom_peg_nodes: Array[Node] = []
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
 var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
+var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 
 @onready var battle_camera: Camera2D = $BattleCamera
 @onready var battle_fx: Node = $BattleFX
@@ -72,6 +78,7 @@ func _load_definitions() -> void:
 		DataLoader.load_all()
 	player_config = DataLoader.get_player_config()
 	feel_config = DataLoader.get_feel_config()
+	field_config = DataLoader.get_field_config()
 	sfx_enabled = bool(feel_config["sfx"]["enabled"])
 
 
@@ -109,13 +116,29 @@ func _update_enemy_display() -> void:
 
 
 func _spawn_pegs() -> void:
-	var field_config := DataLoader.get_field_config()
-	var peg_slots: Array = field_config.get("layout", [])
-	for slot in peg_slots:
-		var peg_id := String(slot["id"])
+	field_generator.configure(field_config["generator"])
+	dynamic_peg_slots = field_generator.build_dynamic_slots(field_config)
+	for slot in dynamic_peg_slots:
 		var peg := PEG_SCENE.instantiate()
 		peg_container.add_child(peg)
 		peg.position = Vector2(float(slot["x"]), float(slot["y"]))
+		dynamic_peg_nodes.append(peg)
+
+	for slot in field_generator.build_bottom_slots(field_config):
+		var peg_id := String((slot as Dictionary)["id"])
+		var peg := PEG_SCENE.instantiate()
+		peg_container.add_child(peg)
+		peg.position = Vector2(float((slot as Dictionary)["x"]), float((slot as Dictionary)["y"]))
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
+		bottom_peg_nodes.append(peg)
+
+
+func _reroll_dynamic_pegs() -> void:
+	var rolled_slots: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_slots)
+	for index in range(min(dynamic_peg_nodes.size(), rolled_slots.size())):
+		var slot := rolled_slots[index] as Dictionary
+		var peg := dynamic_peg_nodes[index]
+		var peg_id := String(slot["id"])
 		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
 
 
@@ -142,6 +165,8 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 
 func _begin_round() -> void:
 	round_index += 1
+	if bool(field_config["generator"].get("reroll_each_round", true)) or round_index == 1:
+		_reroll_dynamic_pegs()
 	round_context.start_round(RunState.balls_per_round)
 	_transition_to(BattleState.AIMING)
 

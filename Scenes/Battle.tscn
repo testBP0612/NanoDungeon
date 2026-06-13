@@ -4,10 +4,10 @@
 [ext_resource type="Script" path="res://Scripts/BattleFX.gd" id="2_battle_fx"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_left_wall"]
-size = Vector2(40, 608)
+size = Vector2(40, 888)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_right_wall"]
-size = Vector2(40, 608)
+size = Vector2(40, 888)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_top_wall"]
 size = Vector2(672, 40)
@@ -30,34 +30,34 @@ script = ExtResource("2_battle_fx")
 
 [node name="FieldFill" type="Polygon2D" parent="PinballField"]
 color = Color(0.055, 0.065, 0.095, 1)
-polygon = PackedVector2Array(196, 72, 828, 72, 828, 680, 196, 680)
+polygon = PackedVector2Array(196, 72, 828, 72, 828, 960, 196, 960)
 
 [node name="FieldBorder" type="Line2D" parent="PinballField"]
-points = PackedVector2Array(196, 72, 828, 72, 828, 680, 196, 680, 196, 72)
+points = PackedVector2Array(196, 72, 828, 72, 828, 960, 196, 960, 196, 72)
 width = 2.0
 default_color = Color(0.25, 0.95, 1, 1)
 
 [node name="Walls" type="Node2D" parent="PinballField"]
 
 [node name="LeftWall" type="StaticBody2D" parent="PinballField/Walls"]
-position = Vector2(176, 376)
+position = Vector2(176, 516)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/LeftWall"]
 shape = SubResource("RectangleShape2D_left_wall")
 
 [node name="Visual" type="Polygon2D" parent="PinballField/Walls/LeftWall"]
 color = Color(0.09, 0.14, 0.2, 1)
-polygon = PackedVector2Array(-20, -304, 20, -304, 20, 304, -20, 304)
+polygon = PackedVector2Array(-20, -444, 20, -444, 20, 444, -20, 444)
 
 [node name="RightWall" type="StaticBody2D" parent="PinballField/Walls"]
-position = Vector2(848, 376)
+position = Vector2(848, 516)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/RightWall"]
 shape = SubResource("RectangleShape2D_right_wall")
 
 [node name="Visual" type="Polygon2D" parent="PinballField/Walls/RightWall"]
 color = Color(0.09, 0.14, 0.2, 1)
-polygon = PackedVector2Array(-20, -304, 20, -304, 20, 304, -20, 304)
+polygon = PackedVector2Array(-20, -444, 20, -444, 20, 444, -20, 444)
 
 [node name="TopWall" type="StaticBody2D" parent="PinballField/Walls"]
 position = Vector2(512, 52)
@@ -72,7 +72,7 @@ polygon = PackedVector2Array(-336, -20, 336, -20, 336, 20, -336, 20)
 [node name="PegContainer" type="Node2D" parent="PinballField"]
 
 [node name="BottomSensor" type="Area2D" parent="PinballField"]
-position = Vector2(512, 706)
+position = Vector2(512, 986)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/BottomSensor"]
 shape = SubResource("RectangleShape2D_bottom_sensor")
@@ -86,7 +86,7 @@ position = Vector2(512, 118)
 z_index = 10
 
 [node name="BattleCamera" type="Camera2D" parent="."]
-position = Vector2(512, 384)
+position = Vector2(512, 512)
 enabled = true
 
 [node name="AimLine" type="Line2D" parent="AimOverlay"]
@@ -204,9 +204,9 @@ autowrap_mode = 2
 
 [node name="StatusLabel" type="Label" parent="BattleUI/UIRoot"]
 offset_left = 260.0
-offset_top = 698.0
+offset_top = 966.0
 offset_right = 764.0
-offset_bottom = 734.0
+offset_bottom = 1002.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
@@ -222,17 +222,17 @@ text = "SFX: ON"
 [node name="RestartButton" type="Button" parent="BattleUI/UIRoot"]
 visible = false
 offset_left = 382.0
-offset_top = 356.0
+offset_top = 496.0
 offset_right = 502.0
-offset_bottom = 398.0
+offset_bottom = 538.0
 mouse_filter = 0
 text = "重來"
 
 [node name="MenuButton" type="Button" parent="BattleUI/UIRoot"]
 visible = false
 offset_left = 522.0
-offset_top = 356.0
+offset_top = 496.0
 offset_right = 642.0
-offset_bottom = 398.0
+offset_bottom = 538.0
 mouse_filter = 0
 text = "主選單"

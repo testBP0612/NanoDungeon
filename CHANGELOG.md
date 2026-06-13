@@ -39,6 +39,30 @@
 
 ---
 
+## [Phase 7 / 1.3.0] - 2026-06-13 — 程序生成釘盤與每回合類型重抽
+
+- 執行者：Codex
+- 任務卡：`Codex/07_PROCEDURAL_PEGBOARD.md`
+
+### Added
+- 新增 `Scripts/FieldGenerator.gd`，由 `Data/field.json` 的 generator 參數計算交錯梅花樁骨架、底排座標，並依權重抽動態 peg 類型。
+- `Data/pegs.json` 新增 `bounce_peg`（`effect_type: none`），僅用於底部固定反彈排。
+
+### Changed
+- `Data/field.json` 改為參數化 `generator + bottom_row`，取代手列座標。
+- `Battle.gd` 於 ROUND_START 重抽動態 peg 類型；位置骨架整局固定，底排 `bounce_peg` 不參與重抽。
+- `DataLoader.gd` 改驗證 generator / bottom_row schema、權重 id、bounds、radius 與 bounce 底排規則。
+- `EffectResolver.gd` 明確支援 `effect_type: none`，回傳無傷害 / 無回血 / 無倍率結果。
+- `project.godot` 與 `Scenes/Battle.tscn` 調整為 1024×1024 場地高度；牆、field border、BottomSensor、BattleCamera、底部狀態 UI 已同步。
+
+### 驗收
+- Godot 4.6.3 headless 載入 main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` 通過。
+- `Data/*.json` 解析通過。
+- Windows Desktop Export 成功，匯出 log 確認 `Data/field.json` 與 `Scripts/FieldGenerator.gd` 打包；匯出 exe 可 `--headless --quit` 獨立啟動。
+
+### 未解問題
+- 無新增。Q-015 / Q-016 / Q-017 皆依已決議內容實作；不做漸變特效、不擾動位置骨架、不新增其他種類。
+
 ## [Post-MVP / 1.1.0] - 2026-06-13 — 釘子佈局與半徑資料化
 
 - 執行者：Codex
@@ -59,6 +83,71 @@
 
 ### 未解問題
 - 無新增。Q-014 採本卡指定預設：單一基礎佈局套用全部場次；本卡不實作每層變化。
+
+## [Phase 7 規劃 / spec] - 2026-06-13 — 程序生成釘盤決策定案 + 任務卡
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/07_PROCEDURAL_PEGBOARD.md`（待 Codex 實作）
+
+### Added
+- `Codex/07_PROCEDURAL_PEGBOARD.md`：程序生成釘盤任務卡（參數化 field.json、FieldGenerator、每回合重抽類型、bounce_peg 底排、場地 1024×1024）。
+
+### Docs / 決策
+- 新增並由人類決議：**Q-015**（程序生成 + 每回合只重抽類型、位置骨架固定）、**Q-016**（新增第 5 種 `bounce_peg`，僅底排）、**Q-017**（場地拉高 1024×1024）。
+- `Docs/02_GAME_DESIGN.md`：Peg 系統由 4 → 5 種（新增 Bounce Peg），補記 Phase 7 程序生成 / 每回合重組規則。
+- `Codex/VALIDATION_CHECKLIST.md`：H 區「維持 4 種 Peg」更新為「MVP 4 種；Phase 7 起含 bounce_peg 共 5 種」。
+- `ROADMAP.md`：新增 Phase 7 列與 MVP 後增量軌道說明。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作；不做漸變特效（人類本輪未選）。Phase 7 為手感/平衡敏感改動，實作後須人類實機驗收。
+
+## [Phase 6 / 1.2.0] - 2026-06-13 — 柏青哥釘盤佈局（密集釘海）
+
+- 執行者：Claude（依人類請求改造關卡）
+- 任務卡：`Codex/06_FIELD_LAYOUT.md`（佈局資料調整）
+
+### Data
+- `Data/field.json`：改為柏青哥釘盤風格的交錯梅花樁，位置以格點公式算出（寬排 5 顆 / 窄排 4 顆交錯，6 排共 27 顆）。
+  - 組成：Normal ×20、Heal ×5、Burst ×1、Double ×1（高價值釘大幅減少）。
+  - 全部釘子縮小碰撞半徑：default 9；Burst 8、Double 7（最小最難打）。
+  - 兩側留空檔，增加漏球風險與亂彈刺激感。
+- `Data/pegs.json`：配合密集釘海下調單顆數值——Normal `base_damage` 3→1、Heal `effect_value` 3→2。
+
+### 備註
+- 僅調 `field.json` / `pegs.json` 數值，未改程式 / 規則。
+- 此為較大幅的手感與平衡改動，**務必人類實機驗收**：確認整局輸出、Boss 可達性、是否漏球過多。可再微調這兩個檔。
+
+## [Phase 6 / 1.1.0] - 2026-06-13 — 策略性關卡重做（field.json 調整）
+
+- 執行者：Claude（依人類請求改造關卡）
+- 任務卡：`Codex/06_FIELD_LAYOUT.md`（佈局資料化完成後的數值調整）
+
+### Data
+- `Data/field.json`：重做 8 顆釘子佈局，建立「左安全 / 右高風險高回報」策略軸。
+  - 維持原 2/2/2/2 類型組成（保留 Phase 4 已驗收的平衡預算）。
+  - 左側 Heal/Normal 放大顆（r19–22，保底易打）；右側 Burst/Double 放小顆（r10–13，需精準角度）；中央頂部 Normal 大顆當分流器。
+  - 用半徑編碼風險：高價值釘最小、最難打。
+
+### 備註
+- 僅調 `field.json` 數值，未改任何程式 / 規則。為純資料佈局調整。
+- 因可達性改變（高價值釘變小變難），整體難度可能略升，建議人類實機比較後，必要時微調 `field.json` 或 `enemies.json`。
+
+## [Phase 6 / 1.0.2] - 2026-06-13 — 完成 Field Layout 佈局資料化
+
+- 執行者：Codex
+- 任務卡：`Codex/06_FIELD_LAYOUT.md`
+- Commit：`a0702f1 Data-drive field layout`
+
+### Added
+- `Data/field.json`：釘子 `id / x / y / radius` 資料化（初版沿用原 8 顆座標，半徑 18，行為等價）。
+
+### Changed
+- `DataLoader.gd`：載入並驗證 `field.json`（id 存在、座標在 bounds 內、radius>0），提供 `get_field_config()`。
+- `Battle.gd`：`_spawn_pegs()` 改讀 `field.json`，移除寫死 `peg_slots`。
+- `Peg.gd`：`configure()` 接收 per-peg radius，並各自 `CircleShape2D.new()`，解除共用 sub-resource 連動。
+
+### 已知事項
+- 暫時 smoke test（直接建兩顆 Peg 驗證不同半徑）曾觸發 Godot headless engine crash；產品 `Battle.tscn` 載入正常，測試檔已刪除未納入 commit。
 
 ## [Phase 5 / 1.0.1] - 2026-06-13 — Phase 5 通過人類實機 + export 驗收
 

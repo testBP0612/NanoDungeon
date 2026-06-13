@@ -1,25 +1,42 @@
 {
   "_meta": {
-    "description": "彈珠場基礎佈局：釘子位置與大小。Q-014：單一基礎佈局套用全部場次；未來可擴充每場覆寫。",
-    "version": "0.1.0"
+    "description": "彈珠場程序佈局：位置骨架由 generator 公式產生，ROUND_START 只重抽動態釘類型；底排 bounce_peg 固定。",
+    "version": "0.3.0"
   },
   "field": {
     "bounds": {
       "left": 196,
       "right": 828,
       "top": 72,
-      "bottom": 680
+      "bottom": 960
     },
-    "default_peg_radius": 18,
-    "layout": [
-      { "id": "normal_peg", "x": 370, "y": 230 },
-      { "id": "burst_peg", "x": 512, "y": 230 },
-      { "id": "heal_peg", "x": 654, "y": 230 },
-      { "id": "double_peg", "x": 440, "y": 340 },
-      { "id": "normal_peg", "x": 584, "y": 340 },
-      { "id": "burst_peg", "x": 370, "y": 455 },
-      { "id": "heal_peg", "x": 512, "y": 455 },
-      { "id": "double_peg", "x": 654, "y": 455 }
-    ]
+    "default_peg_radius": 9,
+    "generator": {
+      "top_y": 210,
+      "row_count": 9,
+      "row_spacing": 64,
+      "wide_cols": 5,
+      "narrow_cols": 4,
+      "col_spacing": 88,
+      "center_x": 512,
+      "type_weights": {
+        "normal_peg": 60,
+        "heal_peg": 22,
+        "burst_peg": 10,
+        "double_peg": 8
+      },
+      "special_radius": {
+        "burst_peg": 8,
+        "double_peg": 7
+      },
+      "reroll_each_round": true,
+      "seed": null
+    },
+    "bottom_row": {
+      "id": "bounce_peg",
+      "y": 900,
+      "count": 7,
+      "radius": 9
+    }
   }
 }
