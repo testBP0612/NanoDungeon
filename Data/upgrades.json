@@ -1,0 +1,129 @@
+{
+  "_meta": {
+    "description": "升級池。target_type: peg / ball / stat。target_id 須對應 pegs.json/balls.json 的 id 或既定 stat 名。effect_type: add(數值相加) / multiply(倍率) / unlock(解鎖). rarity: common/rare/legendary（抽取權重見 OPEN_QUESTIONS Q-004）。stat 名稱: max_hp / balls_per_round / enemy_attack_down。",
+    "version": "0.1.0",
+    "stat_targets": ["max_hp", "balls_per_round", "enemy_attack_down"]
+  },
+  "upgrades": [
+    {
+      "id": "up_normal_peg_dmg",
+      "name": "強化普通釘 Reinforced Node",
+      "description": "普通釘 Normal Peg 的傷害 +2。",
+      "target_type": "peg",
+      "target_id": "normal_peg",
+      "effect_type": "add",
+      "effect_value": 2,
+      "rarity": "common"
+    },
+    {
+      "id": "up_burst_peg_dmg",
+      "name": "強化爆裂釘 Overcharged Burst",
+      "description": "爆裂釘 Burst Peg 的傷害 +3。",
+      "target_type": "peg",
+      "target_id": "burst_peg",
+      "effect_type": "add",
+      "effect_value": 3,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_heal_peg_boost",
+      "name": "強化補血釘 Enhanced Repair",
+      "description": "補血釘 Heal Peg 的回復量 +2。",
+      "target_type": "peg",
+      "target_id": "heal_peg",
+      "effect_type": "add",
+      "effect_value": 2,
+      "rarity": "common"
+    },
+    {
+      "id": "up_double_peg_boost",
+      "name": "強化倍傷釘 Amplified Multiplier",
+      "description": "倍傷釘 Double Peg 的倍率 +0.5（如 ×2 → ×2.5）。",
+      "target_type": "peg",
+      "target_id": "double_peg",
+      "effect_type": "add",
+      "effect_value": 0.5,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_max_hp",
+      "name": "強化外殼 Hardened Shell",
+      "description": "玩家最大 HP +20。",
+      "target_type": "stat",
+      "target_id": "max_hp",
+      "effect_type": "add",
+      "effect_value": 20,
+      "rarity": "common"
+    },
+    {
+      "id": "up_max_hp_big",
+      "name": "核心擴容 Core Expansion",
+      "description": "玩家最大 HP +40。",
+      "target_type": "stat",
+      "target_id": "max_hp",
+      "effect_type": "add",
+      "effect_value": 40,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_balls_per_round",
+      "name": "增量發射 Extra Charge",
+      "description": "每回合球數 +1（封頂 6）。",
+      "target_type": "stat",
+      "target_id": "balls_per_round",
+      "effect_type": "add",
+      "effect_value": 1,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_unlock_blast_ball",
+      "name": "解鎖爆破球 Unlock Blast Ball",
+      "description": "解鎖爆破球 Blast Ball，落底時加成本回合最高單次傷害。",
+      "target_type": "ball",
+      "target_id": "blast_ball",
+      "effect_type": "unlock",
+      "effect_value": 1,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_unlock_shield_ball",
+      "name": "解鎖護盾球 Unlock Shield Ball",
+      "description": "解鎖護盾球 Shield Ball，本回合敵人攻擊減免。",
+      "target_type": "ball",
+      "target_id": "shield_ball",
+      "effect_type": "unlock",
+      "effect_value": 1,
+      "rarity": "rare"
+    },
+    {
+      "id": "up_enemy_attack_down",
+      "name": "干擾協定 Jamming Protocol",
+      "description": "敵人攻擊力 -2（最低為 1）。",
+      "target_type": "stat",
+      "target_id": "enemy_attack_down",
+      "effect_type": "add",
+      "effect_value": 2,
+      "rarity": "common"
+    },
+    {
+      "id": "up_normal_peg_dmg_big",
+      "name": "超載普通釘 Surge Node",
+      "description": "普通釘 Normal Peg 的傷害 +4。",
+      "target_type": "peg",
+      "target_id": "normal_peg",
+      "effect_type": "add",
+      "effect_value": 4,
+      "rarity": "legendary"
+    },
+    {
+      "id": "up_double_peg_extra_trigger",
+      "name": "連鎖增幅 Chain Amplifier",
+      "description": "倍傷釘 Double Peg 每回合可額外觸發 1 次（上限受 04_BALANCE_RULES 約束，見 Q-001）。",
+      "target_type": "peg",
+      "target_id": "double_peg",
+      "effect_type": "add_trigger",
+      "effect_value": 1,
+      "rarity": "legendary"
+    }
+  ]
+}

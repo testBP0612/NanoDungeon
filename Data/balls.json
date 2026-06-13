@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "description": "MVP 球種定義。effect_type: none(基礎) / on_drop_bonus(落底加成本回合最高單次傷害) / damage_reduction(本回合敵人攻擊減免)。見 Docs/02_GAME_DESIGN.md 與 OPEN_QUESTIONS Q-002/Q-003。",
+    "version": "0.1.0"
+  },
+  "balls": [
+    {
+      "id": "normal_ball",
+      "name": "普通球 Normal Ball",
+      "description": "基礎能量球，無額外效果。初始即可使用。",
+      "effect_type": "none",
+      "effect_value": 0,
+      "unlocked_by_default": true
+    },
+    {
+      "id": "blast_ball",
+      "name": "爆破球 Blast Ball",
+      "description": "落底時額外加成一次本回合最高單次釘子傷害（暫行採 Q-002 選項 A，含倍傷後數值）。需透過升級解鎖。",
+      "effect_type": "on_drop_bonus",
+      "effect_value": 1.0,
+      "unlocked_by_default": false
+    },
+    {
+      "id": "shield_ball",
+      "name": "護盾球 Shield Ball",
+      "description": "本回合敵人攻擊傷害降低（暫行採 Q-003：百分比 -30%、多顆不疊加）。需透過升級解鎖。",
+      "effect_type": "damage_reduction",
+      "effect_value": 0.3,
+      "unlocked_by_default": false
+    }
+  ]
+}
