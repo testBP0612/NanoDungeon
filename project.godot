@@ -11,8 +11,14 @@ config_version=5
 [application]
 
 config/name="NanoDungeon"
+run/main_scene="res://Scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+DataLoader="*res://Scripts/DataLoader.gd"
+RunState="*res://Scripts/RunState.gd"
 
 [physics]
 

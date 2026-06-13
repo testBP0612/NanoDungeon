@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "description": "Phase 1 暫行玩家與彈珠場基礎數值。用於避免把 HP、球數、超時與發射力度寫死在程式中；資料位置待人類確認，見 OPEN_QUESTIONS Q-007。",
+    "version": "0.1.0"
+  },
+  "player": {
+    "max_hp": 100,
+    "balls_per_round": 3,
+    "starting_ball_id": "normal_ball",
+    "ball_timeout_seconds": 8.0,
+    "launch_speed": 900.0,
+    "ball_radius": 10.0,
+    "ball_gravity_scale": 1.0,
+    "ball_bounce": 0.9,
+    "ball_friction": 0.0
+  }
+}

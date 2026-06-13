@@ -39,6 +39,38 @@
 
 ---
 
+## [Phase 1 / 0.3.0] - 2026-06-13 — 完成 First Playable 最小戰鬥閉環
+
+- 執行者：Codex
+- 任務卡：`Codex/01_FIRST_PLAYABLE.md`
+
+### Added
+- 新增 `Scenes/MainMenu.tscn` 與 `Scripts/MainMenu.gd`：提供標題、開始、離開，開始後進入戰鬥。
+- 新增 `Scenes/Battle.tscn` 與 `Scripts/Battle.gd`：建立最小戰鬥 FSM（回合開始、瞄準、發射、回收、結算、敵人反擊、勝敗判定）。
+- 新增 `Scenes/Ball.tscn` / `Scripts/Ball.gd`：Normal Ball 使用 `RigidBody2D`，可發射、受重力、撞釘、落底或超時回收。
+- 新增 `Scenes/Peg.tscn` / `Scripts/Peg.gd`：Normal Peg placeholder，可被球碰撞並回報 peg id。
+- 新增 `Scripts/DataLoader.gd`：讀取並驗證 `Data/pegs.json`、`balls.json`、`enemies.json`、`upgrades.json`、`player.json`。
+- 新增 `Scripts/RunState.gd`：保存本局玩家 HP、每回合球數、解鎖球與戰鬥索引。
+
+### Changed
+- `project.godot` 設定 `Scenes/MainMenu.tscn` 為 main scene。
+- `project.godot` 新增 `DataLoader` 與 `RunState` autoload。
+- `WORK_PLAN.md` 更新為本圈 Phase 1 實作計畫。
+
+### Data / Docs
+- 新增 `Data/player.json`：暫存玩家初始 HP、每回合球數、起始球種、球超時、發射力度與基本物理調校值。
+- `OPEN_QUESTIONS.md` 新增 Q-007，記錄玩家初始數值與 Phase 1 物理調校值資料位置的暫行假設。
+
+### Fixed
+- 修正 Godot 4.6 嚴格模式下 `DataLoader.gd` 的 Variant 型別推斷警告。
+- 修正 Battle UI full-rect Control 吃掉滑鼠事件，導致 AIMING 狀態無法左鍵發射的問題；非互動 UI 改為忽略滑鼠，發射輸入改由 `_input()` 接收。
+
+### 驗收
+- 已用 Godot 4.6.3 headless 載入主場景與 `Battle.tscn`，無腳本解析錯誤或場景載入錯誤。
+
+### 未解問題
+- 見 Q-007。既有 Q-001 ~ Q-006 維持。
+
 ## [Phase 0 / 0.2.0] - 2026-06-13 — 升級為 AI Loop Driven Project
 
 - 執行者：Claude

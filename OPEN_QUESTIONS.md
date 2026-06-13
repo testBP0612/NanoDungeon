@@ -104,6 +104,18 @@
 - 影響範圍：Codex/01_FIRST_PLAYABLE.md、Codex/02_PINBALL_FEEL.md
 - 狀態：⚠️ 暫行假設（先採 A，超時 8 秒）
 
+### Q-007：玩家初始數值與 Phase 1 物理調校值應放在哪個 JSON
+- 提出者：Codex
+- 日期：2026-06-13
+- 背景：Phase 1 需要玩家初始 HP、每回合球數、起始球種、球超時秒數、發射力度、球半徑、重力倍率與彈性等數值。既有 `Data/pegs.json` / `balls.json` / `enemies.json` / `upgrades.json` 未提供這些玩家與場地基礎設定，但任務要求數值從 `Data/*.json` 讀取且不得寫死。
+- 選項：
+  - A. 新增 `Data/player.json` 保存玩家初始狀態與 Phase 1 物理調校值
+  - B. 把玩家初始狀態加入既有 `Data/balls.json` 的 `_meta` 或新欄位
+  - C. 另建更廣義的 `Data/run_config.json` 保存整局初始設定
+- AI 建議：A。語意清楚、範圍最小，不改既有四份 JSON 的 schema；Phase 1 先以暫行資料來源推進。
+- 影響範圍：Data/player.json、Scripts/DataLoader.gd、Scripts/RunState.gd、Codex/01_FIRST_PLAYABLE.md
+- 狀態：⚠️ 暫行假設（本圈先新增 `Data/player.json`，待人類確認）
+
 ---
 
 ## 已決議

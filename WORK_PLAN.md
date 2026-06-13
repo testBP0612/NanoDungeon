@@ -39,30 +39,33 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 0（文件與資料結構）已完成：README / ROADMAP / OPEN_QUESTIONS / CHANGELOG、`Docs/01–05`、`Codex/00–04` + VALIDATION_CHECKLIST、`Data/` 四份 JSON 皆已建立並通過解析。
-- 已升級為 AI Loop Development Framework：新增 `LOOP.md`、`WORK_PLAN.md`、`PROGRESS_REPORT.md`；README 與 MASTER_PROMPT 已補上 Loop 與 Permission Matrix。
-- 尚未撰寫任何 GDScript、尚未建立任何遊戲場景。
+- Phase 0（文件與資料結構）已完成：README / ROADMAP / OPEN_QUESTIONS / CHANGELOG、`Docs/01–05`、`Codex/00–04` + VALIDATION_CHECKLIST、`Data/` 四份 JSON 皆已建立。
+- 已升級為 AI Loop Development Framework：`LOOP.md`、`WORK_PLAN.md`、`PROGRESS_REPORT.md` 皆存在。
+- Godot 專案目前仍是空殼：尚未建立 `Scenes/`、`Scripts/`，`project.godot` 尚未指定主場景。
 
 # Current Phase
-- 即將進入 **Phase 1 — First Playable**（目前停在 Phase 0 / Loop 框架完成）。
+- **Phase 1 — First Playable**。
 
 # Recommended Task
-- `Codex/01_FIRST_PLAYABLE.md`（最小可玩：主選單 → 戰鬥 → 發射球 → 撞 Normal Peg → 一次結算給第 1 場敵人）。
+- 執行 `Codex/01_FIRST_PLAYABLE.md`，建立最小可玩閉環：MainMenu → Battle → 讀取 JSON → 顯示玩家 HP / 敵人 HP / 回合傷害 → 瞄準發射 Normal Ball → 撞 Normal Peg 累積傷害 → 落底或 8 秒超時回收 → 全部球回收後一次結算 → 敵人未死亡則以 `enemies.json` 攻擊值反擊 → 玩家 / 敵人死亡基本判定。
 
 # Why
-- ROADMAP 顯示 Phase 0 已達 DoD，下一個未完成且無前置阻斷的是 Phase 1。
-- First Playable 是後續所有 Phase 的物理 / 流程基礎，必須先打通。
+- ROADMAP 顯示 Phase 1 是下一個未完成目標，DoD 要求主選單進戰鬥、發射、碰撞、落底、結算與可重複遊玩。
+- 使用者本圈明確要求補足最小戰鬥閉環中的敵人反擊與玩家死亡判定；以基本扣血處理，不延伸到 Phase 3 的 5 場流程、Boss 行為或完整結算畫面。
 
 # Risks
-- 2D 物理穩定性（球穿透、卡住）→ 需超時回收保險（Q-006 暫定 8 秒）。
-- `project.godot` 目前為 3D 物理設定，本遊戲為 2D，調整前須先記錄於 OPEN_QUESTIONS。
-- 範圍蔓延：可能不小心提前實作 Phase 2 的特效 / 其他釘子。
+- 2D 物理穩定性（球穿透、卡住）需用落底 Area2D 與 8 秒超時保險處理（沿用 Q-006 暫行假設）。
+- `project.godot` 目前未指定主場景；本圈需設定 `Scenes/MainMenu.tscn` 為 main scene，並在 `CHANGELOG.md` 留痕。
+- 敵人反擊是最小閉環需求，但需避免擴張成 Phase 3 的完整敵人系統。
+- 不做 Phase 2 的特效、音效、其他 Peg / Ball 效果，避免範圍蔓延。
 
 # Dependencies
-- 無阻斷性前置。Q-006（落底判定）採暫行假設即可推進。
+- 無阻斷性前置。
+- 相關未決：Q-006 已允許以「底部全開 + 8 秒超時回收」暫行推進。
 
 # Estimated Scope
-- 中。新增 MainMenu / Battle / Peg / Ball 場景、Data Loader、RunState。
+- 中。新增 `Scenes/` 與 `Scripts/`：MainMenu、Battle、Peg、Ball、DataLoader、RunState；更新 `project.godot` main scene；更新 CHANGELOG / PROGRESS_REPORT。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` 的 **C. First Playable 驗收** 全部項目；並確認 **H. 禁止偏離項目** 未被違反。
+- `Codex/VALIDATION_CHECKLIST.md` 的 **C. First Playable 驗收** 全部項目。
+- 同步檢查 **H. 禁止偏離項目**：不改核心設計文件、不改 ROADMAP、不新增 Phase 2+ 玩法、不寫死可調數值。
