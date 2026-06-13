@@ -39,6 +39,39 @@
 
 ---
 
+## [Post-MVP / 1.1.0] - 2026-06-13 — 釘子佈局與半徑資料化
+
+- 執行者：Codex
+- 任務卡：`Codex/06_FIELD_LAYOUT.md`
+
+### Added
+- 新增 `Data/field.json`，保存彈珠場 bounds、預設 peg radius 與 8 顆 peg 的 `id / x / y / radius` 佈局資料。
+- `DataLoader.gd` 新增 `field.json` 載入與驗證：peg id 必須存在、座標需在 bounds 內、radius 必須 > 0。
+
+### Changed
+- `Battle.gd._spawn_pegs()` 改為讀取 `Data/field.json` 生成 peg，移除寫死 peg 座標與類型陣列。
+- `Peg.gd.configure()` 改為接收 per-peg radius，並為每顆 peg 建立獨立 `CircleShape2D`，確保碰撞半徑與繪製半徑一致且不共用 sub-resource。
+
+### 驗收
+- Godot 4.6.3 headless 載入 main scene 與 `Scenes/Battle.tscn` 通過。
+- `Data/*.json` 解析通過。
+- 靜態檢查確認 `Battle.gd` 不再保留 peg 位置 / 類型硬寫，`Peg.gd` 不再保留 `radius := 18.0`，且 `configure()` 內使用 `CircleShape2D.new()`。
+
+### 未解問題
+- 無新增。Q-014 採本卡指定預設：單一基礎佈局套用全部場次；本卡不實作每層變化。
+
+## [Phase 5 / 1.0.1] - 2026-06-13 — Phase 5 通過人類實機 + export 驗收
+
+- 執行者：人類（驗收）+ Claude（留痕）
+- 任務卡：`Codex/05_POLISH_DEMO.md`
+
+### Changed
+- 人類完成最終驗收：實機跑 export 版本與完整局數，確認 Demo 達「比賽現場可穩定展示」標準。
+- `ROADMAP.md`：Phase 5 標記完成；新增 Phase 6（Field Layout，可玩性調整）列，指向 `Codex/06_FIELD_LAYOUT.md`。
+
+### 備註
+- MVP（Phase 1–5）全部完成並驗收。Phase 6 為 MVP 後的可玩性增量，採單一基礎佈局（Q-014 每層變化暫不做）。
+
 ## [Phase 5 / 1.0.0] - 2026-06-13 — 完成 Polish & Demo 收尾
 
 - 執行者：Codex

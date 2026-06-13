@@ -7,6 +7,7 @@ var enemies: Array = []
 var upgrades: Array = []
 var player_config: Dictionary = {}
 var feel_config: Dictionary = {}
+var field_config: Dictionary = {}
 var loaded := false
 
 
@@ -21,6 +22,7 @@ func load_all() -> void:
 	var upgrades_data := _load_json("res://Data/upgrades.json")
 	var player_data := _load_json("res://Data/player.json")
 	var feel_data := _load_json("res://Data/feel.json")
+	var field_data := _load_json("res://Data/field.json")
 
 	pegs_by_id = _index_collection(pegs_data, "pegs", ["id", "name", "base_damage", "effect_type", "effect_value"])
 	balls = _validate_collection(balls_data, "balls", ["id", "name", "effect_type", "effect_value", "unlocked_by_default"])
@@ -29,6 +31,7 @@ func load_all() -> void:
 	upgrades = _validate_collection(upgrades_data, "upgrades", ["id", "name", "target_type", "target_id", "effect_type", "effect_value", "rarity"])
 	player_config = _validate_player_config(player_data)
 	feel_config = _validate_feel_config(feel_data)
+	field_config = _validate_field_config(field_data)
 	_validate_upgrades(upgrades_data)
 	loaded = true
 
@@ -79,6 +82,10 @@ func get_player_config() -> Dictionary:
 
 func get_feel_config() -> Dictionary:
 	return feel_config.duplicate(true)
+
+
+func get_field_config() -> Dictionary:
+	return field_config.duplicate(true)
 
 
 func _load_json(path: String) -> Dictionary:
@@ -183,6 +190,59 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 			push_error("Missing feel config field: %s" % field)
 
 	return config.duplicate(true)
+
+
+func _validate_field_config(data: Dictionary) -> Dictionary:
+	var config: Dictionary = data.get("field", {})
+	if typeof(config) != TYPE_DICTIONARY:
+		push_error("Missing field config in Data/field.json")
+		return {}
+
+	var bounds: Dictionary = config.get("bounds", {})
+	var layout: Array = config.get("layout", [])
+	var default_radius := float(config.get("default_peg_radius", 0.0))
+	var required_bounds := ["left", "right", "top", "bottom"]
+
+	if typeof(bounds) != TYPE_DICTIONARY:
+		push_error("Missing field bounds in Data/field.json")
+	if typeof(layout) != TYPE_ARRAY:
+		push_error("Missing field layout in Data/field.json")
+		layout = []
+	for field in required_bounds:
+		if not bounds.has(field):
+			push_error("Missing field bounds value: %s" % field)
+	if default_radius <= 0.0:
+		push_error("Field default_peg_radius must be > 0")
+
+	var left := float(bounds.get("left", 0.0))
+	var right := float(bounds.get("right", 0.0))
+	var top := float(bounds.get("top", 0.0))
+	var bottom := float(bounds.get("bottom", 0.0))
+	var normalized_layout := []
+
+	for item in layout:
+		if typeof(item) != TYPE_DICTIONARY:
+			push_error("Invalid field layout item")
+			continue
+		var slot := (item as Dictionary).duplicate(true)
+		var peg_id := String(slot.get("id", ""))
+		var x := float(slot.get("x", NAN))
+		var y := float(slot.get("y", NAN))
+		var radius := float(slot.get("radius", default_radius))
+		if not pegs_by_id.has(peg_id):
+			push_error("Field layout peg id not found: %s" % peg_id)
+		if is_nan(x) or is_nan(y):
+			push_error("Field layout item missing x/y: %s" % peg_id)
+		elif x < left or x > right or y < top or y > bottom:
+			push_error("Field layout position out of bounds: %s (%s, %s)" % [peg_id, x, y])
+		if radius <= 0.0:
+			push_error("Field layout radius must be > 0: %s" % peg_id)
+		slot["radius"] = radius
+		normalized_layout.append(slot)
+
+	var normalized := config.duplicate(true)
+	normalized["layout"] = normalized_layout
+	return normalized
 
 
 func _validate_upgrades(data: Dictionary) -> void:

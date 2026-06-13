@@ -33,6 +33,43 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/06_FIELD_LAYOUT.md` 可玩性增量：釘子位置與半徑已由 `Battle.gd` / `Peg.gd` 搬到 `Data/field.json`。初版 field layout 沿用既有 8 顆 peg 的座標與類型，半徑預設 18，作為行為等價起點；後續人類可直接調 JSON 來改佈局與逐顆大小。本卡未新增任何玩法 / 種類，也未實作每層不同佈局。
+
+# Completed
+- 新增 `Data/field.json`：包含 field bounds、`default_peg_radius` 與 8 顆 peg layout。
+- `Scripts/DataLoader.gd`：新增 `field.json` 載入、`get_field_config()` 與驗證：
+  - layout id 必須存在於 `pegs.json`。
+  - x / y 必須在 bounds 內。
+  - radius 或 default radius 必須 > 0。
+- `Scripts/Battle.gd`：`_spawn_pegs()` 改為讀取 `DataLoader.get_field_config()["layout"]`，移除寫死 peg slots。
+- `Scripts/Peg.gd`：`configure()` 接收 per-peg radius，並為每顆 peg `CircleShape2D.new()`，避免共用 sub-resource 連動；繪製半徑與 collision shape 半徑同步。
+- `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md` 已更新。
+
+# Validation Results
+- ✅ 釘子位置與大小來自 `Data/field.json`：Battle 只讀 field layout；初版 8 顆沿用原座標。
+- ✅ 改 JSON 即可調佈局：`DataLoader` 將每顆 layout 正規化並提供給 Battle；無需改程式。
+- ✅ 逐顆 radius 支援：每顆 Peg 在 `configure()` 建立獨立 `CircleShape2D`，並使用同一 `radius` 繪製。
+- ✅ 共用 shape 陷阱已處理：不再修改 `Peg.tscn` 的共用 sub-resource，runtime 每顆獨立 shape。
+- ✅ `DataLoader` 驗證 id / bounds / radius：無效資料會 `push_error()` 明確指出。
+- ✅ 初版行為等價：field layout 沿用現有 8 顆座標與類型，半徑維持 18。
+- ✅ Godot 驗證：Godot 4.6.3 headless 載入 main scene 與 `Scenes/Battle.tscn` 通過。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ 禁止事項：未新增 Peg / Ball / Enemy / upgrade 種類，未新增新機制，未改傷害 / 效果規則，未實作每層不同佈局。
+
+# Open Questions
+- 無新增。
+- Q-014 採使用者本次指定預設：單一基礎佈局套用全部場次；schema 保持可延伸，但本卡不實作每層變化。
+
+# Risks
+- 初版刻意行為等價，策略性尚未調整；下一步應由人類直接調 `Data/field.json` 的座標與 radius 做手感比較。
+- 我嘗試用暫時 smoke test 直接建立兩顆 Peg 驗證不同半徑時，Godot headless 測試場景觸發 engine crash；產品 `Battle.tscn` 載入正常，暫時測試檔已刪除。後續若要自動化這項檢查，建議用更保守的場景流程或 Godot editor test harness。
+
+# Recommended Next Task
+- 建議下一步由人類調整 `Data/field.json`：先讓高價值 peg（Burst / Double）縮小或移到較難命中的位置，Heal / Normal 作為保底，再實機比較 2–3 組佈局。
+
+## 歷史報告 — Phase 5 Polish & Demo
+
+# Summary
 完成 Phase 5 Polish & Demo 收尾：GameOver / Victory 已場景化，UpgradeScreen 套用霓虹賽博卡片風格，build 摘要改顯示球種與升級名稱，`feel.json` 清掉無引用設定，Windows Desktop Export 已產出並可獨立 headless 啟動。未新增玩法 / 種類 / 非目標功能；平衡值沿用 Phase 4 人類實機通過版本。
 
 # Completed

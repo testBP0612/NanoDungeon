@@ -2,7 +2,7 @@ extends StaticBody2D
 
 var peg_id := "normal_peg"
 var peg_def: Dictionary = {}
-var radius := 18.0
+var radius := 0.0
 var _base_color := Color(0.2, 0.85, 1.0)
 var _flash := 0.0
 
@@ -13,12 +13,15 @@ func _ready() -> void:
 	add_to_group("pegs")
 
 
-func configure(new_peg_id: String, new_peg_def: Dictionary) -> void:
+func configure(new_peg_id: String, new_peg_def: Dictionary, new_radius: float) -> void:
 	peg_id = new_peg_id
 	peg_def = new_peg_def.duplicate(true)
+	radius = new_radius
 	_base_color = _color_for_peg(peg_id)
-	if collision_shape != null and collision_shape.shape is CircleShape2D:
-		(collision_shape.shape as CircleShape2D).radius = radius
+	if collision_shape != null:
+		var shape := CircleShape2D.new()
+		shape.radius = radius
+		collision_shape.shape = shape
 	queue_redraw()
 
 

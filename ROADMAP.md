@@ -10,7 +10,8 @@
 | 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ✅ 完成（人類實機驗證） |
 | 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ✅ 完成（人類實機驗證） |
 | 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ✅ 完成（人類實機驗證） |
-| 5 | Polish & Demo | `Codex/05_POLISH_DEMO.md` | ⬜ 待開始（MVP 功能已齊） |
+| 5 | Polish & Demo | `Codex/05_POLISH_DEMO.md` | ✅ 完成（人類實機 + export 驗證） |
+| 6 | Field Layout（可玩性調整） | `Codex/06_FIELD_LAYOUT.md` | ⬜ 待開始（MVP 後增量） |
 
 ---
 

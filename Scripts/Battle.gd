@@ -109,23 +109,14 @@ func _update_enemy_display() -> void:
 
 
 func _spawn_pegs() -> void:
-	var peg_slots := [
-		{"id": "normal_peg", "position": Vector2(370, 230)},
-		{"id": "burst_peg", "position": Vector2(512, 230)},
-		{"id": "heal_peg", "position": Vector2(654, 230)},
-		{"id": "double_peg", "position": Vector2(440, 340)},
-		{"id": "normal_peg", "position": Vector2(584, 340)},
-		{"id": "burst_peg", "position": Vector2(370, 455)},
-		{"id": "heal_peg", "position": Vector2(512, 455)},
-		{"id": "double_peg", "position": Vector2(654, 455)},
-	]
-
+	var field_config := DataLoader.get_field_config()
+	var peg_slots: Array = field_config.get("layout", [])
 	for slot in peg_slots:
 		var peg_id := String(slot["id"])
 		var peg := PEG_SCENE.instantiate()
 		peg_container.add_child(peg)
-		peg.position = slot["position"]
-		peg.configure(peg_id, DataLoader.get_peg(peg_id))
+		peg.position = Vector2(float(slot["x"]), float(slot["y"]))
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
 
 
 func _transition_to(next_state: BattleState, message := "") -> void:

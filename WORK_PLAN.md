@@ -39,41 +39,38 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 / 1.5 / 2 / 3 / 4 皆已完成並經人類實機驗證，MVP 功能到齊。
-- Phase 4 已完成三選一升級、整局成長、round-robin 球池與勝利 / 失敗結算。
-- Q-001 ~ Q-013 皆已決議；Phase 5 不再改規則，只做 demo polish、穩定性、JSON 平衡與 Windows export。
+- MVP Phase 1 ~ 5 已完成並經人類驗收，Demo 可獨立匯出與展示。
+- 目前彈珠場釘子位置仍寫死在 `Battle.gd._spawn_pegs()`，釘子半徑仍寫死在 `Peg.gd`，不利於後續可玩性調整。
+- 新任務卡 `Codex/06_FIELD_LAYOUT.md` 已指定：把釘子位置與大小搬進 `Data/field.json`，Q-014 採「單一基礎佈局套用全部場次」。
 
 # Current Phase
-- **Phase 5 — Polish & Demo**。
+- **Post-MVP Playability Increment — Field Layout**。
 
 # Recommended Task
-- 執行 `Codex/05_POLISH_DEMO.md`。
-- 場景化 `GameOver.tscn` / `Victory.tscn` 的 UI，讓腳本只負責填資料與按鈕。
-- 改善 `UpgradeScreen` 霓虹賽博風與 rarity 顏色；build 摘要改顯示球種 / 升級名稱。
-- 僅透過 JSON 做 demo 平衡微調，移除 `feel.json` 的死設定，新增 Windows Desktop export preset 並嘗試匯出驗證。
+- 執行 `Codex/06_FIELD_LAYOUT.md`。
+- 新增 `Data/field.json`，沿用目前 8 顆 peg 的座標 / 類型作為行為等價起點，並支援每顆選填 radius。
+- `DataLoader` 載入與驗證 field layout；`Battle.gd` 改讀資料生成 peg；`Peg.gd` 改為逐顆獨立 `CircleShape2D` 與繪製半徑。
 
 # Why
-- ROADMAP 顯示 Phase 5 是最後一個未完成 Phase。
-- MVP 功能已齊，剩餘差距集中在比賽展示穩定度、流程順手度、場景 / UI 一致性與 export 可用性。
-- 任務卡明確要求 demo 是否達「比賽現場可穩定展示」標準。
+- 佈局與半徑資料化後，人類可不改程式反覆調整可玩性。
+- 逐顆 radius 是策略性布局的必要基礎，但不新增任何玩法機制或種類。
+- 初版沿用現有座標，可保持行為等價並降低回歸風險。
 
 # Risks
-- Export 可能受本機 Godot export templates 是否已安裝影響；若模板缺失，需回報為環境限制。
-- 連續 3 局「實機」驗收需要人類可視化確認；Codex 可做 headless / export / 靜態穩定檢查與必要的自動化 smoke test。
-- UI polish 需克制，避免新增重特效造成幀率或穩定性風險。
-- 平衡只能調 JSON，不得修改戰鬥 / 升級規則來達成數值目標。
+- `Peg.tscn` 的 `CircleShape2D` 是共用 sub-resource，若直接改 shape radius 會造成所有 peg 連動；必須在 `Peg.configure()` 為每顆 new 獨立 shape。
+- `field.json` 驗證需在 pegs index 建好後執行，避免 id 驗證誤判。
+- 移除寫死座標時要避免改變現有 8 顆初始布局與流程。
 
 # Dependencies
-- 無阻斷性規格前置。
-- Q-001 ~ Q-013 全數定案，照現狀執行；若需要改規則，停止並寫 `OPEN_QUESTIONS.md`。
-- Windows Desktop Export 依賴本機 Godot export templates。
+- Q-014 採預設：單一基礎佈局套用全部場次；schema 可預留擴充，但本卡不實作每層變化。
+- 不新增 Peg / Ball / Enemy / upgrade 種類，不改傷害 / 效果規則。
 
 # Estimated Scope
-- 中到大。會修改 `Scenes/GameOver.tscn`、`Scenes/Victory.tscn`、`Scripts/GameOver.gd`、`Scripts/Victory.gd`、`Scenes/UpgradeScreen.tscn`、`Scripts/UpgradeScreen.gd`、`RunState.gd`、`Data/feel.json`、必要的 JSON 平衡與 `export_presets.cfg`；更新 CHANGELOG / PROGRESS_REPORT。
+- 中。新增 `Data/field.json`，修改 `Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/Peg.gd`，必要時調整 `Scenes/Peg.tscn` 的預設；更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` **G. Demo 展示驗收** 全項自驗。
-- 同步檢查 **H. 禁止偏離**。
+- 對照 `Codex/06_FIELD_LAYOUT.md` DoD：位置 / 半徑全來自 `Data/field.json`、逐顆 radius 獨立、DataLoader 驗證、Godot 場景載入與 JSON parse 通過。
+- 同步檢查禁止事項：不新增玩法 / 種類、不保留寫死 peg 座標 / 半徑、不使用共用 shape 套逐顆半徑。
 
 ---
 
