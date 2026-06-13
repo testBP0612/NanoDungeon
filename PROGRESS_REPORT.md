@@ -33,6 +33,47 @@
 ## 最新報告
 
 # Summary
+完成 Phase 2 Pinball Feel 第一版：在 Phase 1.5 的 EffectResolver / RoundContext 架構上接上 4 種 Peg 與 3 種 Ball 的既定效果，並加入命中粒子、球拖尾、Peg 閃光、screen shake、浮動傷害數字、結算總傷害顯示與可關閉 placeholder SFX。未改 Peg / Ball / Enemy 種類數量，未實作連鎖釘、連射球、升級三選一或完整敵人流程。
+
+# Completed
+- `EffectResolver.gd`：集中處理 `damage`、`heal`、`damage_multiplier`、`on_drop_bonus`、`damage_reduction`。
+- `RoundContext.gd`：保存倍率、最高單次傷害、待回血、Blast bonus、Shield reduction、球數狀態。
+- `Battle.gd`：接入 4 Peg 混合佈局、Phase 2 測試球序列、傷害數字、粒子、screen shake、SFX 事件與 SFX toggle。
+- `Peg.gd`：四種 Peg 顏色與命中閃光。
+- `Ball.gd`：三種 Ball 顏色、拖尾粒子、命中位置 / 顏色事件、撞牆音效事件。
+- `Battle.tscn`：新增 `BattleCamera` 與 `SfxToggleButton`。
+- `Data/player.json`：新增 `phase2_test_ball_sequence` 與 `sfx_enabled`。
+- `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md` 已更新。
+
+# Validation Results
+- ✅ D1 發射有瞄準線與明確輸入回饋：保留 `AimLine`，發射時有粒子、狀態文字與 SFX。
+- ✅ D2 命中釘子有閃光 / 粒子 / 螢幕微震：Peg 命中閃光、命中粒子與 camera shake 已實作。
+- ✅ D3 命中跳出傷害數字，結算顯示總傷害：命中浮動文字與 `TOTAL` 結算文字已實作。
+- ✅ D4 4 種釘子效果可分別觀察：Normal / Burst 累積不同傷害，Heal 結算回血，Double 每回合 1 次倍率提升。
+- ✅ D5 3 種球效果可驗證：Phase 2 測試球序列依序發 Normal / Blast / Shield；Blast 結算加最高單次傷害，Shield 依 Q-003 減傷。
+- ✅ D6 發射 / 命中 / 落底 / 結算各有占位音效且可關閉：事件 beep 已接，`SFX: ON/OFF` 可切換；另補撞牆 beep。
+- ✅ D7 Phase 1 核心流程仍正常：Godot 4.6.3 headless 載入 main scene 與 `Battle.tscn` 無錯；核心 FSM 未移除。
+- ⚠️ D8 多球 + 粒子下幀率穩定、無物理穿透：粒子量克制，headless 載入通過；仍需人類實機觀察幀率與手感。
+- ✅ D9 所有數值仍來自 `Data/*.json`：傷害 / 倍率 / 回復 / 減傷來自 `Data/pegs.json` / `Data/balls.json`，球數 / timeout / 發射與物理參數來自 `Data/player.json`。
+- ✅ C 區核心回歸：主場景與 Battle 場景可載入；球數、傷害、HP、反擊、回收與結算流程保留。
+- ✅ H. 禁止偏離：未改核心設計文件、未改種類數量、未實作連鎖釘 / 連射球、未加入升級三選一或 Phase 3+ 流程。
+
+# Open Questions
+- 無新增。
+- Q-001 / Q-002 / Q-003 仍按暫行假設實作。
+- Q-004 / Q-005 仍待 Phase 4 前決策。
+
+# Risks
+- Phase 2 的視覺 / 音效 / shake 需要人類實機確認是否過強或過弱。
+- `phase2_test_ball_sequence` 是測試用方案，正式球種解鎖仍應留到 Phase 4。
+- Placeholder SFX 使用即時合成 beep，適合占位，後續 Phase 5 可替換為正式音效資源。
+
+# Recommended Next Task
+- 建議下一張任務卡：`Codex/03_ENEMY_SYSTEM.md`。Phase 2 已完成 4 Peg / 3 Ball 的效果與回饋基礎，下一步應建立 5 場敵人與完整回合制戰鬥流程。
+
+## 歷史報告 — Phase 1.5 Architecture Refactor
+
+# Summary
 完成 Phase 1.5 Architecture Refactor 行為等價重構。`Battle.gd` 的 Peg 傷害分派已搬到 `EffectResolver`，回合暫存集中到 `RoundContext`，FSM 狀態切換統一走 `_transition_to()`；`Battle.tscn` 依 Q-008 改為承載實際彈珠場與 UI 節點，並移除空的 `node_2d.tscn`。未修改玩法、數值、座標、UI 版面、物理參數，也未實作任何 Phase 2 效果。
 
 # Completed

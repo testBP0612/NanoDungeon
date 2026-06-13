@@ -39,33 +39,37 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 First Playable 已完成並經人類實機驗證（發射 / 碰撞 / 累積 / 落底 / 結算 / 反擊 / 重來 / 回主選單皆正常）。
-- Phase 1.5 Architecture Review 已產出，指出三項須在 Phase 2 前修復的債（Effect Resolver、RoundContext、FSM 入口）+ 場景分離 + 殘渣清除。
-- 已建立任務卡 `Codex/01b_REFACTOR.md`，ROADMAP 已插入 Phase 1.5。
+- Phase 1 First Playable 已完成並經人類實機驗證。
+- Phase 1.5 Architecture Refactor 已完成並經人類實機驗證行為等價；`EffectResolver`、`RoundContext`、場景節點化 Battle 已可供 Phase 2 擴充。
+- 進入 Phase 2 前已提交並推送 Phase 1.5 驗收紀錄與 `Data/balls.json` 格式整理。
 
 # Current Phase
-- **Phase 1.5 — Architecture Refactor**（行為等價重構）。
+- **Phase 2 — Pinball Feel**。
 
 # Recommended Task
-- 執行 `Codex/01b_REFACTOR.md`。
+- 執行 `Codex/02_PINBALL_FEEL.md`：強化發射 / 命中 / 結算回饋，實作 4 種 Peg 與 3 種 Ball 既定效果，並加入傷害數字、screen shake、粒子 / 閃光與可關閉的 placeholder SFX。
 
 # Why
-- Phase 2 內容（4 釘 3 球效果、傷害數字、粒子）會直接踩中現有架構債；先還債可避免在 god object 上複利累積。
+- ROADMAP 顯示 Phase 1.5 已完成，下一個未完成目標是 Phase 2。
+- Phase 1.5 已建立 EffectResolver / RoundContext，適合把 4 釘 3 球效果集中接上，不再把效果邏輯 inline 回 `Battle.gd`。
 
 # Risks
-- 重構誤改行為（最大風險）→ 以「行為等價 + C 區回歸」為驗收鐵律。
-- 場景分離可能動到座標 / 版面 → 需逐項比對視覺一致。
+- 範圍蔓延：不得做升級三選一、完整敵人流程、Boss、正式解鎖流程或 Phase 5 美術定稿。
+- 特效過量可能影響穩定性；粒子與 shake 需克制，先保持可運行。
+- Q-001 / Q-002 / Q-003 仍是暫行假設，實作需嚴格遵守。
 
 # Dependencies
 - 無阻斷性前置。
-- Q-008 已決議：Battle 場地 / UI 改為 `Battle.tscn` 實際節點，行為與座標必須等價。
-- Q-009 已決議：Phase 1.5 不清理 `project.godot` 的 3D 物理 / d3d12 設定。
+- Q-001：Double Peg 每回合 1 次、倍率 ×2。
+- Q-002：Blast Ball 取本回合所有命中中「單次最高傷害值」，含倍傷後數值。
+- Q-003：Shield Ball 敵人攻擊 -30%，多顆不疊加。
 
 # Estimated Scope
-- 中。新增 EffectResolver / RoundContext；瘦身 Battle.gd；（預設）重建 Battle.tscn 節點；刪 node_2d.tscn。
+- 中到大。會修改 `Battle.gd`、`EffectResolver.gd`、`RoundContext.gd`、`Peg.gd`、`Ball.gd`、`Battle.tscn`，可能新增傷害數字 / SFX / 視覺回饋腳本或節點；必要時在 `Data/player.json` 加入 Phase 2 測試球序列與音效開關。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` **C. First Playable** 全項回歸 + **H. 禁止偏離**。
+- `Codex/VALIDATION_CHECKLIST.md` **D. Pinball Feel** 全項自驗。
+- 同步回歸 **C. First Playable** 核心流程與 **H. 禁止偏離**。
 
 ---
 

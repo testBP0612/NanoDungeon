@@ -30,5 +30,9 @@ func damage_player(amount: int) -> void:
 	player_hp = max(0, player_hp - amount)
 
 
+func heal_player(amount: int) -> void:
+	player_hp = min(player_max_hp, player_hp + amount)
+
+
 func is_player_dead() -> bool:
 	return player_hp <= 0

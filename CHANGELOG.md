@@ -39,6 +39,34 @@
 
 ---
 
+## [Phase 2 / 0.4.0] - 2026-06-13 — 實作 Pinball Feel 與 4 釘 3 球效果
+
+- 執行者：Codex
+- 任務卡：`Codex/02_PINBALL_FEEL.md`
+
+### Added
+- `EffectResolver` 新增 Peg 效果分派：`damage`、`heal`、`damage_multiplier`，遵守 Q-001 暫行假設（Double Peg 每回合 1 次、倍率 ×2）。
+- `EffectResolver` 新增 Ball 效果分派：`none`、`on_drop_bonus`、`damage_reduction`，遵守 Q-002 / Q-003 暫行假設。
+- `RoundContext` 新增回合倍率、最高單次傷害、待結算回血、Blast 結算加成、Shield 減傷等回合暫存。
+- `Battle.gd` 新增命中粒子、發射粒子、傷害 / 回復 / 倍率浮動文字、screen shake、結算總傷害顯示。
+- 新增 placeholder SFX：發射、命中、撞牆、落底、結算事件皆有簡單合成 beep，並提供 `SFX: ON/OFF` 按鈕。
+- `Ball.gd` 新增球拖尾粒子與三球顏色辨識。
+- `Peg.gd` 新增四種 Peg 顏色與命中閃光。
+
+### Changed
+- `Battle.gd` 的 Peg 佈局在既有 8 個座標中改為 Normal / Burst / Heal / Double 循環，以驗證 4 種 Peg 效果。
+- `Data/player.json` 新增 `phase2_test_ball_sequence`，讓每回合 3 顆球依序為 Normal / Blast / Shield，僅供 Phase 2 效果驗證，不做正式解鎖流程。
+- `Data/player.json` 新增 `sfx_enabled` 作為音效預設開關。
+- `WORK_PLAN.md` 更新為 Phase 2 實作計畫。
+
+### 驗收
+- Godot 4.6.3 headless 載入主場景與 `Scenes/Battle.tscn` 無腳本解析 / 場景錯誤。
+- `Data/*.json` 解析通過。
+- 靜態檢查確認 `Battle.gd` 未 inline `effect_type` / `base_damage` / `effect_value` 效果邏輯。
+
+### 未解問題
+- 無新增。沿用 Q-001 / Q-002 / Q-003 暫行假設；Q-004 / Q-005 仍待 Phase 4 前決策。
+
 ## [Phase 1.5 / 0.3.2] - 2026-06-13 — Phase 1.5 通過人類實機驗收
 
 - 執行者：人類（驗收）

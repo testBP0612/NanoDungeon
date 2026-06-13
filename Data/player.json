@@ -7,6 +7,8 @@
     "max_hp": 100,
     "balls_per_round": 3,
     "starting_ball_id": "normal_ball",
+    "phase2_test_ball_sequence": ["normal_ball", "blast_ball", "shield_ball"],
+    "sfx_enabled": true,
     "ball_timeout_seconds": 8.0,
     "launch_speed": 900.0,
     "ball_radius": 10.0,
