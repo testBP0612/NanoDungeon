@@ -20,21 +20,22 @@ func _build_ui() -> void:
 	add_child(title)
 
 	var summary := Label.new()
-	summary.text = "到達場次：%s / %s\n擊殺數：%s\n最終 HP：%s / %s" % [
+	summary.text = "到達場次：%s / %s\n擊殺數：%s\n最終 HP：%s / %s\n%s" % [
 		RunState.current_battle_index + 1,
 		DataLoader.enemies.size(),
 		RunState.kills,
 		RunState.player_hp,
 		RunState.player_max_hp,
+		RunState.build_summary(),
 	]
 	summary.position = Vector2(312, 230)
-	summary.size = Vector2(400, 120)
+	summary.size = Vector2(400, 150)
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	summary.add_theme_font_size_override("font_size", 22)
 	add_child(summary)
 
-	_add_button("重來", Vector2(382, 390), _on_restart_pressed)
-	_add_button("主選單", Vector2(522, 390), _on_menu_pressed)
+	_add_button("重來", Vector2(382, 420), _on_restart_pressed)
+	_add_button("主選單", Vector2(522, 420), _on_menu_pressed)
 
 
 func _add_button(text: String, position: Vector2, callback: Callable) -> void:

@@ -210,7 +210,7 @@ func _update_aim_overlay() -> void:
 
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color) -> void:
-	var peg_def := DataLoader.get_peg(peg_id)
+	var peg_def := RunState.get_modified_peg_def(DataLoader.get_peg(peg_id))
 	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context)
 	var message := String(result.get("message", ""))
 	if not message.is_empty():
@@ -291,11 +291,11 @@ func _enemy_attack_value() -> Dictionary:
 		var every_n_rounds := int(special.get("every_n_rounds", 3))
 		if every_n_rounds > 0 and round_index % every_n_rounds == 0:
 			return {
-				"attack": int(special.get("attack", enemy_def["attack"])),
+				"attack": RunState.get_modified_enemy_attack(int(special.get("attack", enemy_def["attack"]))),
 				"message": "%s 施放 %s" % [String(enemy_def["name"]), String(special.get("name", "強攻擊"))],
 			}
 	return {
-		"attack": int(enemy_def["attack"]),
+		"attack": RunState.get_modified_enemy_attack(int(enemy_def["attack"])),
 		"message": "%s 反擊" % String(enemy_def["name"]),
 	}
 
@@ -318,13 +318,9 @@ func _check_battle_end() -> void:
 
 
 func _advance_to_next_battle() -> void:
-	status_label.text = "升級占位：進入下一場"
-	RunState.current_battle_index = min(RunState.current_battle_index + 1, DataLoader.enemies.size() - 1)
-	var timer := get_tree().create_timer(float(feel_config["reward_advance_delay_seconds"]))
-	timer.timeout.connect(func():
-		_load_enemy_from_run_state()
-		_transition_to(BattleState.ROUND_START)
-	)
+	RunState.pending_upgrade_enemy_type = String(enemy_def.get("type", "normal"))
+	status_label.text = "選擇升級"
+	get_tree().change_scene_to_file("res://Scenes/UpgradeScreen.tscn")
 
 
 func _update_ui() -> void:

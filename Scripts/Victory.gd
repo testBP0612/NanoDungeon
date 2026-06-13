@@ -20,11 +20,12 @@ func _build_ui() -> void:
 	add_child(title)
 
 	var summary := Label.new()
-	summary.text = "剩餘 HP：%s / %s\n擊殺數：%s\n用時：%s 秒\nBuild：Phase 4 尚未啟用" % [
+	summary.text = "剩餘 HP：%s / %s\n擊殺數：%s\n用時：%s 秒\n%s" % [
 		RunState.player_hp,
 		RunState.player_max_hp,
 		RunState.kills,
 		int(RunState.get_elapsed_seconds()),
+		RunState.build_summary(),
 	]
 	summary.position = Vector2(312, 230)
 	summary.size = Vector2(400, 140)

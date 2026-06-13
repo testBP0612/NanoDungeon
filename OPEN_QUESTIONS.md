@@ -69,30 +69,6 @@
 - 影響範圍：Data/balls.json、Docs/04_BALANCE_RULES.md、Codex/03_ENEMY_SYSTEM.md
 - 狀態：⚠️ 暫行假設（先採 A，-30%）
 
-### Q-004：升級三選一的抽取規則與 rarity 權重
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：`upgrades.json` 有 `rarity` 欄位，但抽取權重與「已解鎖類升級不再出現」規則未定。
-- 選項：
-  - A. 依 rarity 加權（common 高、rare 低、legendary 最低），已達上限或已解鎖的選項自動排除
-  - B. 完全均勻隨機
-  - C. 固定劇本（每場給定三選一，不隨機）
-- AI 建議：A，但 Demo 若想要可預測展示，可保留 C 作為「展示模式」開關。
-- 影響範圍：Data/upgrades.json、Codex/04_ROGUELITE_BUILD.md
-- 狀態：⬜ 待決策
-
-### Q-005：敵人攻擊時機與精英怪解鎖內容
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：精英怪「打倒後可解鎖新球種或新增釘子能力」，需確定解鎖的是哪一項，避免與三選一升級重複。
-- 選項：
-  - A. 精英怪固定解鎖一種球（如 Blast Ball），與三選一升級分離
-  - B. 精英怪不特別解鎖，全部交給三選一
-  - C. 精英怪提供「保底高 rarity 三選一」
-- AI 建議：C。簡化系統、又保留精英怪的獎勵感。
-- 影響範圍：Data/enemies.json、Data/upgrades.json、Codex/04_ROGUELITE_BUILD.md
-- 狀態：⬜ 待決策
-
 ### Q-006：球落底的「底部」與失球判定
 - 提出者：Claude
 - 日期：2026-06-13
@@ -174,4 +150,44 @@
 - 結論（人類決議）：**採 A**。每顆 Blast 球各加成一次，視為 build 投資的合理回報；Phase 4 的解鎖 / 球池上限本就會限制 Blast 球數量，數值不致爆炸。Q-002 維持選項 A（含倍傷後數值），本題補充「可隨球數疊加」。
 - 決議日期：2026-06-13
 - 影響範圍：Docs/02_GAME_DESIGN.md、Codex/04_ROGUELITE_BUILD.md
+- 狀態：✅ 已決議
+
+### Q-004：升級三選一的抽取規則與 rarity 權重
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：`upgrades.json` 有 `rarity` 欄位，但抽取權重與「已解鎖類升級不再出現」規則未定。
+- 結論（人類決議）：**採 A（rarity 加權 + 排重）**。收斂為以下可直接實作的規則：
+  - **rarity 相對權重**：`common = 60`、`rare = 30`、`legendary = 10`。
+  - **每次抽 3 個「互不重複」選項**（同一次三選一內不出現重複 id）。
+  - **排除規則**：`unlock` 類若該球已在 `unlocked_balls` 則排除；`stat` 類若已達上限（如 `balls_per_round` 上限 6）則排除；其餘類型可在不同場次重複出現。
+  - **可選池不足 3 個時**：有幾個給幾個（至少 1 個）。
+  - **不做選項 C**「固定劇本 / 展示模式」（保持單一路徑，列為非目標）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/upgrades.json、Codex/04_ROGUELITE_BUILD.md、Scripts（升級抽取器）
+- 狀態：✅ 已決議
+
+### Q-005：敵人攻擊時機與精英怪解鎖內容
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：精英怪「打倒後可解鎖新球種或新增釘子能力」，需確定解鎖的是哪一項，避免與三選一升級重複。
+- 結論（人類決議）：**採 C（精英保底高 rarity）**。收斂為以下規則：
+  - **普通怪（normal）擊敗**：三選一照 Q-004 一般加權。
+  - **精英怪（elite）擊敗**：三選一「3 槽中保底至少 1 個 rare 或以上」——實作為**第 1 槽只從 `rare + legendary` 池抽**（同樣排重），其餘 2 槽照 Q-004 一般加權。
+  - **精英怪不另外固定解鎖球種**：解鎖一律交給升級池的 `unlock` 選項，避免雙重獎勵。
+  - **Boss 擊敗**：直接進 Victory，無三選一。
+- 決議日期：2026-06-13
+- 影響範圍：Data/enemies.json、Data/upgrades.json、Codex/04_ROGUELITE_BUILD.md、Scripts（升級抽取器）
+- 狀態：✅ 已決議
+
+### Q-013：球池組成規則（解鎖球種後每回合如何發球）
+- 提出者：Claude（Phase 3 Review）
+- 日期：2026-06-13
+- 背景：Phase 3 已隱性以 round-robin 發球（`已發球數 % unlocked_balls.size()`），但規格未定義球池組成規則，會影響 Phase 4 的 build 手感。
+- 結論（人類決議）：**採 A（round-robin 輪替）**。收斂為以下規則：
+  - 每回合發球依 `unlocked_balls` 的**解鎖順序**輪替：第 k 顆球 = `unlocked_balls[k % unlocked_balls.size()]`（k 從 0 起算）。
+  - **初始 `unlocked_balls`** 依 `balls.json` 的 `unlocked_by_default` 欄位填入（目前為 `normal_ball`），不再僅靠 `starting_ball_id` 硬填。
+  - 解鎖新球（升級 `unlock`）時 **append 到 `unlocked_balls` 末端**，使其進入輪替。
+  - **不做**隨機抽球 / 玩家自訂球種比例（列為非目標）。
+- 決議日期：2026-06-13
+- 影響範圍：Scripts/Battle.gd（`_ball_id_for_next_launch`）、Scripts/RunState.gd（初始 unlocked_balls）、Data/balls.json（`unlocked_by_default`）、Codex/04_ROGUELITE_BUILD.md
 - 狀態：✅ 已決議

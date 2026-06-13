@@ -39,6 +39,31 @@
 
 ---
 
+## [Phase 4 / 0.6.0] - 2026-06-13 — 完成 Roguelite Build 三選一升級
+
+- 執行者：Codex
+- 任務卡：`Codex/04_ROGUELITE_BUILD.md`
+
+### Added
+- 新增 `Scenes/UpgradeScreen.tscn` / `Scripts/UpgradeScreen.gd`：非 Boss 勝利後顯示三選一升級卡片，選擇後進入下一場。
+- 新增 `Scripts/UpgradeResolver.gd`：集中處理升級抽取與套用，包含 rarity 權重 60 / 30 / 10、同次排重、已解鎖 / 已達上限排除、精英怪第 1 槽 rare+ 保底。
+- `RunState.gd` 新增整局成長狀態：peg damage / effect / trigger mods、enemy attack down、applied upgrades、pending upgrade enemy type。
+- `RunState.gd` 新增 `balls.json` 的 `unlocked_by_default` 初始化與 unlock append，維持 round-robin 球池。
+
+### Changed
+- `Battle.gd` 非 Boss 敵人死亡後改切 `UpgradeScreen.tscn`，不再使用升級占位直接進下一場。
+- `Battle.gd` 命中 Peg 時套用 `RunState` 的 peg 修正；敵人攻擊套用整局 `enemy_attack_down` 後再交給 Shield 減免。
+- `DataLoader.gd` 新增 upgrades target 驗證與預設解鎖球查詢。
+- `GameOver.gd` / `Victory.gd` 結算摘要顯示本局 build / 球池摘要。
+
+### 驗收
+- Godot 4.6.3 headless 載入 main scene、`Scenes/Battle.tscn`、`Scenes/UpgradeScreen.tscn`、`Scenes/GameOver.tscn`、`Scenes/Victory.tscn` 皆通過。
+- `Data/*.json` 解析通過。
+- 暫時驗證場景確認：初始球池讀 `unlocked_by_default`、精英首槽 rare+、同次選項不重複、已解鎖球與球數封頂升級會排除、unlock append、max HP 升級補半。
+
+### 未解問題
+- 無新增。Q-004 / Q-005 / Q-013 已按定案實作。
+
 ## [Phase 3 / 0.5.0] - 2026-06-13 — 完成敵人系統與 5 場戰鬥流程
 
 - 執行者：Codex
@@ -96,6 +121,51 @@
 
 ### 未解問題
 - 無新增。沿用 Q-001 / Q-002 / Q-003 暫行假設；Q-004 / Q-005 仍待 Phase 4 前決策。
+
+## [Phase 3 / 0.5.1] - 2026-06-13 — Phase 3 通過人類驗收 + Phase 4 決策定案
+
+- 執行者：Claude（Technical Reviewer 角色）+ 人類（驗收與決策）
+- 任務卡：`Codex/03_ENEMY_SYSTEM.md`（已完成驗收）
+
+### Changed
+- 人類於 Godot 實機驗證 Phase 3（5 場流程、Boss 強攻擊、結算場景），確認通過。
+- `ROADMAP.md`：Phase 3 標記完成；Phase 4 註明 Q-004/005/013 已定案。
+- `Codex/04_ROGUELITE_BUILD.md`：將抽取 / 保底 / 球池規則由「待決議」收斂為定案，並補上對應驗收項與禁止事項。
+
+### Docs / 決策
+- Phase 3 Review 確認前置（BattleFX 抽離、feel.json、peg cooldown、移除測試球序列）全數達成。
+- 新增並由人類決議（已收斂為可直接實作的規則）：
+  - **Q-004**：rarity 加權 60/30/10、抽 3 個互不重複、排除已解鎖 / 已達上限、池不足給幾算幾、不做固定劇本。
+  - **Q-005**：精英怪三選一第 1 槽保底 rare+；普通怪一般加權；精英不另解鎖球種；Boss 無三選一。
+  - **Q-013**：球池 round-robin，初始 `unlocked_balls` 改讀 `unlocked_by_default`，`unlock` 升級 append 末端。
+
+### 未解問題
+- Q-004 / Q-005 由「待決策」移入「已決議」；新增 Q-013（已決議）。
+- 仍為暫行假設待人類最終確認者：Q-001/002/003/006/007（沿用中，不阻擋）。
+
+### 備註
+- 本圈為審查 + 決策落地，未撰寫 / 修改任何 GDScript 或場景。
+
+## [Phase 3 / 0.5.0] - 2026-06-13 — 完成 Enemy System 與 Phase 2 Review 前置
+
+- 執行者：Codex
+- 任務卡：`Codex/03_ENEMY_SYSTEM.md`
+- Commit：`4a0f273 Implement Phase 3 enemy system`（已 push 至 origin/main）
+
+### Added
+- `Scripts/BattleFX.gd`：表現層（粒子 / shake / 浮動文字 / placeholder SFX）自 `Battle.gd` 抽離。
+- `Data/feel.json`：手感常數資料化（含 peg re-hit cooldown 0.2s）；`DataLoader` 載入與驗證。
+- 5 場敵人依序載入、完整回合制 FSM（REWARD/GAME_OVER/VICTORY）、敵人攻擊、Boss 每 3 回合強攻擊。
+- 玩家 / 敵人 HP bar 與敵人資訊 UI（場次 / 類型 / dialogue / portrait 占位）。
+- `Scenes/GameOver.tscn` + `Scripts/GameOver.gd`、`Scenes/Victory.tscn` + `Scripts/Victory.gd`。
+- `RunState`：擊殺數與用時統計。
+
+### Changed
+- `Scripts/Ball.gd`：per-ball / per-peg re-hit cooldown、拖尾參數改讀 `feel.json`。
+- `Data/player.json`：移除 `phase2_test_ball_sequence` 與 `sfx_enabled`，正式戰鬥依 `RunState.unlocked_balls` 發球。
+
+### 備註
+- 未改 Peg / Ball / Enemy 種類數量，未實作連鎖釘 / 連射球 / 升級三選一。
 
 ## [Phase 2 / 0.4.1] - 2026-06-13 — Phase 2 通過人類驗收 + Review 決策落地
 

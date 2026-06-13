@@ -8,8 +8,8 @@
 | 1 | First Playable | `Codex/01_FIRST_PLAYABLE.md` | ✅ 完成（人類實機驗證） |
 | 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ✅ 完成（人類實機驗證行為等價） |
 | 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ✅ 完成（人類實機驗證） |
-| 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ⬜ 待開始（含 Phase 2 Review 併入前置） |
-| 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始 |
+| 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ✅ 完成（人類實機驗證） |
+| 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始（Q-004/005/013 已定案） |
 | 5 | Polish & Demo | （統合，無新任務卡） | ⬜ 待開始 |
 
 ---

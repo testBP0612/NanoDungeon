@@ -1,6 +1,7 @@
 extends Node
 
 var pegs_by_id: Dictionary = {}
+var balls: Array = []
 var balls_by_id: Dictionary = {}
 var enemies: Array = []
 var upgrades: Array = []
@@ -22,11 +23,13 @@ func load_all() -> void:
 	var feel_data := _load_json("res://Data/feel.json")
 
 	pegs_by_id = _index_collection(pegs_data, "pegs", ["id", "name", "base_damage", "effect_type", "effect_value"])
-	balls_by_id = _index_collection(balls_data, "balls", ["id", "name", "effect_type", "effect_value"])
+	balls = _validate_collection(balls_data, "balls", ["id", "name", "effect_type", "effect_value", "unlocked_by_default"])
+	balls_by_id = _index_array(balls, "balls")
 	enemies = _validate_collection(enemies_data, "enemies", ["id", "name", "type", "hp", "attack", "description", "dialogue"])
 	upgrades = _validate_collection(upgrades_data, "upgrades", ["id", "name", "target_type", "target_id", "effect_type", "effect_value", "rarity"])
 	player_config = _validate_player_config(player_data)
 	feel_config = _validate_feel_config(feel_data)
+	_validate_upgrades(upgrades_data)
 	loaded = true
 
 
@@ -43,6 +46,19 @@ func get_enemy(index: int) -> Dictionary:
 		push_error("Enemy index out of range: %s" % index)
 		return {}
 	return (enemies[index] as Dictionary).duplicate(true)
+
+
+func get_upgrades() -> Array:
+	return _duplicate_dictionary_array(upgrades)
+
+
+func get_default_unlocked_balls() -> Array[String]:
+	var default_balls: Array[String] = []
+	for ball in balls:
+		var ball_def := ball as Dictionary
+		if bool(ball_def.get("unlocked_by_default", false)):
+			default_balls.append(String(ball_def["id"]))
+	return default_balls
 
 
 func get_player_config() -> Dictionary:
@@ -72,8 +88,12 @@ func _load_json(path: String) -> Dictionary:
 
 
 func _index_collection(data: Dictionary, key: String, required_fields: Array) -> Dictionary:
+	return _index_array(_validate_collection(data, key, required_fields), key)
+
+
+func _index_array(collection: Array, key: String) -> Dictionary:
 	var indexed := {}
-	for item in _validate_collection(data, key, required_fields):
+	for item in collection:
 		var item_id := String(item["id"])
 		if indexed.has(item_id):
 			push_error("Duplicate id in %s: %s" % [key, item_id])
@@ -96,6 +116,13 @@ func _validate_collection(data: Dictionary, key: String, required_fields: Array)
 				push_error("Missing field '%s' in %s item" % [field, key])
 
 	return collection
+
+
+func _duplicate_dictionary_array(collection: Array) -> Array:
+	var duplicated := []
+	for item in collection:
+		duplicated.append((item as Dictionary).duplicate(true))
+	return duplicated
 
 
 func _validate_player_config(data: Dictionary) -> Dictionary:
@@ -145,3 +172,24 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 			push_error("Missing feel config field: %s" % field)
 
 	return config.duplicate(true)
+
+
+func _validate_upgrades(data: Dictionary) -> void:
+	var meta: Dictionary = data.get("_meta", {})
+	var stat_targets: Array = meta.get("stat_targets", [])
+	for item in upgrades:
+		var upgrade := item as Dictionary
+		var target_type := String(upgrade["target_type"])
+		var target_id := String(upgrade["target_id"])
+		match target_type:
+			"peg":
+				if not pegs_by_id.has(target_id):
+					push_error("Upgrade target peg not found: %s" % target_id)
+			"ball":
+				if not balls_by_id.has(target_id):
+					push_error("Upgrade target ball not found: %s" % target_id)
+			"stat":
+				if not stat_targets.has(target_id):
+					push_error("Upgrade target stat not allowed: %s" % target_id)
+			_:
+				push_error("Unknown upgrade target_type: %s" % target_type)

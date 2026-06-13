@@ -33,6 +33,48 @@
 ## 最新報告
 
 # Summary
+完成 Phase 4 Roguelite Build：非 Boss 勝利後會進入 `UpgradeScreen.tscn` 三選一，選項由 `upgrades.json` 加權抽取並排除不合法項，精英怪第 1 槽保底 rare+；玩家選擇後由 `UpgradeResolver` 套用到 `RunState`，效果持續整局並反映到後續戰鬥。初始球池改讀 `balls.json` 的 `unlocked_by_default`，解鎖 Blast / Shield 會 append 到 round-robin 球池。未新增 Peg / Ball / Enemy 種類，未實作 Phase 5 polish。
+
+# Completed
+- `Scenes/UpgradeScreen.tscn` / `Scripts/UpgradeScreen.gd`：新增三選一升級畫面與選擇後進下一場流程。
+- `Scripts/UpgradeResolver.gd`：集中抽取與套用升級，避免把 upgrade 規則 inline 回 `Battle.gd`。
+- `Scripts/RunState.gd`：新增整局成長狀態，包括 peg damage / effect / trigger mods、enemy attack down、applied upgrades、pending upgrade enemy type、max HP / balls per round / unlock helpers。
+- `Scripts/DataLoader.gd`：新增 `get_upgrades()`、`get_default_unlocked_balls()`，並驗證 upgrade target 是否對應既有 peg / ball / stat。
+- `Scripts/Battle.gd`：非 Boss 擊敗後改切 `UpgradeScreen.tscn`；Peg 命中讀取 RunState 修正後定義；敵攻先套用整局 enemy attack down 再給 Shield 減免。
+- `Scripts/GameOver.gd` / `Scripts/Victory.gd`：結算顯示本局 build / 球池摘要。
+- `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md` 已更新。
+
+# Validation Results
+- ✅ F1 每場非 Boss 勝利後出現三選一：`Battle.gd` 的 REWARD 分支切 `UpgradeScreen.tscn`；Boss 仍直接 Victory。
+- ✅ F2 選項來自 `upgrades.json`：`UpgradeResolver` 透過 `DataLoader.get_upgrades()` 抽取。
+- ✅ F3 rarity 權重 60/30/10、3 個互不重複、排除已解鎖 / 已達上限：驗證腳本通過；抽取器以 id 排重並排除已解鎖球與 `balls_per_round` 封頂項。
+- ✅ F4 精英怪保底 rare+、普通怪一般加權、Boss 無三選一：驗證腳本確認 elite 第 1 槽為 rare / legendary；Battle 只在非 Boss 進 REWARD。
+- ✅ F5 初始 `unlocked_balls` 來自 `balls.json` 的 `unlocked_by_default`：驗證腳本確認初始為 `normal_ball`。
+- ✅ F6 unlock 升級 append 並進入 round-robin 球池：`RunState.unlock_ball()` append；`Battle.gd` 既有 round-robin 發球邏輯保留。
+- ✅ F7 選擇後數值會改變並反映後續戰鬥：Peg 修正、max HP、balls per round、enemy attack down、unlock ball 均寫入 `RunState`。
+- ✅ F8 增加球數、提升 HP、降低敵人攻擊等效果可於下一場驗證：HP / 球數 / 攻擊值路徑已接入戰鬥；max HP 補半依 `Docs/04_BALANCE_RULES.md`。
+- ✅ F9 升級效果持續整局、重新開始後歸零：成長狀態保存在 `RunState`，`reset_new_run()` 會清空。
+- ⚠️ F10 一整局 5 場 + 4 次升級穩定跑完：headless 場景載入與抽取 / 套用邏輯驗證通過；仍建議人類做一次完整可視化實機驗收。
+- ✅ Godot 驗證：Godot 4.6.3 headless 載入 main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` 通過。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ H. 禁止偏離：未新增種類數量，未實作連鎖釘 / 連射球，未引入存檔 / 永久成長 / 非目標功能。
+
+# Open Questions
+- 無新增。
+- Q-004 / Q-005 / Q-013 已依已決議規則實作。
+- Q-001 / Q-002 / Q-003 / Q-006 / Q-007 仍沿用既有暫行狀態，未在本圈擴大規格。
+
+# Risks
+- `UpgradeScreen` 是功能型 placeholder UI，Phase 5 可再依場景節點慣例與美術方向 polish。
+- 升級抽取使用隨機權重，實機驗收時可能需要多跑幾次確認 Blast / Shield 解鎖節奏是否適合 Demo。
+- 目前 `GameOver` / `Victory` 仍是程式生成 UI，已列為 Phase 5 polish 可處理項。
+
+# Recommended Next Task
+- 建議下一步進入 Phase 5 Polish & Demo：做完整可視化回歸、調整升級節奏 / UI polish、確認 5–10 分鐘一局、Windows Desktop Export 與連續展示穩定性。
+
+## 歷史報告 — Phase 3 Enemy System
+
+# Summary
 完成 Phase 3 Enemy System，並先併入 Phase 2 Review 前置：`BattleFX` 抽離、`Data/feel.json` 手感資料化、peg re-hit cooldown 0.2 秒、正式戰鬥移除 Phase 2 測試球序列副作用。戰鬥現在可依 `enemies.json` 載入 5 場敵人，跑完整回合循環、敵人攻擊、Boss 週期強攻擊、HP UI、死亡與勝利結算。未實作 Phase 4 升級三選一。
 
 # Completed

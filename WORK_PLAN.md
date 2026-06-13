@@ -39,43 +39,40 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 / 1.5 / 2 皆已完成並經人類實機驗證。
-- Phase 2 已完成 Pinball Feel、4 種 Peg、3 種 Ball、傷害數字、粒子、screen shake 與 placeholder SFX。
-- Phase 2 Review 已產出並決議 Q-010 / Q-011 / Q-012，並已併入 `Codex/03_ENEMY_SYSTEM.md` 前置。
+- Phase 1 / 1.5 / 2 / 3 皆已完成並經人類實機驗證。
+- Phase 3 已完成 5 場敵人、完整回合制、HP UI、Boss 強攻擊、GameOver / Victory 結算。
+- Phase 4 所需決策 Q-004 / Q-005 / Q-013 已定案，可直接依任務卡實作。
 
 # Current Phase
-- **Phase 3 — Enemy System**（含 Phase 2 Review 前置）。
+- **Phase 4 — Roguelite Build**。
 
 # Recommended Task
-- 執行 `Codex/03_ENEMY_SYSTEM.md`。
-- 先完成前置：抽出 `BattleFX`、新增 `Data/feel.json`、實作 peg re-hit cooldown 0.2s、移除 `phase2_test_ball_sequence` 對正式戰鬥的影響。
-- 再完成 5 場敵人流程、完整回合制、Boss 強攻擊、HP UI、GameOver / Victory 結算畫面。
+- 執行 `Codex/04_ROGUELITE_BUILD.md`。
+- 新增 `UpgradeScreen.tscn` 三選一流程、升級抽取器 / 套用器、RunState 整局成長狀態，並串接「非 Boss 勝利 → 升級 → 下一場」。
+- 初始球池改由 `balls.json` 的 `unlocked_by_default` 初始化；unlock 升級 append 到 round-robin 球池。
 
 # Why
-- ROADMAP 顯示 Phase 2 已完成，下一個未完成目標是 Phase 3。
-- Phase 2 Review 的前置若不先做，Battle.gd 會繼續累積 presentation 職責，且 feel 常數仍不符合資料驅動原則。
-- 完整 5 場敵人流程是 Phase 4 升級三選一之前的必要戰鬥骨架。
+- ROADMAP 顯示 Phase 3 已完成，下一個未完成目標是 Phase 4。
+- Phase 3 目前非 Boss 勝利後仍是升級占位，尚未形成 roguelite build 成長閉環。
+- Phase 4 完成後，整局 5 場 + 4 次升級才會具備 Demo 的核心 replay value。
 
 # Risks
-- 前置重構需保持 Phase 2 行為等價，不能改特效結果、數值或手感。
-- 移除測試球序列後預設正式戰鬥只會發 Normal Ball；Shield / Blast 效果保留但本圈預設不靠測試序列影響節奏。
-- 5 場流程可能拉長測試時間，需保證重新開始 / 回主選單狀態乾淨。
-- 升級三選一不可在本圈實作，只能用「下一場」或 reward placeholder 推進。
+- 抽取規則若寫在 `Battle.gd` 會破壞 Phase 1.5 / 3 的邊界，需集中在 upgrade resolver。
+- 升級效果需持續整局但重開歸零，RunState 初始化與結算場景重來路徑必須同步。
+- 可選升級池不足、已解鎖球排除、球數封頂、精英保底 rare+ 都需要靜態與場景載入雙重驗證。
+- `upgrades.json` 既有 `add_trigger` 效果需支援，但不得新增 Peg / Ball / Enemy 種類。
 
 # Dependencies
 - 無阻斷性前置。
-- Q-003：Shield Ball 減傷百分比 -30%、多顆不疊加，敵人攻擊不得繞過。
-- Q-005：精英怪獎勵規則仍待決策；本圈不實作升級，敵人死後先推進下一場。
-- Q-010：Peg per-peg re-hit cooldown 採 0.2 秒並資料化。
-- Q-011：新增 `Data/feel.json` 資料化 feel 常數。
-- Q-012：多顆 Blast Ball 可疊加，保留既有 resolver 行為。
+- Q-004：rarity 權重 common / rare / legendary = 60 / 30 / 10；三選一互不重複；排除已解鎖 / 已達上限。
+- Q-005：普通怪一般加權，精英怪第 1 槽保底 rare+，Boss 無三選一。
+- Q-013：球池 round-robin，初始讀 `unlocked_by_default`，unlock append。
 
 # Estimated Scope
-- 大。會新增 / 修改 `BattleFX.gd`、`Data/feel.json`、`DataLoader.gd`、`Battle.gd`、`Ball.gd`、`RunState.gd`、`Battle.tscn`、`GameOver.tscn`、`Victory.tscn` 與對應腳本；更新 CHANGELOG / PROGRESS_REPORT。
+- 大。會新增 `UpgradeScreen.tscn` / `UpgradeScreen.gd` / `UpgradeResolver.gd`，修改 `RunState.gd`、`DataLoader.gd`、`Battle.gd`、`EffectResolver.gd`，必要時微調 `GameOver` / `Victory` build 摘要；更新 CHANGELOG / PROGRESS_REPORT。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` **E. Enemy System** 全項自驗。
-- 同步回歸 Phase 2 Review 前置：BattleFX 抽出、feel.json、Peg cooldown、正式戰鬥不受測試球序列影響。
+- `Codex/VALIDATION_CHECKLIST.md` **F. Roguelite Build** 全項自驗。
 - 同步檢查 **H. 禁止偏離**。
 
 ---
