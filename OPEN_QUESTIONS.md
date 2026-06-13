@@ -214,3 +214,37 @@
 - 決議日期：2026-06-13
 - 影響範圍：project.godot（viewport）、Scenes/Battle.tscn、Scripts/Battle.gd、Data/field.json（bounds）、export_presets.cfg、Codex/07_PROCEDURAL_PEGBOARD.md
 - 狀態：✅ 已決議
+
+### Q-018：底排 bounce_peg 改為主動 bumper（反彈加速）
+- 提出者：Claude（Phase 8 規劃）
+- 日期：2026-06-13
+- 背景：人類希望底排反彈力更強（約現在 2 倍、可手動調）。物理彈性係數上限為 1.0，無法「加速」，需主動加力。
+- 結論（人類決議）：**底排 bounce_peg 當主動 bumper**——球碰到時，將反彈後速度乘上可調倍率（預設 `2.0`），數值放 `field.json` 的 `bottom_row`（如 `bounce_multiplier`）。**須設速度上限**避免穿透 / 飛出（保留 CCD）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/field.json、Scripts/Ball.gd 或 Peg.gd、Codex/08_LAUNCH_AND_TUNING.md
+- 狀態：✅ 已決議
+
+### Q-019：集氣發射 + 拋物線瞄準
+- 提出者：Claude（Phase 8 規劃）
+- 日期：2026-06-13
+- 背景：人類希望發射更有策略：滑鼠瞄方向、預覽拋物線、集氣表 0→100→0 來回，按一下集氣、再按一下發射，power 決定力道。
+- 結論（人類決議）：
+  - 瞄準模型：**保留滑鼠瞄方向**，瞄準預覽線改為**拋物線弧線**（依當前 power 與重力預測落點）。
+  - **集氣**：第一下（左鍵**或**空白鍵）開始集氣，power 在 0→100→0 間來回擺動；第二下（同鍵）以當前 power 發射。
+  - power 映射到**初速 / 射程**（`player.json` 的 `launch_speed_min/max`）；集氣週期時間資料化。
+  - 仍為「逐顆發射」；發射後回到 AIMING 等下一顆。
+- 決議日期：2026-06-13
+- 影響範圍：Data/player.json、Scenes/Battle.tscn（集氣表 UI、AimLine→弧線）、Scripts/Battle.gd、Scripts/Ball.gd、Codex/08_LAUNCH_AND_TUNING.md
+- 狀態：✅ 已決議
+
+### Q-020：double_peg 每回合保證固定數量 + 升級增加
+- 提出者：Claude（Phase 8 規劃）
+- 日期：2026-06-13
+- 背景：人類希望倍傷釘 double_peg 每回合固定有 2 顆在場上，並新增升級可多一顆。
+- 結論（人類決議）：
+  - 每回合重抽時，**保證 `guaranteed_double_peg_count`（預設 2）顆 double_peg** 出現在動態骨架（保留槽位後其餘照權重抽）。
+  - 新增升級選項（`upgrades.json`）：**保證數 +1**（rarity 建議 rare/legendary），由 `RunState` 持有整局成長，套用後反映於後續每回合。
+  - `DataLoader` 的 `stat_targets` 增加對應 target（如 `guaranteed_double_peg`）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/field.json（guaranteed_double_peg_count）、Data/upgrades.json、Scripts/FieldGenerator.gd、Scripts/RunState.gd、Scripts/UpgradeResolver.gd、Scripts/DataLoader.gd、Codex/08_LAUNCH_AND_TUNING.md
+- 狀態：✅ 已決議

@@ -23,6 +23,9 @@ var field_config: Dictionary = {}
 var dynamic_peg_slots: Array = []
 var dynamic_peg_nodes: Array[Node] = []
 var bottom_peg_nodes: Array[Node] = []
+var is_charging_launch := false
+var charge_elapsed := 0.0
+var charge_power := 0.0
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
 var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
 var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
@@ -41,6 +44,8 @@ var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 @onready var round_label: Label = $BattleUI/UIRoot/RoundLabel
 @onready var damage_label: Label = $BattleUI/UIRoot/DamageLabel
 @onready var balls_label: Label = $BattleUI/UIRoot/BallsLabel
+@onready var power_label: Label = $BattleUI/UIRoot/PowerLabel
+@onready var power_bar: ProgressBar = $BattleUI/UIRoot/PowerBar
 @onready var floor_label: Label = $BattleUI/UIRoot/FloorLabel
 @onready var enemy_type_label: Label = $BattleUI/UIRoot/EnemyTypeLabel
 @onready var enemy_dialogue_label: Label = $BattleUI/UIRoot/EnemyDialogueLabel
@@ -62,6 +67,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	battle_fx.update(delta)
+	_update_charge(delta)
 	_update_aim_overlay()
 	_update_ui()
 
@@ -70,7 +76,9 @@ func _input(event: InputEvent) -> void:
 	if state != BattleState.AIMING:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_fire_ball()
+		_handle_launch_input()
+	elif event is InputEventKey and event.keycode == KEY_SPACE and event.pressed and not event.echo:
+		_handle_launch_input()
 
 
 func _load_definitions() -> void:
@@ -134,7 +142,7 @@ func _spawn_pegs() -> void:
 
 
 func _reroll_dynamic_pegs() -> void:
-	var rolled_slots: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_slots)
+	var rolled_slots: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_slots, RunState.guaranteed_double_peg_count)
 	for index in range(min(dynamic_peg_nodes.size(), rolled_slots.size())):
 		var slot := rolled_slots[index] as Dictionary
 		var peg := dynamic_peg_nodes[index]
@@ -148,7 +156,8 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 		BattleState.ROUND_START:
 			_begin_round()
 		BattleState.AIMING:
-			status_label.text = "瞄準後點擊發射"
+			_reset_charge()
+			status_label.text = "瞄準後點擊 / 空白鍵開始集氣"
 		BattleState.SETTLE:
 			_settle_round()
 		BattleState.ENEMY_TURN:
@@ -171,16 +180,28 @@ func _begin_round() -> void:
 	_transition_to(BattleState.AIMING)
 
 
+func _handle_launch_input() -> void:
+	if not is_charging_launch:
+		is_charging_launch = true
+		charge_elapsed = 0.0
+		charge_power = 0.0
+		status_label.text = "集氣中：再按一次發射"
+		return
+	_fire_ball()
+
+
 func _fire_ball() -> void:
 	if round_context.balls_remaining <= 0:
 		return
 
+	var launch_speed := _launch_speed_for_power(charge_power)
+	is_charging_launch = false
 	var ball := BALL_SCENE.instantiate()
 	var ball_id := _ball_id_for_next_launch()
 	var ball_def := DataLoader.get_ball(ball_id)
 	ball_container.add_child(ball)
 	ball.position = launcher_position
-	ball.configure(ball_id, ball_def, player_config, feel_config)
+	ball.configure(ball_id, ball_def, player_config, feel_config, field_config)
 	ball.peg_hit.connect(_on_ball_peg_hit)
 	ball.wall_hit.connect(_on_ball_wall_hit)
 	ball.recovered.connect(_on_ball_recovered)
@@ -194,7 +215,7 @@ func _fire_ball() -> void:
 	_transition_to(BattleState.LAUNCHED)
 	battle_fx.spawn_launch_feedback(launcher_position)
 	battle_fx.play_sfx("launch")
-	ball.launch(_aim_direction())
+	ball.launch(_aim_direction(), launch_speed)
 	_update_ui()
 
 
@@ -218,11 +239,44 @@ func _update_aim_overlay() -> void:
 	launcher_visual.visible = true
 	aim_line.visible = state == BattleState.AIMING
 	if aim_line.visible:
-		var direction := _aim_direction()
-		aim_line.points = PackedVector2Array([
-			launcher_position,
-			launcher_position + direction * 115.0,
-		])
+		aim_line.points = _aim_trajectory_points()
+
+
+func _update_charge(delta: float) -> void:
+	if state != BattleState.AIMING or not is_charging_launch:
+		return
+	var cycle_seconds: float = max(0.01, float(player_config.get("charge_cycle_seconds", 1.0)))
+	charge_elapsed = fmod(charge_elapsed + delta, cycle_seconds)
+	var half_cycle: float = cycle_seconds * 0.5
+	var normalized: float = charge_elapsed / half_cycle
+	if normalized > 1.0:
+		normalized = 2.0 - normalized
+	charge_power = clamp(normalized * 100.0, 0.0, 100.0)
+
+
+func _reset_charge() -> void:
+	is_charging_launch = false
+	charge_elapsed = 0.0
+	charge_power = 0.0
+
+
+func _launch_speed_for_power(power: float) -> float:
+	var launch_speed_min := float(player_config.get("launch_speed_min", player_config.get("launch_speed", 900.0)))
+	var launch_speed_max := float(player_config.get("launch_speed_max", player_config.get("launch_speed", 900.0)))
+	return lerp(launch_speed_min, launch_speed_max, clamp(power / 100.0, 0.0, 1.0))
+
+
+func _aim_trajectory_points() -> PackedVector2Array:
+	var preview_config: Dictionary = feel_config.get("aim_preview", {})
+	var point_count: int = max(2, int(preview_config.get("point_count", 18)))
+	var time_step: float = max(0.01, float(preview_config.get("time_step", 0.06)))
+	var velocity := _aim_direction() * _launch_speed_for_power(charge_power)
+	var gravity := Vector2.DOWN * float(ProjectSettings.get_setting("physics/2d/default_gravity")) * float(player_config.get("ball_gravity_scale", 1.0))
+	var points := PackedVector2Array()
+	for index in range(point_count):
+		var time: float = float(index) * time_step
+		points.append(launcher_position + velocity * time + gravity * 0.5 * time * time)
+	return points
 
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color) -> void:
@@ -347,6 +401,8 @@ func _update_ui() -> void:
 	round_label.text = "回合：%s" % round_index
 	damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator
 	balls_label.text = "剩餘球：%s｜場上球：%s" % [round_context.balls_remaining, round_context.balls_in_play]
+	power_label.text = "POWER：%03d" % int(round(charge_power))
+	power_bar.value = charge_power
 	sfx_toggle_button.text = "SFX: %s" % ("ON" if sfx_enabled else "OFF")
 	_update_hp_bars()
 

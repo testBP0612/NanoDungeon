@@ -41,38 +41,39 @@
 # Current State
 - MVP Phase 1 ~ 5 已完成並經人類驗收，Demo 可獨立匯出與展示。
 - Phase 6 已將 peg 位置 / 半徑資料化到 `Data/field.json`。
-- 新任務卡 `Codex/07_PROCEDURAL_PEGBOARD.md` 已指定：field 改參數化 generator + bottom_row、每回合重抽類型、新增底排 bounce_peg、場地拉高至 1024×1024。
+- Phase 7 已完成程序生成釘盤、每回合重抽動態釘類型、底排 `bounce_peg` 與 1024×1024 場地，並經人類實機驗收。
+- 新任務卡 `Codex/08_LAUNCH_AND_TUNING.md` 已指定：底排 bumper 主動加速、兩段式集氣發射 + 拋物線瞄準、double_peg 每回合保底與對應升級。
 
 # Current Phase
-- **Post-MVP Playability Increment — Procedural Pegboard**。
+- **Post-MVP Playability Increment — Launch & Tuning**。
 
 # Recommended Task
-- 執行 `Codex/07_PROCEDURAL_PEGBOARD.md`。
-- 將 `Data/field.json` 改為 `generator + bottom_row`，新增 `FieldGenerator.gd` 算骨架與抽類型。
-- `Battle.gd` 在 ROUND_START 重抽動態 peg 類型，位置骨架固定；底排 `bounce_peg` 固定存在。
-- 調整 1024×1024 viewport / Battle 場地 / UI / export preset。
+- 執行 `Codex/08_LAUNCH_AND_TUNING.md`。
+- `bounce_peg` 命中時依 `field.json` 的 `bottom_row.bounce_multiplier` 主動放大速度，並以 `max_ball_speed` 夾住。
+- 將 AIMING 輸入改為左鍵 / 空白鍵第一下集氣、第二下依 power 發射；AimLine 改為拋物線預覽，power 表 UI 可見。
+- 在 `FieldGenerator` 加入 `guaranteed_double_peg_count` 保底抽取，並新增 `up_guaranteed_double` 讓 RunState 整局提升保底數。
 
 # Why
-- Q-015 / Q-016 / Q-017 已決議，下一個可玩性目標是柏青哥式程序釘盤與每回合重組。
-- 參數化骨架比手列座標更適合反覆調整密度、高度與權重。
-- 場地加高到 1024×1024 是容納更多釘排與底部 bounce row 的前置。
+- Q-018 / Q-019 / Q-020 已決議，Phase 8 的目標是補足發射策略、底部反彈手感與倍傷釘可預期性。
+- 這些都是可玩性調校，不應改動既有傷害公式、敵人規則、釘 / 球種類或位置骨架。
+- 新數值必須 JSON 化，讓後續只調資料即可微調手感。
 
 # Risks
-- 每回合重抽類型會影響輸出波動，需要確保底排 bounce 與 8 秒 timeout 保持穩定。
-- 新增 `bounce_peg` 是已決議的第 5 種 peg，但不可順手新增其他種類或效果。
-- 1024×1024 調整涉及場景座標、camera、UI 和 export，需 headless/export 回歸。
+- 主動 bumper 若速度過高可能造成穿透、飛出或 timeout 變多，需保留 CCD 並夾 `max_ball_speed`。
+- 兩段式輸入可能和舊「點一下發射」衝突，需確保未集氣不誤射、飛行中輸入無效。
+- double 保底會提高輸出波動與強度，需設上限並讓升級在達上限後排除。
 
 # Dependencies
-- Q-015：程序生成骨架，每回合只重抽類型，位置固定，seed 可選。
-- Q-016：新增 `bounce_peg`，只用底排，不進隨機池。
-- Q-017：viewport / 場地加高至 1024×1024。
+- Q-018：底排 `bounce_peg` 改主動 bumper，倍率與速度上限資料化。
+- Q-019：集氣發射、拋物線瞄準、power 表與發射速度資料化。
+- Q-020：`double_peg` 每回合保底數量與升級增加已決議。
 
 # Estimated Scope
-- 大。會修改 `Data/field.json`、`Data/pegs.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/EffectResolver.gd`、新增 `Scripts/FieldGenerator.gd`，調整 `project.godot`、`Scenes/Battle.tscn`、`export_presets.cfg`，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 大。會修改 `Data/field.json`、`Data/player.json`、`Data/upgrades.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/Ball.gd`、`Scripts/FieldGenerator.gd`、`Scripts/RunState.gd`、`Scripts/UpgradeResolver.gd`、`Scenes/Battle.tscn`，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/07_PROCEDURAL_PEGBOARD.md` DoD：公式生成骨架、ROUND_START 類型重抽、底排 bounce 固定、bounce 無效果、1024×1024 場地、seed 支援、Godot / JSON / export 驗證。
-- 同步檢查禁止事項：不做漸變特效、不擾動位置骨架、不把 bounce 放進隨機池、不加其他種類、不改既有規則。
+- 對照 `Codex/08_LAUNCH_AND_TUNING.md` DoD：bumper 加速與上限、集氣表與兩段式輸入、拋物線預覽、power 影響初速、double_peg 保底與升級、JSON 驗證、Godot headless / export 驗證。
+- 同步檢查禁止事項：不新增種類、不改傷害 / 敵人 / 既有升級規則、不擾動位置骨架、不把數值寫死。
 
 ---
 

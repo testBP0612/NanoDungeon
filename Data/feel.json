@@ -49,6 +49,10 @@
       "rise_x": -20.0,
       "rise_y": -42.0
     },
+    "aim_preview": {
+      "point_count": 24,
+      "time_step": 0.055
+    },
     "sfx": {
       "enabled": true,
       "mix_rate": 22050.0,

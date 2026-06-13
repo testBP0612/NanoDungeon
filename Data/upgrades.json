@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "description": "升級池。target_type: peg / ball / stat。target_id 須對應 pegs.json/balls.json 的 id 或既定 stat 名。effect_type: add(數值相加) / multiply(倍率) / unlock(解鎖). rarity: common/rare/legendary（抽取權重見 OPEN_QUESTIONS Q-004）。stat 名稱: max_hp / balls_per_round / enemy_attack_down。",
+    "description": "升級池。target_type: peg / ball / stat。target_id 須對應 pegs.json/balls.json 的 id 或既定 stat 名。effect_type: add(數值相加) / multiply(倍率) / unlock(解鎖). rarity: common/rare/legendary（抽取權重見 OPEN_QUESTIONS Q-004）。stat 名稱: max_hp / balls_per_round / enemy_attack_down / guaranteed_double_peg。",
     "version": "0.1.0",
-    "stat_targets": ["max_hp", "balls_per_round", "enemy_attack_down"]
+    "stat_targets": ["max_hp", "balls_per_round", "enemy_attack_down", "guaranteed_double_peg"]
   },
   "upgrades": [
     {
@@ -104,6 +104,16 @@
       "effect_type": "add",
       "effect_value": 2,
       "rarity": "common"
+    },
+    {
+      "id": "up_guaranteed_double",
+      "name": "倍率增殖 Multiplier Surge",
+      "description": "每回合場上保證的倍傷釘 +1。",
+      "target_type": "stat",
+      "target_id": "guaranteed_double_peg",
+      "effect_type": "add",
+      "effect_value": 1,
+      "rarity": "legendary"
     },
     {
       "id": "up_normal_peg_dmg_big",

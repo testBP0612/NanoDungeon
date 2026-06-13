@@ -152,6 +152,9 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		"starting_ball_id",
 		"ball_timeout_seconds",
 		"launch_speed",
+		"launch_speed_min",
+		"launch_speed_max",
+		"charge_cycle_seconds",
 		"ball_radius",
 		"ball_gravity_scale",
 		"ball_bounce",
@@ -165,6 +168,12 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 	for field in required_fields:
 		if not (config as Dictionary).has(field):
 			push_error("Missing player config field: %s" % field)
+	if float(config.get("launch_speed_min", 0.0)) <= 0.0 or float(config.get("launch_speed_max", 0.0)) <= 0.0:
+		push_error("Player launch_speed_min/max must be > 0")
+	if float(config.get("launch_speed_max", 0.0)) < float(config.get("launch_speed_min", 0.0)):
+		push_error("Player launch_speed_max must be >= launch_speed_min")
+	if float(config.get("charge_cycle_seconds", 0.0)) <= 0.0:
+		push_error("Player charge_cycle_seconds must be > 0")
 
 	return (config as Dictionary).duplicate(true)
 
@@ -176,6 +185,7 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		"shake",
 		"particles",
 		"trail",
+		"aim_preview",
 		"floating_text",
 		"sfx",
 		"hp_tween_duration",
@@ -188,6 +198,11 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 	for field in required_fields:
 		if not config.has(field):
 			push_error("Missing feel config field: %s" % field)
+	var aim_preview: Dictionary = config.get("aim_preview", {})
+	if int(aim_preview.get("point_count", 0)) < 2:
+		push_error("feel.aim_preview.point_count must be >= 2")
+	if float(aim_preview.get("time_step", 0.0)) <= 0.0:
+		push_error("feel.aim_preview.time_step must be > 0")
 
 	return config.duplicate(true)
 
@@ -238,6 +253,8 @@ func _validate_field_generator(generator: Dictionary, left: float, right: float,
 		"center_x",
 		"type_weights",
 		"special_radius",
+		"guaranteed_double_peg_count",
+		"max_guaranteed_double_peg_count",
 		"reroll_each_round",
 		"seed",
 	]
@@ -273,6 +290,17 @@ func _validate_field_generator(generator: Dictionary, left: float, right: float,
 		push_error("Field generator rows and columns must be > 0")
 	if row_spacing <= 0.0 or col_spacing <= 0.0:
 		push_error("Field generator spacing must be > 0")
+	var guaranteed_double := int(generator.get("guaranteed_double_peg_count", 0))
+	var max_guaranteed_double := int(generator.get("max_guaranteed_double_peg_count", 0))
+	var slot_count := 0
+	for row in range(row_count):
+		slot_count += int(wide_cols if row % 2 == 0 else narrow_cols)
+	if guaranteed_double < 0:
+		push_error("Field guaranteed_double_peg_count must be >= 0")
+	if max_guaranteed_double < guaranteed_double:
+		push_error("Field max_guaranteed_double_peg_count must be >= guaranteed_double_peg_count")
+	if max_guaranteed_double > slot_count:
+		push_error("Field max_guaranteed_double_peg_count must not exceed dynamic slot count")
 	if top_y < top or top_y + float(max(0, row_count - 1)) * row_spacing > bottom:
 		push_error("Field generator y range out of bounds")
 	for columns in [wide_cols, narrow_cols]:
@@ -287,6 +315,8 @@ func _validate_bottom_row(bottom_row: Dictionary, left: float, right: float, top
 	var count := int(bottom_row.get("count", 0))
 	var y := float(bottom_row.get("y", NAN))
 	var radius := float(bottom_row.get("radius", 0.0))
+	var bounce_multiplier := float(bottom_row.get("bounce_multiplier", 0.0))
+	var max_ball_speed := float(bottom_row.get("max_ball_speed", 0.0))
 	if peg_id != "bounce_peg":
 		push_error("Field bottom_row must use bounce_peg")
 	if not pegs_by_id.has(peg_id):
@@ -297,6 +327,10 @@ func _validate_bottom_row(bottom_row: Dictionary, left: float, right: float, top
 		push_error("Field bottom_row y out of bounds")
 	if radius <= 0.0:
 		push_error("Field bottom_row radius must be > 0")
+	if bounce_multiplier <= 0.0:
+		push_error("Field bottom_row bounce_multiplier must be > 0")
+	if max_ball_speed <= 0.0:
+		push_error("Field bottom_row max_ball_speed must be > 0")
 	if count > 1 and right <= left:
 		push_error("Field bottom_row bounds are invalid")
 

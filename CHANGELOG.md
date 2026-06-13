@@ -39,6 +39,38 @@
 
 ---
 
+## [Phase 8 / 1.4.0] - 2026-06-13 — 集氣發射、底排 bumper 與保底倍傷釘
+
+- 執行者：Codex
+- 任務卡：`Codex/08_LAUNCH_AND_TUNING.md`
+
+### Added
+- `Battle.gd` 新增兩段式集氣發射：AIMING 狀態下左鍵 / 空白鍵第一下開始集氣、第二下依當前 power 發射；球飛行中輸入無效。
+- `Battle.tscn` 新增 `PowerLabel` / `PowerBar`，power 在 0→100→0 之間來回擺動。
+- `AimLine` 改為依目前 power、發射方向、重力與 `feel.json` 採樣設定繪製拋物線預覽。
+- `upgrades.json` 新增 `up_guaranteed_double`，讓每回合保底 `double_peg` 數量 +1。
+
+### Changed
+- `Ball.gd` 對底排 `bounce_peg` 命中套用主動 bumper：速度依 `field.json` 的 `bottom_row.bounce_multiplier` 放大，並以 `max_ball_speed` 夾住；CCD 保留。
+- `FieldGenerator.gd` 在每回合重抽類型時先保留 `RunState.guaranteed_double_peg_count` 個槽位為 `double_peg`，其餘槽位仍照 `type_weights` 抽取。
+- `RunState.gd` 新增整局 `guaranteed_double_peg_count` / 上限，重新開始時回到 `field.json` 預設。
+- `UpgradeResolver.gd` 支援 `guaranteed_double_peg` stat 升級，並在達上限時排除。
+- `DataLoader.gd` 驗證新的 player / feel / field / upgrade stat 欄位。
+
+### Data
+- `Data/player.json` 新增 `launch_speed_min`、`launch_speed_max`、`charge_cycle_seconds`。
+- `Data/feel.json` 新增 `aim_preview.point_count` / `time_step`。
+- `Data/field.json` 新增 `bottom_row.bounce_multiplier`、`bottom_row.max_ball_speed`、`generator.guaranteed_double_peg_count`、`generator.max_guaranteed_double_peg_count`。
+- `Data/upgrades.json` 的 `_meta.stat_targets` 新增 `guaranteed_double_peg`。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` 通過。
+- Windows Desktop Export 成功，匯出 exe 可 `--headless --quit` 獨立啟動。
+
+### 未解問題
+- 無新增。Q-018 / Q-019 / Q-020 皆依已決議內容實作。
+
 ## [Phase 7 / 1.3.0] - 2026-06-13 — 程序生成釘盤與每回合類型重抽
 
 - 執行者：Codex
@@ -83,6 +115,23 @@
 
 ### 未解問題
 - 無新增。Q-014 採本卡指定預設：單一基礎佈局套用全部場次；本卡不實作每層變化。
+
+## [Phase 8 規劃 / spec] - 2026-06-13 — 集氣發射 / 底排 bumper / 保底倍傷釘 決策 + 任務卡
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/08_LAUNCH_AND_TUNING.md`（待 Codex 實作）
+
+### Changed
+- 人類實機驗證 Phase 7 程序生成釘盤通過；`ROADMAP.md` 標記 Phase 7 完成、新增 Phase 8 列。
+
+### Added
+- `Codex/08_LAUNCH_AND_TUNING.md`：三項可玩性強化任務卡。
+
+### Docs / 決策
+- 新增並由人類決議：**Q-018**（底排 bounce_peg 改主動 bumper，反彈速度×可調倍率預設 2.0、含速度上限）、**Q-019**（集氣發射 0→100→0 + 拋物線瞄準預覽、左鍵或空白鍵兩段式、power→初速）、**Q-020**（double_peg 每回合保底 2 顆 + 新增升級保底數 +1）。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作。Phase 8 屬手感 / 平衡敏感改動，實作後須人類實機驗收。
 
 ## [Phase 7 規劃 / spec] - 2026-06-13 — 程序生成釘盤決策定案 + 任務卡
 

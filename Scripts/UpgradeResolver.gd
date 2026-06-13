@@ -73,6 +73,8 @@ func _apply_stat_upgrade(target_id: String, effect_type: String, effect_value: V
 			RunState.increase_balls_per_round(int(effect_value))
 		"enemy_attack_down":
 			RunState.add_enemy_attack_down(int(effect_value))
+		"guaranteed_double_peg":
+			RunState.increase_guaranteed_double_peg(int(effect_value))
 
 
 func _eligible_upgrades(allowed_rarities: Array, excluded_ids: Array) -> Array:
@@ -97,6 +99,8 @@ func _is_upgrade_excluded(upgrade: Dictionary) -> bool:
 		return RunState.unlocked_balls.has(target_id)
 	if target_type == "stat" and target_id == "balls_per_round":
 		return RunState.balls_per_round >= RunState.MAX_BALLS_PER_ROUND
+	if target_type == "stat" and target_id == "guaranteed_double_peg":
+		return RunState.guaranteed_double_peg_count >= RunState.max_guaranteed_double_peg_count
 	return false
 
 

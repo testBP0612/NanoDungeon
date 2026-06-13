@@ -12,7 +12,8 @@
 | 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ✅ 完成（人類實機驗證） |
 | 5 | Polish & Demo | `Codex/05_POLISH_DEMO.md` | ✅ 完成（人類實機 + export 驗證） |
 | 6 | Field Layout（可玩性調整） | `Codex/06_FIELD_LAYOUT.md` | ✅ 完成（佈局資料化） |
-| 7 | Procedural Pegboard（可玩性擴充） | `Codex/07_PROCEDURAL_PEGBOARD.md` | ⬜ 待開始（程序生成 + 每回合重組） |
+| 7 | Procedural Pegboard（可玩性擴充） | `Codex/07_PROCEDURAL_PEGBOARD.md` | ✅ 完成（人類實機驗證） |
+| 8 | Launch & Tuning（可玩性擴充） | `Codex/08_LAUNCH_AND_TUNING.md` | ⬜ 待開始（集氣發射 / 底排 bumper / 保底倍傷釘） |
 
 ---
 
@@ -120,7 +121,7 @@
 
 **目標**：比賽現場可穩定展示的完成度。任務卡見 `Codex/05_POLISH_DEMO.md`。MVP 功能（Phase 1–4）已 100% 到齊，本階段不加新玩法。
 
-> **MVP 後增量軌道（人類主導，非比賽硬需求）**：Phase 6 佈局資料化（`Codex/06_FIELD_LAYOUT.md`，已完成）、Phase 7 程序生成釘盤 + 每回合重組 + 新增 `bounce_peg` + 場地拉高 1024×1024（`Codex/07_PROCEDURAL_PEGBOARD.md`）。決策見 OPEN_QUESTIONS Q-014~Q-017。
+> **MVP 後增量軌道（人類主導，非比賽硬需求）**：Phase 6 佈局資料化（已完成）、Phase 7 程序生成釘盤 + 每回合重組 + `bounce_peg` + 場地 1024×1024（已完成）、Phase 8 集氣發射 + 底排 bumper + 保底倍傷釘（`Codex/08_LAUNCH_AND_TUNING.md`）。決策見 OPEN_QUESTIONS Q-014~Q-020。
 
 工作項：
 - 美術一致性（霓虹賽博風、glow、UI）。

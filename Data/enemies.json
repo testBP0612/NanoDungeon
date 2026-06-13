@@ -1,59 +1,59 @@
 {
   "_meta": {
-    "description": "MVP 5 場戰鬥，依序 battle 1..5。type: normal(普通怪) / elite(精英怪) / boss。HP/attack 見 Docs/04_BALANCE_RULES.md，可調。boss 含 special。",
-    "version": "0.1.0"
+	"description": "MVP 5 場戰鬥，依序 battle 1..5。type: normal(普通怪) / elite(精英怪) / boss。HP/attack 見 Docs/04_BALANCE_RULES.md，可調。boss 含 special。",
+	"version": "0.1.0"
   },
   "enemies": [
-    {
-      "id": "virus_scout",
-      "name": "偵察病毒 Scout Virus",
-      "type": "normal",
-      "hp": 40,
-      "attack": 8,
-      "description": "最低階的遊蕩病毒程式，攻擊微弱，是入侵者的第一道試煉。",
-      "dialogue": "偵測到未授權能量體……正在分析。"
-    },
-    {
-      "id": "virus_crawler",
-      "name": "爬行病毒 Crawler Virus",
-      "type": "normal",
-      "hp": 60,
-      "attack": 10,
-      "description": "會自我複製的病毒，比偵察病毒更具攻擊性。",
-      "dialogue": "感染程序啟動。你將成為我的一部分。"
-    },
-    {
-      "id": "firewall_sentinel",
-      "name": "防火牆哨兵 Firewall Sentinel",
-      "type": "elite",
-      "hp": 110,
-      "attack": 14,
-      "description": "精英級防禦程式，裝甲厚重、反擊兇猛。擊敗後給予較佳獎勵（見 OPEN_QUESTIONS Q-005）。",
-      "dialogue": "存取遭拒。準備被清除。"
-    },
-    {
-      "id": "virus_swarm",
-      "name": "群集病毒 Swarm Virus",
-      "type": "normal",
-      "hp": 90,
-      "attack": 12,
-      "description": "由大量微型病毒組成的群體，數量就是武器。",
-      "dialogue": "我們是眾多。我們是無限。"
-    },
-    {
-      "id": "core_program",
-      "name": "核心程式 Core Program",
-      "type": "boss",
-      "hp": 220,
-      "attack": 15,
-      "description": "奈米地下城的核心，掌控整個賽博空間。高血量並具週期性必殺。擊敗即遊戲勝利。",
-      "dialogue": "我即是這座地下城的意志。你的入侵到此為止。",
-      "special": {
-        "name": "核心過載 Core Overload",
-        "every_n_rounds": 3,
-        "attack": 30,
-        "description": "每 3 回合釋放一次過載攻擊，造成大量傷害（受 Shield Ball 減免）。"
-      }
-    }
+	{
+	  "id": "virus_scout",
+	  "name": "偵察病毒 Scout Virus",
+	  "type": "normal",
+	  "hp": 40,
+	  "attack": 8,
+	  "description": "最低階的遊蕩病毒程式，攻擊微弱，是入侵者的第一道試煉。",
+	  "dialogue": "偵測到未授權能量體……正在分析。"
+	},
+	{
+	  "id": "virus_crawler",
+	  "name": "爬行病毒 Crawler Virus",
+	  "type": "normal",
+	  "hp": 60,
+	  "attack": 10,
+	  "description": "會自我複製的病毒，比偵察病毒更具攻擊性。",
+	  "dialogue": "感染程序啟動。你將成為我的一部分。"
+	},
+	{
+	  "id": "firewall_sentinel",
+	  "name": "防火牆哨兵 Firewall Sentinel",
+	  "type": "elite",
+	  "hp": 110,
+	  "attack": 14,
+	  "description": "精英級防禦程式，裝甲厚重、反擊兇猛。擊敗後給予較佳獎勵（見 OPEN_QUESTIONS Q-005）。",
+	  "dialogue": "存取遭拒。準備被清除。"
+	},
+	{
+	  "id": "virus_swarm",
+	  "name": "群集病毒 Swarm Virus",
+	  "type": "normal",
+	  "hp": 90,
+	  "attack": 12,
+	  "description": "由大量微型病毒組成的群體，數量就是武器。",
+	  "dialogue": "我們是眾多。我們是無限。"
+	},
+	{
+	  "id": "core_program",
+	  "name": "核心程式 Core Program",
+	  "type": "boss",
+	  "hp": 220,
+	  "attack": 15,
+	  "description": "奈米地下城的核心，掌控整個賽博空間。高血量並具週期性必殺。擊敗即遊戲勝利。",
+	  "dialogue": "我即是這座地下城的意志。你的入侵到此為止。",
+	  "special": {
+		"name": "核心過載 Core Overload",
+		"every_n_rounds": 3,
+		"attack": 30,
+		"description": "每 3 回合釋放一次過載攻擊，造成大量傷害（受 Shield Ball 減免）。"
+	  }
+	}
   ]
 }

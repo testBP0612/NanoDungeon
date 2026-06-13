@@ -11,6 +11,8 @@ var peg_damage_mods: Dictionary = {}
 var peg_effect_mods: Dictionary = {}
 var peg_trigger_mods: Dictionary = {}
 var enemy_attack_down := 0
+var guaranteed_double_peg_count := 0
+var max_guaranteed_double_peg_count := 0
 var applied_upgrades: Array[String] = []
 var pending_upgrade_enemy_type := "normal"
 
@@ -21,9 +23,13 @@ func reset_new_run() -> void:
 	if not DataLoader.loaded:
 		DataLoader.load_all()
 	var player_config := DataLoader.get_player_config()
+	var field_config := DataLoader.get_field_config()
+	var generator_config: Dictionary = field_config.get("generator", {})
 	player_max_hp = int(player_config["max_hp"])
 	player_hp = player_max_hp
 	balls_per_round = int(player_config["balls_per_round"])
+	guaranteed_double_peg_count = int(generator_config.get("guaranteed_double_peg_count", 0))
+	max_guaranteed_double_peg_count = int(generator_config.get("max_guaranteed_double_peg_count", guaranteed_double_peg_count))
 	current_battle_index = 0
 	kills = 0
 	started_at_msec = Time.get_ticks_msec()
@@ -41,7 +47,7 @@ func reset_new_run() -> void:
 
 
 func ensure_run_started() -> void:
-	if player_max_hp <= 0 or player_hp <= 0 or balls_per_round <= 0:
+	if player_max_hp <= 0 or player_hp <= 0 or balls_per_round <= 0 or max_guaranteed_double_peg_count <= 0:
 		reset_new_run()
 
 
@@ -64,6 +70,10 @@ func increase_balls_per_round(amount: int) -> void:
 
 func add_enemy_attack_down(amount: int) -> void:
 	enemy_attack_down += amount
+
+
+func increase_guaranteed_double_peg(amount: int) -> void:
+	guaranteed_double_peg_count = min(max_guaranteed_double_peg_count, guaranteed_double_peg_count + amount)
 
 
 func unlock_ball(ball_id: String) -> void:

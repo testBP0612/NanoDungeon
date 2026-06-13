@@ -9,6 +9,8 @@ var ball_def: Dictionary = {}
 var radius := 10.0
 var _recovered := false
 var _launch_speed := 0.0
+var _bounce_multiplier := 1.0
+var _max_ball_speed := 0.0
 var _ball_color := Color(1.0, 0.86, 0.25)
 var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
@@ -24,11 +26,14 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
-func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dictionary, feel_config: Dictionary) -> void:
+func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dictionary, feel_config: Dictionary, field_config: Dictionary = {}) -> void:
 	ball_id = new_ball_id
 	ball_def = new_ball_def.duplicate(true)
 	_feel_config = feel_config.duplicate(true)
 	_peg_rehit_cooldown = float(_feel_config["peg_rehit_cooldown_seconds"])
+	var bottom_row: Dictionary = field_config.get("bottom_row", {})
+	_bounce_multiplier = float(bottom_row.get("bounce_multiplier", 1.0))
+	_max_ball_speed = float(bottom_row.get("max_ball_speed", 0.0))
 	_ball_color = _color_for_ball(ball_id)
 	radius = float(player_config["ball_radius"])
 	gravity_scale = float(player_config["ball_gravity_scale"])
@@ -51,8 +56,9 @@ func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dic
 	queue_redraw()
 
 
-func launch(direction: Vector2) -> void:
-	apply_central_impulse(direction.normalized() * _launch_speed)
+func launch(direction: Vector2, launch_speed := -1.0) -> void:
+	var speed := _launch_speed if launch_speed <= 0.0 else launch_speed
+	apply_central_impulse(direction.normalized() * speed)
 
 
 func recover(reason: String) -> void:
@@ -69,6 +75,8 @@ func _on_body_entered(body: Node) -> void:
 	if body.has_method("get_peg_id"):
 		if not _can_hit_peg(body):
 			return
+		if String(body.get_peg_id()) == "bounce_peg":
+			_apply_bumper_boost()
 		if body.has_method("play_hit_feedback"):
 			body.play_hit_feedback()
 		var hit_color := Color(0.2, 0.85, 1.0)
@@ -77,6 +85,18 @@ func _on_body_entered(body: Node) -> void:
 		peg_hit.emit(body.get_peg_id(), body.global_position, hit_color)
 	else:
 		wall_hit.emit(global_position)
+
+
+func _apply_bumper_boost() -> void:
+	if _bounce_multiplier <= 0.0:
+		return
+	var current_speed := linear_velocity.length()
+	if current_speed <= 0.01:
+		return
+	var boosted_speed := current_speed * _bounce_multiplier
+	if _max_ball_speed > 0.0:
+		boosted_speed = min(boosted_speed, _max_ball_speed)
+	linear_velocity = linear_velocity.normalized() * boosted_speed
 
 
 func _add_trail() -> void:

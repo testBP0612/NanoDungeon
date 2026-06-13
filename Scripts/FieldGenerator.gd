@@ -53,17 +53,19 @@ func build_bottom_slots(field_config: Dictionary) -> Array:
 	return slots
 
 
-func roll_dynamic_types(field_config: Dictionary, dynamic_slots: Array) -> Array:
+func roll_dynamic_types(field_config: Dictionary, dynamic_slots: Array, guaranteed_double_count := -1) -> Array:
 	var generator: Dictionary = field_config["generator"]
 	var default_radius := float(field_config["default_peg_radius"])
 	var special_radius: Dictionary = generator.get("special_radius", {})
 	var rolled := []
-	for slot in dynamic_slots:
-		var peg_id := _weighted_peg_id(generator["type_weights"])
+	var guaranteed_indices := _guaranteed_double_indices(dynamic_slots.size(), int(generator.get("guaranteed_double_peg_count", 0)) if guaranteed_double_count < 0 else guaranteed_double_count)
+	for index in range(dynamic_slots.size()):
+		var slot := dynamic_slots[index] as Dictionary
+		var peg_id := "double_peg" if guaranteed_indices.has(index) else _weighted_peg_id(generator["type_weights"])
 		rolled.append({
 			"id": peg_id,
-			"x": float((slot as Dictionary)["x"]),
-			"y": float((slot as Dictionary)["y"]),
+			"x": float(slot["x"]),
+			"y": float(slot["y"]),
 			"radius": float(special_radius.get(peg_id, default_radius)),
 			"fixed": false,
 		})
@@ -87,3 +89,11 @@ func _weighted_peg_id(type_weights: Dictionary) -> String:
 		if roll <= running:
 			return String(peg_id)
 	return String(type_weights.keys()[0])
+
+
+func _guaranteed_double_indices(slot_count: int, requested_count: int) -> Dictionary:
+	var indices := {}
+	var target_count = clamp(requested_count, 0, slot_count)
+	while indices.size() < target_count:
+		indices[_rng.randi_range(0, slot_count - 1)] = true
+	return indices

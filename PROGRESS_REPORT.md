@@ -33,6 +33,49 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/08_LAUNCH_AND_TUNING.md`：底排 `bounce_peg` 改為主動 bumper，命中後依 JSON 倍率加速且有速度上限；發射流程改為 AIMING 狀態兩段式集氣，左鍵 / 空白鍵第一下集氣、第二下發射，AimLine 改拋物線預覽；每回合重抽 peg 類型時保證 `double_peg` 至少出現指定數量，並新增整局升級可增加保底數。未新增球 / 敵人 / 釘種類，未改既有傷害、敵人或升級抽取規則，位置骨架不變。
+
+# Completed
+- `Data/field.json`：新增 `bottom_row.bounce_multiplier`、`bottom_row.max_ball_speed`、`generator.guaranteed_double_peg_count`、`generator.max_guaranteed_double_peg_count`。
+- `Data/player.json`：新增 `launch_speed_min`、`launch_speed_max`、`charge_cycle_seconds`，power 以此換算初速。
+- `Data/feel.json`：新增 `aim_preview.point_count` / `time_step`，控制拋物線預覽採樣。
+- `Data/upgrades.json`：新增 `up_guaranteed_double`，`_meta.stat_targets` 加入 `guaranteed_double_peg`。
+- `Scripts/Ball.gd`：命中 `bounce_peg` 時主動放大 `linear_velocity` 並夾 `max_ball_speed`；CCD 保留。
+- `Scripts/Battle.gd`：AIMING 輸入改兩段式集氣 / 發射，支援左鍵與空白鍵；`AimLine` 改為拋物線點列；發射速度依 power 傳給 Ball。
+- `Scenes/Battle.tscn`：新增 power label / progress bar。
+- `Scripts/FieldGenerator.gd`：每回合重抽時先保留指定數量槽位為 `double_peg`，其餘照權重池抽。
+- `Scripts/RunState.gd` / `Scripts/UpgradeResolver.gd`：新增保底 double 整局狀態、升級套用、重開歸零與達上限排除。
+- `Scripts/DataLoader.gd`：驗證 Phase 8 新欄位與數值範圍。
+
+# Validation Results
+- ✅ bumper 加速資料化：底排 `bounce_peg` 讀 `field.json.bottom_row.bounce_multiplier = 2.0`；速度以 `max_ball_speed = 1600.0` 夾住。
+- ✅ CCD 保留：`Ball.gd` 仍設定 `continuous_cd = RigidBody2D.CCD_MODE_CAST_RAY`。
+- ✅ 兩段式輸入：AIMING 下左鍵 / 空白鍵第一下只開始集氣，第二下才發射；非 AIMING 狀態 `_input()` 直接 return。
+- ✅ power 表：`PowerLabel` / `PowerBar` 顯示 0→100→0 來回擺動。
+- ✅ power 影響初速：`launch_speed = lerp(launch_speed_min, launch_speed_max, power/100)`。
+- ✅ 拋物線預覽：`AimLine.points` 由發射方向、當前 speed、重力與 `feel.aim_preview` 採樣產生。
+- ✅ double_peg 保底：`FieldGenerator.roll_dynamic_types()` 先抽保底槽位為 `double_peg`；Battle 傳入 `RunState.guaranteed_double_peg_count`。
+- ✅ 新升級套用與上限：`up_guaranteed_double` 會讓保底數 +1，達 `max_guaranteed_double_peg_count` 後排除；`reset_new_run()` 回預設。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ Godot 驗證：main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功；匯出 exe 可 `--headless --quit` 獨立啟動。
+- ⚠️ 實機完整一局：headless / export 驗證通過；bumper 力道、集氣節奏、double 保底對輸出與 5 場節奏的影響仍需人類實機驗收。
+
+# Open Questions
+- 無新增。
+- Q-018 / Q-019 / Q-020 已依決議實作。
+
+# Risks
+- 主動 bumper 與速度上限會明顯改變球路；若出現穿透、卡死或過度飛高，建議只調 `Data/field.json` 的 `bounce_multiplier` / `max_ball_speed`。
+- 集氣週期與速度上下限會直接影響手感與可控性，建議實機後只調 `Data/player.json`。
+- double 保底與升級會提高輸出穩定度，可能需要實機後微調 `guaranteed_double_peg_count` / 上限或既有敵人 JSON。
+
+# Recommended Next Task
+- 建議人類先用 export 版實機驗收 Phase 8：確認兩段式操作是否順手、拋物線預覽是否可信、底排 bumper 是否不穿透、保底 double 是否有策略感。若通過，下一圈建議只做 JSON 手感調參，不新增玩法。
+
+## 歷史報告 — Procedural Pegboard
+
+# Summary
 完成 `Codex/07_PROCEDURAL_PEGBOARD.md`：釘盤由手列座標改為 `Data/field.json` 參數化 generator，新增 `FieldGenerator.gd` 以公式生成固定位置骨架，並在每次 ROUND_START 只重抽動態 peg 類型。新增底部固定 `bounce_peg` 反彈排，場地與 viewport 拉高至 1024×1024。未做漸變特效、未擾動位置骨架、未新增除 bounce_peg 以外的種類，也未改既有傷害 / 升級 / 敵人規則。
 
 # Completed
