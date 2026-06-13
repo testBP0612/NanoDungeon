@@ -1,6 +1,158 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Battle.gd" id="1_battle"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_left_wall"]
+size = Vector2(40, 608)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_right_wall"]
+size = Vector2(40, 608)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_top_wall"]
+size = Vector2(672, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom_sensor"]
+size = Vector2(632, 52)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_transparent"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_field_fill"]
+bg_color = Color(0.055, 0.065, 0.095, 1)
+
 [node name="Battle" type="Node2D"]
 script = ExtResource("1_battle")
+
+[node name="PinballField" type="Node2D" parent="."]
+
+[node name="FieldFill" type="Polygon2D" parent="PinballField"]
+color = Color(0.055, 0.065, 0.095, 1)
+polygon = PackedVector2Array(196, 72, 828, 72, 828, 680, 196, 680)
+
+[node name="FieldBorder" type="Line2D" parent="PinballField"]
+points = PackedVector2Array(196, 72, 828, 72, 828, 680, 196, 680, 196, 72)
+width = 2.0
+default_color = Color(0.25, 0.95, 1, 1)
+
+[node name="Walls" type="Node2D" parent="PinballField"]
+
+[node name="LeftWall" type="StaticBody2D" parent="PinballField/Walls"]
+position = Vector2(176, 376)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/LeftWall"]
+shape = SubResource("RectangleShape2D_left_wall")
+
+[node name="Visual" type="Polygon2D" parent="PinballField/Walls/LeftWall"]
+color = Color(0.09, 0.14, 0.2, 1)
+polygon = PackedVector2Array(-20, -304, 20, -304, 20, 304, -20, 304)
+
+[node name="RightWall" type="StaticBody2D" parent="PinballField/Walls"]
+position = Vector2(848, 376)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/RightWall"]
+shape = SubResource("RectangleShape2D_right_wall")
+
+[node name="Visual" type="Polygon2D" parent="PinballField/Walls/RightWall"]
+color = Color(0.09, 0.14, 0.2, 1)
+polygon = PackedVector2Array(-20, -304, 20, -304, 20, 304, -20, 304)
+
+[node name="TopWall" type="StaticBody2D" parent="PinballField/Walls"]
+position = Vector2(512, 52)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/TopWall"]
+shape = SubResource("RectangleShape2D_top_wall")
+
+[node name="Visual" type="Polygon2D" parent="PinballField/Walls/TopWall"]
+color = Color(0.09, 0.14, 0.2, 1)
+polygon = PackedVector2Array(-336, -20, 336, -20, 336, 20, -336, 20)
+
+[node name="PegContainer" type="Node2D" parent="PinballField"]
+
+[node name="BottomSensor" type="Area2D" parent="PinballField"]
+position = Vector2(512, 706)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/BottomSensor"]
+shape = SubResource("RectangleShape2D_bottom_sensor")
+
+[node name="Launcher" type="Node2D" parent="PinballField"]
+position = Vector2(512, 118)
+
+[node name="BallContainer" type="Node2D" parent="PinballField"]
+
+[node name="BattleUI" type="CanvasLayer" parent="."]
+
+[node name="UIRoot" type="Control" parent="BattleUI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_transparent")
+
+[node name="PlayerHPLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 264.0
+offset_bottom = 52.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="EnemyHPLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 24.0
+offset_top = 56.0
+offset_right = 384.0
+offset_bottom = 84.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="RoundLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 24.0
+offset_top = 88.0
+offset_right = 244.0
+offset_bottom = 116.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="DamageLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 24.0
+offset_top = 120.0
+offset_right = 284.0
+offset_bottom = 148.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="BallsLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 24.0
+offset_top = 152.0
+offset_right = 284.0
+offset_bottom = 180.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="StatusLabel" type="Label" parent="BattleUI/UIRoot"]
+offset_left = 260.0
+offset_top = 698.0
+offset_right = 764.0
+offset_bottom = 734.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="BattleUI/UIRoot"]
+visible = false
+offset_left = 382.0
+offset_top = 356.0
+offset_right = 502.0
+offset_bottom = 398.0
+mouse_filter = 0
+text = "重來"
+
+[node name="MenuButton" type="Button" parent="BattleUI/UIRoot"]
+visible = false
+offset_left = 522.0
+offset_top = 356.0
+offset_right = 642.0
+offset_bottom = 398.0
+mouse_filter = 0
+text = "主選單"

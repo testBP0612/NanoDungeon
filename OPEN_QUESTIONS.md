@@ -120,4 +120,20 @@
 
 ## 已決議
 
-（目前尚無。被回答的問題請從上方移到此處，保留題號並補上「結論 / 決議日期」。）
+### Q-008：Battle 場地 / UI 採場景節點或程式化生成
+- 提出者：Claude（Phase 1.5 Architecture Review）
+- 日期：2026-06-13
+- 背景：Phase 1 將彈珠場與 BattleUI 全部由 `Battle.gd` 程式化生成，與 `03_SYSTEM_SPEC.md` 建議的場景樹背離，影響 Phase 2 特效與 Phase 5 美術的可視化調校。
+- 結論（人類決議）：**改為 `Battle.tscn` 內的實際節點**，`Battle.gd` 改以 `@onready` 取用、只負責邏輯。視覺與座標須與重構前一致。
+- 決議日期：2026-06-13
+- 影響範圍：Scenes/Battle.tscn、Scripts/Battle.gd、Codex/01b_REFACTOR.md
+- 狀態：✅ 已決議
+
+### Q-009：是否清理 `project.godot` 的 3D 物理 / d3d12 設定
+- 提出者：Claude（Phase 1.5 Architecture Review）
+- 日期：2026-06-13
+- 背景：專案為 2D，但 `project.godot` 仍含 `3d/physics_engine = Jolt Physics` 與 d3d12 設定（對 2D 物理無影響，屬噪音）。
+- 結論（人類決議）：**Phase 1.5 暫不動**。保持現狀，不在重構圈處理，避免擴大範圍。日後若需要再另開圈。
+- 決議日期：2026-06-13
+- 影響範圍：project.godot
+- 狀態：✅ 已決議

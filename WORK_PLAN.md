@@ -39,6 +39,39 @@
 ## 當前工作計畫
 
 # Current State
+- Phase 1 First Playable 已完成並經人類實機驗證（發射 / 碰撞 / 累積 / 落底 / 結算 / 反擊 / 重來 / 回主選單皆正常）。
+- Phase 1.5 Architecture Review 已產出，指出三項須在 Phase 2 前修復的債（Effect Resolver、RoundContext、FSM 入口）+ 場景分離 + 殘渣清除。
+- 已建立任務卡 `Codex/01b_REFACTOR.md`，ROADMAP 已插入 Phase 1.5。
+
+# Current Phase
+- **Phase 1.5 — Architecture Refactor**（行為等價重構）。
+
+# Recommended Task
+- 執行 `Codex/01b_REFACTOR.md`。
+
+# Why
+- Phase 2 內容（4 釘 3 球效果、傷害數字、粒子）會直接踩中現有架構債；先還債可避免在 god object 上複利累積。
+
+# Risks
+- 重構誤改行為（最大風險）→ 以「行為等價 + C 區回歸」為驗收鐵律。
+- 場景分離可能動到座標 / 版面 → 需逐項比對視覺一致。
+
+# Dependencies
+- 無阻斷性前置。
+- Q-008 已決議：Battle 場地 / UI 改為 `Battle.tscn` 實際節點，行為與座標必須等價。
+- Q-009 已決議：Phase 1.5 不清理 `project.godot` 的 3D 物理 / d3d12 設定。
+
+# Estimated Scope
+- 中。新增 EffectResolver / RoundContext；瘦身 Battle.gd；（預設）重建 Battle.tscn 節點；刪 node_2d.tscn。
+
+# Validation Target
+- `Codex/VALIDATION_CHECKLIST.md` **C. First Playable** 全項回歸 + **H. 禁止偏離**。
+
+---
+
+## 歷史計畫 — Phase 1（已完成）
+
+# Current State
 - Phase 0（文件與資料結構）已完成：README / ROADMAP / OPEN_QUESTIONS / CHANGELOG、`Docs/01–05`、`Codex/00–04` + VALIDATION_CHECKLIST、`Data/` 四份 JSON 皆已建立。
 - 已升級為 AI Loop Development Framework：`LOOP.md`、`WORK_PLAN.md`、`PROGRESS_REPORT.md` 皆存在。
 - Godot 專案目前仍是空殼：尚未建立 `Scenes/`、`Scripts/`，`project.godot` 尚未指定主場景。

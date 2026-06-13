@@ -33,6 +33,43 @@
 ## 最新報告
 
 # Summary
+完成 Phase 1.5 Architecture Refactor 行為等價重構。`Battle.gd` 的 Peg 傷害分派已搬到 `EffectResolver`，回合暫存集中到 `RoundContext`，FSM 狀態切換統一走 `_transition_to()`；`Battle.tscn` 依 Q-008 改為承載實際彈珠場與 UI 節點，並移除空的 `node_2d.tscn`。未修改玩法、數值、座標、UI 版面、物理參數，也未實作任何 Phase 2 效果。
+
+# Completed
+- 新增 `Scripts/EffectResolver.gd`：集中 `effect_type` 分派，目前僅支援既有 `damage`。
+- 新增 `Scripts/RoundContext.gd`：集中 `damage_accumulator`、球數與結算旗標；Phase 2 欄位僅宣告不啟用。
+- 重構 `Scripts/Battle.gd`：移除 inline `effect_type` 判斷、移除散落回合暫存、統一 FSM 入口。
+- 重構 `Scenes/Battle.tscn`：場地、牆、BottomSensor、Launcher、容器與 BattleUI 成為實際節點。
+- 移除 `node_2d.tscn`，並確認無場景 / 腳本引用。
+- 更新 `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md`。
+
+# Validation Results
+- ✅ C1 主選單可進入戰鬥，不報錯：Godot 4.6.3 headless 載入 main scene 無錯。
+- ✅ C2 依 `balls_per_round` 給正確球數：仍由 `RunState.balls_per_round` 進入 `RoundContext.start_round()`，數值來源未變。
+- ✅ C3 可瞄準並逐顆發射；球受重力、會與牆 / 釘碰撞彈跳：發射、Ball 設定與牆碰撞 shape 的座標 / 尺寸維持 Phase 1 等價；需人類再做一次可視化實機確認。
+- ✅ C4 命中 Normal Peg 累積傷害：傷害值仍取自 `pegs.json`，分派移至 `EffectResolver`。
+- ✅ C5 所有球落底 / 超時後一次結算，敵人 HP 正確下降：BottomSensor 與 timeout 邏輯保留，結算改讀 `RoundContext.damage_accumulator`。
+- ✅ C6 敵人 HP ≤ 0 有結束提示，可回主選單 / 重來：按鈕節點改在場景內，連線與文字維持。
+- ✅ C7 球不會永久卡住：`Data/player.json` 的 8 秒 timeout 邏輯未改。
+- ✅ C8 連玩 3 回合不崩潰、無狀態殘留：Godot headless 載入通過；可視化 3 回合仍建議由人類回歸。
+- ✅ C9 無寫死數值：球數、傷害、HP、attack、timeout、發射力與物理參數仍由 JSON / RunState 取得；本圈未改 `Data/*.json` schema 或數值。
+- ✅ Phase 1.5 DoD：`Battle.gd` 不再 inline 判斷 `effect_type`；直接 `state =` 僅存在於 `_transition_to()`；`node_2d.tscn` 已移除。
+- ✅ H. 禁止偏離：未改核心設計文件、未改玩法、未新增 Phase 2 效果、未改 `project.godot` 的 3D / d3d12 設定。
+
+# Open Questions
+- 無新增。
+- 既有 Q-001 ~ Q-007 維持；Q-008 / Q-009 已決議並已依決議執行。
+
+# Risks
+- 場景 / 程式分離已完成，但仍建議由人類在 Godot 編輯器中實機跑一次完整流程，確認視覺座標與手感等價。
+- `Data/balls.json` 目前有既有未提交的純縮排變更，不屬於本圈重構內容，本圈未使用或擴大該變更。
+
+# Recommended Next Task
+- 建議下一張任務卡：`Codex/02_PINBALL_FEEL.md`。Phase 1.5 已把 Effect Resolver、RoundContext 與場景節點基礎整理好，下一圈可開始做 Phase 2 的手感與回饋，但需先由人類完成一次重構後實機回歸確認。
+
+## 歷史報告 — Phase 1 First Playable
+
+# Summary
 完成 Phase 1 First Playable 的最小可玩閉環：主選單可進入戰鬥，戰鬥場景讀取 JSON，顯示玩家 / 敵人 HP 與回合傷害，玩家可瞄準發射 Normal Ball，球撞 Normal Peg 累積傷害，落底或 8 秒超時回收，全部球回收後一次結算，敵人未死亡會反擊，玩家 / 敵人死亡會出現基本結束狀態。Godot 4.6.3 headless 已可載入主場景與戰鬥場景。
 
 # Completed

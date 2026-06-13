@@ -5,7 +5,8 @@
 | Phase | 名稱 | 任務卡 | 狀態 |
 | --- | --- | --- | --- |
 | 0 | 文件與資料結構 | （本批文件） | ✅ 完成 |
-| 1 | First Playable | `Codex/01_FIRST_PLAYABLE.md` | ⬜ 待開始 |
+| 1 | First Playable | `Codex/01_FIRST_PLAYABLE.md` | ✅ 完成（人類實機驗證） |
+| 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ⬜ 待開始 |
 | 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ⬜ 待開始 |
 | 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ⬜ 待開始 |
 | 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始 |
@@ -44,6 +45,23 @@
 - 球會碰撞釘子、落底、觸發一次結算。
 - 敵人 HP 會因結算而下降。
 - 全程不崩潰，可重複進行。
+
+## Phase 1.5 — Architecture Refactor
+
+**目標**：在**不改變任何遊戲行為**的前提下，清理 Phase 1 累積的架構債，為 Phase 2 鋪路。由 Phase 1.5 Architecture Review 觸發，任務卡見 `Codex/01b_REFACTOR.md`。
+
+工作項：
+- 抽出 Effect Resolver（集中 `effect_type` 分派，目前僅 `damage`）。
+- 建立 `RoundContext`（集中回合暫存，並預留 Phase 2 欄位）。
+- 統一 FSM 入口（所有切換走 `_transition_to`）。
+- 場景 / 程式分離（彈珠場與 UI 改為 `Battle.tscn` 實際節點；若人類選擇維持程式化生成，則改為在 SPEC 提案記錄為慣例）。
+- 清除殘渣（`node_2d.tscn`）。
+
+**完成定義（DoD）**：
+- **行為等價**：重構前後遊戲可見行為完全相同，C 區驗收逐項回歸通過。
+- 傷害邏輯只存在於 Effect Resolver；回合暫存集中於 RoundContext；無散落 `state = ...`。
+- 數值、座標、UI 版面、物理參數皆未變。
+- 專案可正常載入與遊玩，無載入錯誤。
 
 ## Phase 2 — Pinball Feel
 

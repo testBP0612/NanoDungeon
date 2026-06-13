@@ -39,6 +39,31 @@
 
 ---
 
+## [Phase 1.5 / 0.3.1] - 2026-06-13 — 完成 Architecture Refactor 行為等價重構
+
+- 執行者：Codex
+- 任務卡：`Codex/01b_REFACTOR.md`
+
+### Added
+- 新增 `Scripts/EffectResolver.gd`：集中 Peg `effect_type` 分派，目前僅搬移 Phase 1 的 `damage` 分支，未實作其他效果。
+- 新增 `Scripts/RoundContext.gd`：集中回合暫存，包含目前使用的傷害累積與球數狀態，並宣告 Phase 2 預留欄位但不啟用。
+
+### Changed
+- `Scripts/Battle.gd`：改為呼叫 `EffectResolver` 處理 Peg 命中，改用 `RoundContext` 持有回合狀態，並統一所有狀態切換走 `_transition_to()`。
+- `Scenes/Battle.tscn`：依 Q-008 決議，將彈珠場節點、牆、BottomSensor、容器與 BattleUI 改為場景內實際節點；座標、尺寸、顏色與 UI 版面維持 Phase 1 等價。
+- `WORK_PLAN.md`：更新 Phase 1.5 Dependencies，標記 Q-008 / Q-009 已決議且無阻斷。
+
+### Removed
+- 移除根目錄空場景 `node_2d.tscn`；確認沒有 `.tscn` 或腳本引用。
+
+### 驗收
+- Godot 4.6.3 headless 載入主場景與 `Scenes/Battle.tscn` 無腳本解析 / 場景錯誤。
+- `Data/*.json` 解析通過。
+- 靜態檢查確認 `Battle.gd` 不再 inline 判斷 `effect_type`，直接狀態賦值僅保留於 `_transition_to()` 內。
+
+### 未解問題
+- 無新增。既有 Q-001 ~ Q-007 維持；Q-008 / Q-009 已決議。
+
 ## [Phase 1 / 0.3.0] - 2026-06-13 — 完成 First Playable 最小戰鬥閉環
 
 - 執行者：Codex
@@ -70,6 +95,28 @@
 
 ### 未解問題
 - 見 Q-007。既有 Q-001 ~ Q-006 維持。
+
+## [Phase 1.5 / 0.3.0] - 2026-06-13 — Architecture Review 與重構任務卡
+
+- 執行者：Claude（Game Director + Technical Reviewer 角色）
+- 任務卡：N/A（審查 + 規劃，非實作）
+
+### Added
+- `Codex/01b_REFACTOR.md`：Phase 1.5 行為等價重構任務卡（Effect Resolver、RoundContext、統一 FSM 入口、場景分離、清殘渣）。
+
+### Changed
+- `ROADMAP.md`：標記 Phase 1 完成（人類實機驗證），插入 Phase 1.5 列與章節（含 DoD）。
+- `WORK_PLAN.md`：當前計畫切到 Phase 1.5，Phase 1 計畫移為歷史。
+
+### Docs
+- 產出 Architecture Review Report（完成度、架構風險評等、技術債、AI Workflow 評估、下一步建議、人類待決事項）。
+
+### 未解問題
+- 沿用 Q-001~Q-007。
+- 新增並已由人類決議：Q-008（場景策略 → 改為 Battle.tscn 實際節點）、Q-009（project.godot 3D 設定 → Phase 1.5 暫不動）。`01b_REFACTOR.md` 已收斂為定案。
+
+### 備註
+- 本圈未撰寫 / 修改任何 GDScript 或場景，僅文件層異動。
 
 ## [Phase 0 / 0.2.0] - 2026-06-13 — 升級為 AI Loop Driven Project
 
