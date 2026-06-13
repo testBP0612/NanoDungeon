@@ -67,6 +67,43 @@
 ### 未解問題
 - 無新增。沿用 Q-001 / Q-002 / Q-003 暫行假設；Q-004 / Q-005 仍待 Phase 4 前決策。
 
+## [Phase 2 / 0.4.1] - 2026-06-13 — Phase 2 通過人類驗收 + Review 決策落地
+
+- 執行者：Claude（Technical Reviewer 角色）+ 人類（驗收與決策）
+- 任務卡：`Codex/02_PINBALL_FEEL.md`（已完成驗收）
+
+### Changed
+- 人類於 Godot 實機驗證 Phase 2 Pinball Feel，確認手感 / 回饋良好，通過。
+- `ROADMAP.md`：Phase 2 標記完成；Phase 3 補上「Phase 2 Review 併入前置」說明。
+- `Codex/03_ENEMY_SYSTEM.md`：新增「Phase 2 Review 併入前置（必做）」段與對應驗收項（BattleFX 抽離、feel 資料化、peg cooldown、移除測試球序列副作用）。
+
+### Docs
+- `Docs/02_GAME_DESIGN.md`：Peg 規則新增「再命中冷卻」與「不實作釘子耗損」；Ball 規則補充 Blast 可疊加、Shield 不疊加。
+- `Docs/03_SYSTEM_SPEC.md`：模組邊界新增 Presentation / BattleFX；注意事項新增 feel 數值資料化與表現層分離。
+- `Docs/04_BALANCE_RULES.md`：新增「釘子再命中冷卻 / feel 設定」小節（cooldown 預設 0.2s、feel 數值放 `Data/feel.json`）。
+
+### 未解問題
+- 新增並已由人類決議：Q-010（釘子重複命中 → re-hit cooldown 0.2s）、Q-011（feel 數值資料化 → 新增 `Data/feel.json`）、Q-012（多顆 Blast 可疊加）。
+- 既有 Q-001~Q-007 維持；Q-008/Q-009 已決議。
+
+### 備註
+- 本圈為審查 + 文件落地，未撰寫 / 修改任何 GDScript 或場景。Q-010/Q-011 的實作併入 Phase 3。
+
+## [Phase 2 / 0.4.0] - 2026-06-13 — 完成 Phase 2 Pinball Feel 第一版
+
+- 執行者：Codex
+- 任務卡：`Codex/02_PINBALL_FEEL.md`
+
+### Added
+- 4 種 Peg 與 3 種 Ball 效果經 `EffectResolver` 全數生效；命中粒子、球拖尾、Peg 閃光、screen shake、浮動傷害數字、結算總傷顯示、可關閉 placeholder SFX。
+- `Battle.tscn` 新增 `BattleCamera`、`SfxToggleButton`。
+
+### Data
+- `Data/player.json` 新增 `phase2_test_ball_sequence` 與 `sfx_enabled`（測試用，Phase 3 將移除其對正式戰鬥的影響）。
+
+### 備註
+- 未改 Peg / Ball / Enemy 種類數量，未實作連鎖釘 / 連射球 / 升級 / Phase 3+ 流程。
+
 ## [Phase 1.5 / 0.3.2] - 2026-06-13 — Phase 1.5 通過人類實機驗收
 
 - 執行者：人類（驗收）

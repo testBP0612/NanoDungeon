@@ -137,3 +137,41 @@
 - 決議日期：2026-06-13
 - 影響範圍：project.godot
 - 狀態：✅ 已決議
+
+### Q-010：釘子可被同一顆球重複命中刷分
+- 提出者：Claude（Phase 2 Review）
+- 日期：2026-06-13
+- 背景：球在同一釘上連續彈跳會多次觸發 `body_entered`，使 normal / burst / heal 傷害與回血可被「卡釘」farming（倍傷已被 `max_triggers_per_round` 保護）。此為 Phase 1 即存在、Phase 2 因 4 釘上線而更明顯的設計問題。
+- 選項：
+  - A. 每顆球對同一釘加入「再命中冷卻」（re-hit cooldown，資料驅動），冷卻內的重複接觸不計分，但不同球或冷卻後的命中仍計分。
+  - B. 釘子命中數次後熄滅 / 消失（pinball-roguelite 常見）。
+  - C. 不處理，維持可 farming。
+- 結論（人類決議）：**採 A**。加入 per-peg re-hit cooldown，預設 `0.2` 秒，數值放入 feel 設定（見 Q-011）。選項 B 的「釘子耗損 / 消失」屬玩法擴張，列為 MVP 外，暫不實作。
+- 決議日期：2026-06-13
+- 影響範圍：Scripts/Ball.gd 或 Peg.gd、Data（feel 設定）、Docs/02_GAME_DESIGN.md、Docs/04_BALANCE_RULES.md、Codex/03_ENEMY_SYSTEM.md
+- 狀態：✅ 已決議
+
+### Q-011：feel / 表現層數值是否資料化
+- 提出者：Claude（Phase 2 Review）
+- 日期：2026-06-13
+- 背景：Phase 2 的手感常數（screen shake 強度 / 時長、粒子數量 / 壽命、拖尾參數、浮動文字時長、SFX 頻率、peg re-hit cooldown）目前 hardcode 在 `.gd`。這與專案「資料驅動 / 不改程式調數值」原則相違，也不利於由人類 / AI 快速調手感。
+- 選項：
+  - A. 新增 `Data/feel.json` 集中所有表現層 / 手感數值，程式只讀。
+  - B. 併入既有 `Data/player.json` 的新區段。
+  - C. 維持 hardcode。
+- 結論（人類決議）：**採 A**。新增 `Data/feel.json`，語意清楚、與玩法數值分離；程式改為讀取。實作併入 Phase 3（見任務卡前置段）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/feel.json、Scripts/Battle.gd（及表現層 helper）、Docs/03_SYSTEM_SPEC.md、Docs/04_BALANCE_RULES.md、Codex/03_ENEMY_SYSTEM.md
+- 狀態：✅ 已決議
+
+### Q-012：多顆 Blast Ball 的落底加成是否疊加（延伸 Q-002）
+- 提出者：Claude（Phase 2 Review）
+- 日期：2026-06-13
+- 背景：Q-002 原文為「額外加成一次本回合最高單次傷害」。現行實作 `pending_drop_bonus_multiplier += effect_value`，每多一顆 Blast 球就多加一次。Phase 2 測試每回合僅 1 顆，無影響；Phase 4 正式解鎖後需明確規則。
+- 選項：
+  - A. 每顆 Blast 球各加成一次（可疊加，現行行為）。
+  - B. 不論幾顆，整回合僅加成一次（嚴格照 Q-002 字面）。
+- 結論（人類決議）：**採 A**。每顆 Blast 球各加成一次，視為 build 投資的合理回報；Phase 4 的解鎖 / 球池上限本就會限制 Blast 球數量，數值不致爆炸。Q-002 維持選項 A（含倍傷後數值），本題補充「可隨球數疊加」。
+- 決議日期：2026-06-13
+- 影響範圍：Docs/02_GAME_DESIGN.md、Codex/04_ROGUELITE_BUILD.md
+- 狀態：✅ 已決議

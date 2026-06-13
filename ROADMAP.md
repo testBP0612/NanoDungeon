@@ -7,8 +7,8 @@
 | 0 | 文件與資料結構 | （本批文件） | ✅ 完成 |
 | 1 | First Playable | `Codex/01_FIRST_PLAYABLE.md` | ✅ 完成（人類實機驗證） |
 | 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ✅ 完成（人類實機驗證行為等價） |
-| 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ⬜ 待開始 |
-| 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ⬜ 待開始 |
+| 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ✅ 完成（人類實機驗證） |
+| 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ⬜ 待開始（含 Phase 2 Review 併入前置） |
 | 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始 |
 | 5 | Polish & Demo | （統合，無新任務卡） | ⬜ 待開始 |
 
@@ -84,6 +84,8 @@
 ## Phase 3 — Enemy System
 
 **目標**：完整回合制戰鬥與 5 場敵人流程。
+
+> **併入前置（來自 Phase 2 Review，已決議）**：抽出 Presentation / BattleFX 模組、新增 `Data/feel.json` 將手感常數資料化（Q-011）、實作 Peg re-hit cooldown（Q-010）、移除 `phase2_test_ball_sequence` 對正式戰鬥的影響。詳見 `Codex/03_ENEMY_SYSTEM.md`。
 
 工作項：
 - 從 `enemies.json` 讀取 5 場敵人。

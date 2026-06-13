@@ -103,6 +103,7 @@ RoundContext:
 | Pinball / Physics | 球、釘、碰撞、落底 | 不決定勝敗、不切場景 |
 | Effect Resolver | 依 effect_type 套用 Peg/Ball 效果 | 不畫 UI |
 | UI / Screens | 顯示 HP / 傷害 / 升級 / 結算 | 不算傷害邏輯 |
+| Presentation / BattleFX | 命中粒子、拖尾、screen shake、浮動傷害數字、SFX | 不算傷害 / 不推進 FSM；只被呼叫播放回饋 |
 
 原則：**物理層只回報事件（命中了哪個 peg、球落底了），傷害與規則由 Effect Resolver / BattleState 決定。** 避免把規則寫死在物理節點裡。
 
@@ -116,3 +117,5 @@ RoundContext:
 - **可重入**：戰鬥結束能乾淨重來（重玩 Demo 不殘留狀態）。
 - **遇到規格沒寫的選擇**：寫進 `OPEN_QUESTIONS.md`，採暫行假設時明確標記。
 - **既有 `project.godot`**：目前含 3D 物理引擎設定；本遊戲為 2D，如需調整專案設定請先記錄於 `OPEN_QUESTIONS.md`，不要無聲更動。
+- **feel / 表現層數值資料化**（Q-011）：screen shake、粒子、拖尾、浮動文字、SFX、peg re-hit cooldown 等手感常數一律放 `Data/feel.json`，程式只讀，不寫死於 `.gd`。讓人類 / AI 不改程式即可調手感。
+- **表現層應與邏輯分離**：隨著 `Battle.gd` 成長，命中粒子 / shake / 跳字 / SFX 等回饋應抽成獨立的 Presentation / BattleFX 模組（見模組邊界表），由 `Battle.gd` 呼叫，避免重蹈 god object。
