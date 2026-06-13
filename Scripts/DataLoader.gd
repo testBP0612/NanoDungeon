@@ -166,6 +166,9 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		"ball_gravity_scale",
 		"ball_bounce",
 		"ball_friction",
+		"peg_bounce_boost",
+		"max_ball_speed",
+		"execute",
 	]
 
 	if typeof(config) != TYPE_DICTIONARY:
@@ -181,6 +184,15 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		push_error("Player launch_speed_max must be >= launch_speed_min")
 	if float(config.get("charge_cycle_seconds", 0.0)) <= 0.0:
 		push_error("Player charge_cycle_seconds must be > 0")
+	if float(config.get("peg_bounce_boost", 0.0)) <= 0.0:
+		push_error("Player peg_bounce_boost must be > 0")
+	if float(config.get("max_ball_speed", 0.0)) <= 0.0:
+		push_error("Player max_ball_speed must be > 0")
+	var execute: Dictionary = config.get("execute", {})
+	if typeof(execute) != TYPE_DICTIONARY:
+		push_error("Player execute config must be a dictionary")
+	if float(execute.get("margin", 0.0)) < 0.0:
+		push_error("Player execute.margin must be >= 0")
 
 	return (config as Dictionary).duplicate(true)
 
@@ -205,6 +217,8 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		"reroll_flash",
 		"upgrade_card",
 		"settlement",
+		"overkill_cutin",
+		"player_attack",
 		"sfx",
 		"hp_tween_duration",
 	]
@@ -221,6 +235,20 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		push_error("feel.aim_preview.point_count must be >= 2")
 	if float(aim_preview.get("time_step", 0.0)) <= 0.0:
 		push_error("feel.aim_preview.time_step must be > 0")
+	var overkill_cutin: Dictionary = config.get("overkill_cutin", {})
+	if float(overkill_cutin.get("flash_seconds", 0.0)) <= 0.0:
+		push_error("feel.overkill_cutin.flash_seconds must be > 0")
+	if float(overkill_cutin.get("cut_in_seconds", 0.0)) <= 0.0:
+		push_error("feel.overkill_cutin.cut_in_seconds must be > 0")
+	var player_attack: Dictionary = config.get("player_attack", {})
+	if float(player_attack.get("gather_seconds", 0.0)) < 0.0:
+		push_error("feel.player_attack.gather_seconds must be >= 0")
+	if float(player_attack.get("travel_seconds", 0.0)) <= 0.0:
+		push_error("feel.player_attack.travel_seconds must be > 0")
+	if float(player_attack.get("damage_scale_reference", 0.0)) <= 0.0:
+		push_error("feel.player_attack.damage_scale_reference must be > 0")
+	if float(player_attack.get("max_width", 0.0)) < float(player_attack.get("base_width", 0.0)):
+		push_error("feel.player_attack.max_width must be >= base_width")
 
 	return config.duplicate(true)
 

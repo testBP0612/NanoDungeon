@@ -15,6 +15,12 @@
     "ball_radius": 10.0,
     "ball_gravity_scale": 1.0,
     "ball_bounce": 0.9,
-    "ball_friction": 0.0
+    "ball_friction": 0.0,
+    "peg_bounce_boost": 1.15,
+    "max_ball_speed": 1600.0,
+    "execute": {
+      "enabled": true,
+      "margin": 0
+    }
   }
 }

@@ -14,6 +14,8 @@ var _overload_flash: ColorRect
 var _overload_wash: ColorRect
 var _overload_scanlines: Control
 var _overload_cut_in: Label
+var _overkill_flash: ColorRect
+var _overkill_cut_in: Label
 var _low_hp_edges: Array[ColorRect] = []
 var _low_hp_phase := 0.0
 var _overload_phase := 0.0
@@ -300,6 +302,111 @@ func animate_settlement(damage_label: Label, hp_bar: ProgressBar, total_damage: 
 	await tween.finished
 
 
+func show_overkill_cutin() -> void:
+	var config := _overkill_cutin_config()
+	if not bool(config.get("enabled", true)):
+		return
+	_ensure_overlay_nodes()
+	var flash_color := Color(String(config.get("flash_color", "#FFE85C")))
+	flash_color.a = float(config.get("flash_alpha", 0.82))
+	_flash_overlay(_overkill_flash, flash_color, float(config.get("flash_seconds", 0.42)))
+	spawn_particles(
+		Vector2(512, 512),
+		Color(String(config.get("flash_color", "#FFE85C"))),
+		int(config.get("particle_amount", 46)),
+		float(config.get("particle_lifetime", 0.38))
+	)
+	if _overkill_cut_in != null:
+		_overkill_cut_in.text = String(config.get("text", "OVERKILL / 強制清除"))
+		_overkill_cut_in.add_theme_font_size_override("font_size", int(config.get("font_size", 68)))
+		_overkill_cut_in.modulate = Color(1.0, 0.92, 0.34, 0.0)
+		_overkill_cut_in.scale = Vector2.ONE * float(config.get("start_scale", 0.72))
+		var tween := create_tween()
+		tween.parallel().tween_property(_overkill_cut_in, "modulate:a", 1.0, 0.08)
+		tween.parallel().tween_property(_overkill_cut_in, "scale", Vector2.ONE * float(config.get("peak_scale", 1.1)), 0.14)
+		tween.tween_interval(float(config.get("cut_in_seconds", 0.68)) * 0.5)
+		tween.parallel().tween_property(_overkill_cut_in, "modulate:a", 0.0, 0.18)
+		tween.parallel().tween_property(_overkill_cut_in, "scale", Vector2.ONE * float(config.get("end_scale", 1.22)), 0.18)
+	start_screen_shake(float(config.get("shake_strength", 14.0)), float(config.get("shake_duration", 0.32)))
+	_punch_camera_zoom(float(config.get("camera_zoom_punch", 0.07)), float(config.get("flash_seconds", 0.42)))
+	play_sfx("settle", 0.78)
+	await get_tree().create_timer(float(config.get("cut_in_seconds", 0.68))).timeout
+
+
+func play_player_attack(from_position: Vector2, to_position: Vector2, damage: int, enemy_max_hp: int, overload_active: bool) -> void:
+	var config := _player_attack_config()
+	if not bool(config.get("enabled", true)) or damage <= 0:
+		return
+	var scale_reference: float = max(1.0, min(float(config.get("damage_scale_reference", 120.0)), float(max(enemy_max_hp, 1))))
+	var intensity: float = clamp(float(damage) / scale_reference, 0.0, 1.0)
+	var attack_color := Color(String(config.get("overload_color", "#FFC83D"))) if overload_active else Color(String(config.get("normal_color", "#00E5FF")))
+	var core_color := Color(String(config.get("core_color", "#FFFFFF")))
+	var beam_width: float = lerp(float(config.get("base_width", 5.0)), float(config.get("max_width", 18.0)), intensity)
+	var projectile_radius := float(config.get("projectile_radius", 7.0))
+	var projectile := Polygon2D.new()
+	projectile.polygon = _circle_points(projectile_radius, 18)
+	projectile.color = attack_color
+	projectile.position = from_position
+	projectile.scale = Vector2.ONE
+	projectile.z_index = 22
+	add_child(projectile)
+	spawn_particles(
+		from_position,
+		attack_color,
+		int(round(float(config.get("gather_particle_amount", 18)) * (1.0 + intensity))),
+		float(config.get("particle_lifetime", 0.26))
+	)
+	var gather_seconds := float(config.get("gather_seconds", 0.16))
+	if gather_seconds > 0.0:
+		await get_tree().create_timer(gather_seconds).timeout
+
+	var beam := Line2D.new()
+	beam.width = beam_width
+	beam.default_color = attack_color
+	beam.points = PackedVector2Array([from_position, from_position])
+	beam.z_index = 20
+	add_child(beam)
+	var core := Line2D.new()
+	core.width = max(1.0, beam_width * 0.36)
+	core.default_color = core_color
+	core.points = PackedVector2Array([from_position, from_position])
+	core.z_index = 21
+	add_child(core)
+
+	var travel_seconds := float(config.get("travel_seconds", 0.18))
+	var tween := create_tween()
+	var update_beam := func(value: float) -> void:
+		var current := from_position.lerp(to_position, value)
+		beam.points = PackedVector2Array([from_position, current])
+		core.points = PackedVector2Array([from_position, current])
+	tween.tween_method(update_beam, 0.0, 1.0, travel_seconds)
+	tween.parallel().tween_property(projectile, "position", to_position, travel_seconds)
+	tween.parallel().tween_property(projectile, "scale", Vector2.ONE * lerp(1.0, float(config.get("projectile_max_scale", 2.4)), intensity), travel_seconds)
+	await tween.finished
+
+	spawn_particles(
+		to_position,
+		attack_color,
+		int(round(float(config.get("impact_particle_amount", 26)) * (1.0 + intensity))),
+		float(config.get("particle_lifetime", 0.26))
+	)
+	var min_pitch := float(config.get("sfx_pitch_min", 0.92))
+	var max_pitch := float(config.get("sfx_pitch_max", 1.35))
+	play_sfx("hit", lerp(min_pitch, max_pitch, intensity))
+	start_screen_shake(lerp(2.0, 7.0, intensity), lerp(0.08, 0.18, intensity))
+
+	var hold_seconds := float(config.get("impact_hold_seconds", 0.08))
+	if hold_seconds > 0.0:
+		await get_tree().create_timer(hold_seconds).timeout
+	var fade := create_tween()
+	fade.parallel().tween_property(beam, "modulate:a", 0.0, float(config.get("fade_seconds", 0.14)))
+	fade.parallel().tween_property(core, "modulate:a", 0.0, float(config.get("fade_seconds", 0.14)))
+	fade.parallel().tween_property(projectile, "modulate:a", 0.0, float(config.get("fade_seconds", 0.14)))
+	fade.tween_callback(beam.queue_free)
+	fade.tween_callback(core.queue_free)
+	fade.tween_callback(projectile.queue_free)
+
+
 func flash_reroll_peg(peg: Node, delay: float) -> void:
 	var config := _reroll_flash_config()
 	if peg == null or not peg.has_method("play_reroll_feedback") or not bool(config.get("enabled", true)):
@@ -465,6 +572,20 @@ func _ensure_overlay_nodes() -> void:
 		_overload_cut_in.modulate.a = 0.0
 		_overload_cut_in.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_ui_root.add_child(_overload_cut_in)
+	if _overkill_flash == null:
+		_overkill_flash = _make_full_rect("OverkillFlash", Color.TRANSPARENT)
+		_ui_root.add_child(_overkill_flash)
+	if _overkill_cut_in == null:
+		_overkill_cut_in = Label.new()
+		_overkill_cut_in.name = "OverkillCutIn"
+		_overkill_cut_in.position = Vector2(118, 384)
+		_overkill_cut_in.size = Vector2(788, 128)
+		_overkill_cut_in.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_overkill_cut_in.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_overkill_cut_in.add_theme_font_size_override("font_size", 68)
+		_overkill_cut_in.modulate.a = 0.0
+		_overkill_cut_in.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ui_root.add_child(_overkill_cut_in)
 	if _low_hp_edges.is_empty():
 		_low_hp_edges.append(_make_edge_rect("LowHpTop", Vector2(0, 0), Vector2(1024, 90)))
 		_low_hp_edges.append(_make_edge_rect("LowHpBottom", Vector2(0, 934), Vector2(1024, 90)))
@@ -509,6 +630,15 @@ func _make_scanline_overlay() -> Control:
 		root.add_child(line)
 		y += 16
 	return root
+
+
+func _circle_points(radius: float, point_count: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var safe_count: int = max(6, point_count)
+	for index in range(safe_count):
+		var angle := TAU * float(index) / float(safe_count)
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
 
 
 func _flash_overlay(rect: ColorRect, color: Color, duration: float) -> void:
@@ -596,6 +726,14 @@ func _drain_config() -> Dictionary:
 
 func _settlement_config() -> Dictionary:
 	return feel_config.get("settlement", {})
+
+
+func _overkill_cutin_config() -> Dictionary:
+	return feel_config.get("overkill_cutin", {})
+
+
+func _player_attack_config() -> Dictionary:
+	return feel_config.get("player_attack", {})
 
 
 func _reroll_flash_config() -> Dictionary:

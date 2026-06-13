@@ -31,6 +31,7 @@ var _last_charge_sfx_step := -1
 var _settlement_animating := false
 var _overload_triggered_this_round := false
 var _overload_active_this_round := false
+var _execute_in_progress := false
 var launch_direction_locked := false
 var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
@@ -85,6 +86,8 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _execute_in_progress:
+		return
 	if state != BattleState.AIMING:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -137,6 +140,12 @@ func _update_enemy_display() -> void:
 			enemy_portrait.color = Color(1.0, 0.18, 0.58, 0.45)
 
 
+func _enemy_hit_position() -> Vector2:
+	if enemy_portrait == null:
+		return Vector2(512, 600)
+	return enemy_portrait.get_global_rect().get_center()
+
+
 func _spawn_pegs() -> void:
 	field_generator.configure(field_config["generator"])
 	dynamic_peg_cells = field_generator.build_dynamic_cells(field_config)
@@ -171,6 +180,8 @@ func _reroll_dynamic_pegs() -> void:
 
 
 func _transition_to(next_state: BattleState, message := "") -> void:
+	if _execute_in_progress and next_state not in [BattleState.CHECK, BattleState.REWARD, BattleState.GAME_OVER, BattleState.VICTORY]:
+		return
 	state = next_state
 	match state:
 		BattleState.ROUND_START:
@@ -194,6 +205,7 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 
 func _begin_round() -> void:
 	round_index += 1
+	_execute_in_progress = false
 	_overload_triggered_this_round = false
 	if RunState.should_force_overload(overload_config):
 		_trigger_overload(true)
@@ -208,6 +220,8 @@ func _begin_round() -> void:
 
 
 func _handle_launch_input() -> void:
+	if _execute_in_progress:
+		return
 	if not is_charging_launch:
 		is_charging_launch = true
 		launch_direction_locked = true
@@ -220,6 +234,8 @@ func _handle_launch_input() -> void:
 
 
 func _fire_ball() -> void:
+	if _execute_in_progress:
+		return
 	if round_context.balls_remaining <= 0:
 		return
 
@@ -328,6 +344,8 @@ func _aim_preview_speed() -> float:
 
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int) -> void:
+	if _execute_in_progress:
+		return
 	var peg_def := RunState.get_modified_peg_def(DataLoader.get_peg(peg_id))
 	var damage_multiplier := _overload_damage_multiplier()
 	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context, damage_multiplier)
@@ -352,6 +370,7 @@ func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, c
 	var overload_pitch_bonus := float(overload_config.get("sfx", {}).get("active_hit_pitch_bonus", 0.0)) if RunState.is_overload_active() else 0.0
 	battle_fx.play_sfx("hit", 1.0 + overload_pitch_bonus + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06)))
 	_update_ui()
+	_try_trigger_execute()
 
 
 func _on_ball_wall_hit(_hit_position: Vector2) -> void:
@@ -363,6 +382,8 @@ func _on_ball_recovered(ball: RigidBody2D, reason: String) -> void:
 	if ball != null and ball.has_method("get_combo_hits"):
 		hit_count = int(ball.get_combo_hits())
 	round_context.balls_in_play = max(0, round_context.balls_in_play - 1)
+	if _execute_in_progress:
+		return
 	status_label.text = "球已回收：%s" % reason
 	var drain_config: Dictionary = feel_config.get("drain", {})
 	if hit_count <= int(drain_config.get("miss_hit_threshold", 1)):
@@ -382,6 +403,8 @@ func _on_bottom_sensor_body_entered(body: Node) -> void:
 
 
 func _settle_round() -> void:
+	if _execute_in_progress:
+		return
 	await _wait_pacing("settle_pre_delay")
 	var settlement: Dictionary = effect_resolver.apply_settlement_effects(round_context)
 	var bonus_damage := int(settlement.get("bonus_damage", 0))
@@ -399,6 +422,7 @@ func _settle_round() -> void:
 	if heal_amount > 0:
 		status_label.text += "，回復 %s HP" % heal_amount
 	_settlement_animating = true
+	await battle_fx.play_player_attack(launcher_position, _enemy_hit_position(), round_context.damage_accumulator, enemy_max_hp, RunState.is_overload_active())
 	await battle_fx.animate_settlement(damage_label, enemy_hp_bar, round_context.damage_accumulator, previous_enemy_hp, next_enemy_hp)
 	_settlement_animating = false
 	enemy_hp = next_enemy_hp
@@ -408,6 +432,52 @@ func _settle_round() -> void:
 	battle_fx.play_sfx("settle")
 	await _wait_pacing("settle_post_delay")
 	_finish_overload_round()
+	await _transition_to(BattleState.CHECK)
+
+
+func _try_trigger_execute() -> void:
+	if _execute_in_progress or enemy_hp <= 0:
+		return
+	var execute_config: Dictionary = player_config.get("execute", {})
+	if not bool(execute_config.get("enabled", true)):
+		return
+	var margin := int(execute_config.get("margin", 0))
+	if round_context.damage_accumulator < enemy_hp + margin:
+		return
+	call_deferred("_begin_execute_clear")
+
+
+func _begin_execute_clear() -> void:
+	if _execute_in_progress:
+		return
+	_execute_in_progress = true
+	state = BattleState.SETTLE
+	_reset_charge()
+	round_context.balls_remaining = 0
+	status_label.text = "強制清除序列啟動"
+	for child in ball_container.get_children():
+		if child != null and child.has_method("recover"):
+			child.recover("execute")
+	round_context.balls_in_play = 0
+	if round_context.pending_heal > 0:
+		RunState.heal_player(round_context.pending_heal)
+	if not _overload_triggered_this_round:
+		RunState.record_overload_miss_round(overload_config)
+	round_context.mark_settled()
+	var previous_enemy_hp := enemy_hp
+	var resolved_damage: int = max(int(round_context.damage_accumulator), previous_enemy_hp)
+	await battle_fx.show_overkill_cutin()
+	await battle_fx.play_player_attack(launcher_position, _enemy_hit_position(), resolved_damage, enemy_max_hp, RunState.is_overload_active())
+	_settlement_animating = true
+	await battle_fx.animate_settlement(damage_label, enemy_hp_bar, resolved_damage, previous_enemy_hp, 0)
+	_settlement_animating = false
+	enemy_hp = 0
+	_last_enemy_hp = enemy_hp
+	battle_fx.show_floating_text("OVERKILL %s" % resolved_damage, Vector2(512, 610), Color(1.0, 0.92, 0.34))
+	await battle_fx.flash_enemy_hit(enemy_portrait)
+	battle_fx.play_sfx("settle", 1.12)
+	_finish_overload_round()
+	_execute_in_progress = false
 	await _transition_to(BattleState.CHECK)
 
 
