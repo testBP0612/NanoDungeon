@@ -39,37 +39,37 @@
 ## 當前工作計畫
 
 # Current State
-- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底、Phase 9 Game Feel 皆已落地。
-- 目前已有 `Data/feel.json`、`Scripts/BattleFX.gd`、每回合重抽與資料化場地，可作為 Phase 10 過載模式接點。
-- Q-022 已決議：過載槽累積、天井保底、限定回合、過載中權重與傷害倍率、純程序化演出，全參數放 `Data/overload.json`。
+- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底、Phase 9 Game Feel、Phase 10 Overclock 皆已落地。
+- 目前已有 `Data/feel.json`、`Scripts/BattleFX.gd`、settlement count-up、Overclock 倍率與底排 bumper，可作為 Phase 11 三項手感增量接點。
+- Q-023 / Q-024 / Q-025 已決議：回合內累積傷害達標即斬殺、結算 / 斬殺時播放玩家攻擊演繹、一般釘彈跳 boost 並資料化。
 
 # Current Phase
-- **Phase 10 — OVERLOAD MODE（過載模式：張力鋪陳 → 爆發）**。
+- **Phase 11 — PLAYER ATTACK & BOUNCE（斬殺、玩家攻擊演繹、彈跳手感）**。
 
 # Recommended Task
-- 執行 `Codex/10_OVERLOAD_MODE.md`。
-- 新增 `Data/overload.json`，集中過載槽、命中累積、trigger、pity、持續回合、權重倍率、傷害倍率與演出參數。
-- 擴充 `RunState` / `Battle` / `FieldGenerator` / `EffectResolver` / `BattleFX` / `Battle.tscn`，接入過載狀態、UI、重抽權重覆寫與程序化演出。
+- 執行 `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`。
+- 新增 `Data/player.json` 的 `execute`、`peg_bounce_boost`、共用 `max_ball_speed`，以及 `Data/feel.json` 的 `overkill_cutin` / `player_attack`。
+- 擴充 `Battle.gd`、`BattleFX.gd`、`Ball.gd`、`DataLoader.gd`，接入提前斬殺、玩家攻擊演出與一般釘彈跳 boost。
 
 # Why
-- ROADMAP 將 Phase 10 排在 Phase 9 之後，目標是補上可展示的張力鋪陳與爆發節奏。
-- Q-022 已決議且無阻斷問題，任務卡明確要求全資料化、限定回合、可關閉與賽博化用詞。
-- 既有 BattleFX 與每回合重抽架構已能小步接入，不需重寫核心戰鬥流程。
+- ROADMAP 已將 Phase 11 排在 Phase 10 之後，目標是縮短達標後的等待時間，補足玩家輸出視覺重量，並強化一般釘反彈手感。
+- Q-023 / Q-024 / Q-025 已決議且無阻斷問題，任務卡明確要求全資料化、純程序化、不新增種類、不改傷害公式。
+- 既有 BattleFX、count-up、Overclock 與 bumper 架構已能小步接入，不需重寫核心戰鬥流程。
 
 # Risks
-- 過載觸發若接在 FSM 錯誤位置，可能導致天井或持續回合計數錯位；需明確在 ROUND_START / SETTLE 更新。
-- 傷害倍率必須是清楚的全域狀態乘數，不改 base 傷害與既有公式結構。
-- shader / overlay / shake 需以穩定為先，可用 ColorRect、Tween、粒子、Camera punch 降級完成。
-- 用詞需避開任務卡禁用術語，包含畫面文字、變數名與註解。
+- 斬殺若與球回收 signal / SETTLE 同時觸發，可能造成重複結算；需加明確 execution guard。
+- 玩家攻擊演出需與 settlement count-up 對齊，避免卡住 FSM 或讓敵人受擊回饋重複太多。
+- 一般釘 boost 改變物理速度，必須夾 `max_ball_speed` 並保留底排 bumper 獨立倍率。
+- 用詞需避開任務卡禁用術語，畫面文字維持賽博化。
 
 # Dependencies
-- Q-022 已決議，無阻斷性未決問題。
+- Q-023 / Q-024 / Q-025 已決議，無阻斷性未決問題。
 
 # Estimated Scope
-- 大。會新增 `Data/overload.json`，修改 `Scripts/DataLoader.gd`、`Scripts/RunState.gd`、`Scripts/Battle.gd`、`Scripts/FieldGenerator.gd`、`Scripts/EffectResolver.gd`、`Scripts/BattleFX.gd`、`Scenes/Battle.tscn`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 中。會修改 `Data/player.json`、`Data/feel.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/BattleFX.gd`、`Scripts/Ball.gd`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/10_OVERLOAD_MODE.md` DoD：命中累積、double 加最多、70% / 90% / 觸發演出、3 回合天井、過載期間 burst/double 變多與傷害倍率、指定回合退場、全參數資料化、可關閉、程序化效果與賽博用詞。
+- 對照 `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md` DoD：達標立即斬殺、場上球清除、OVERKILL cut-in、玩家攻擊匯聚→射出→命中、強度隨傷害、一般釘 boost、底排 bumper 不疊加、全參數資料化、可關閉。
 - 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：Demo 展示穩定性與禁止偏離項目。
 
 ---

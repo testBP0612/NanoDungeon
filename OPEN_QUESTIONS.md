@@ -248,3 +248,76 @@
 - 決議日期：2026-06-13
 - 影響範圍：Data/field.json（guaranteed_double_peg_count）、Data/upgrades.json、Scripts/FieldGenerator.gd、Scripts/RunState.gd、Scripts/UpgradeResolver.gd、Scripts/DataLoader.gd、Codex/08_LAUNCH_AND_TUNING.md
 - 狀態：✅ 已決議
+
+### Q-021：Game Feel 打磨範圍（轉場 / 回合節奏 / 反饋）
+- 提出者：Claude（Phase 9 規劃）
+- 日期：2026-06-13
+- 背景：可玩 MVP 已成形，但轉場生硬、回合節奏無間隔、敵人攻擊與多種反饋未打磨。需在純色 placeholder 上先把 game feel 收齊（美術留待之後）。
+- 結論（人類決議）：納入以下打磨（時間 / 參數一律進 `feel.json`，**純表現、不改任何玩法數值**）：
+  - 轉場柔化（場景間淡入淡出）、回合 beats（結算→敵攻→下一回合的有反饋停頓）、敵人攻擊三拍（預兆/衝擊/收手）、受擊反饋（敵人閃白/抖動、HP 條順移）、結算總傷 count-up、回合提示橫幅。
+  - **A** 連擊/彈跳升階反饋（**純表現、不改傷害**）；**B** Boss 必殺預兆 telegraph；**C** 低血警示（邊緣紅脈動）；**D** 失球/漏球反饋；**E** 集氣音高漸強 + 發射後座力；**F** 升級卡 hover/選定 juice。
+  - **G** 釘盤每回合「重組」**輕量閃光** beat：此即 Phase 7 當時緩做的「漸變/類型切換特效」，現決議以**輕量閃光版**納入（不做複雜漸變，點到為止、不影響穩定）。
+- 決議日期：2026-06-13
+- 影響範圍：Data/feel.json、Scenes/*（轉場 / UI）、Scripts/Battle.gd / BattleFX.gd / UpgradeScreen.gd、Codex/09_GAME_FEEL.md
+- 狀態：✅ 已決議
+
+### Q-022：過載模式 Overclock（張力鋪陳 → 爆發）
+- 提出者：Claude（Phase 10 規劃）
+- 日期：2026-06-13
+- 背景：人類希望加入「鋪陳張力→大爆發」的爽感（借柏青哥情緒結構），但以賽博語言表達、避免技術不穩與行家信譽風險；明確不做拉霸。
+- 結論（人類決議）：
+  - 新增「**過載槽（Overclock gauge）**」UI：命中釘累積能量（double 加更多），滿值或天井觸發「過載模式」。
+  - **天井保底**：DEMO 預設 **3 回合**未觸發即強制觸發；參數化可手調。
+  - 過載模式持續 N 回合：每回合重抽權重倒向 burst/double + 全域傷害倍率，畫面爆發演出。
+  - **張力分階段**（升壓 70% → 臨界 90% → 觸發）依現有 feel 層 + 重組洗牌漸強鋪陳。
+  - **爽度以 Godot 內建程序化效果演繹**（shader/粒子/glow/tween/SFX/camera），**不依賴外部美術素材**，確保 Codex 做得出、穩定且 export 安全。
+  - 全參數放 `Data/overload.json`，可手調。
+  - **用詞一律賽博化**（過載 / Overclock / 系統崩潰），不出現任何柏青術語。
+- 決議日期：2026-06-13
+- 影響範圍：Data/overload.json、Scenes/Battle.tscn（gauge UI / overlay）、Scripts/Battle.gd / BattleFX.gd / FieldGenerator.gd / EffectResolver.gd / RunState.gd / DataLoader.gd、Codex/10_OVERLOAD_MODE.md
+- 狀態：✅ 已決議
+
+### Q-023：回合內累積傷害達標即斬殺（OVERKILL）
+- 提出者：Claude（Phase 11 規劃）
+- 日期：2026-06-13
+- 背景：人類希望回合內若累積傷害已超過怪物血量，可直接斬殺、不必等所有球落底，增加爽度與節奏。
+- 結論（人類決議）：
+  - 回合進行中，命中累積傷害（含當前過載倍率）**≥ 敵人當前 HP** 時，**立即觸發強制清除**：停止發射 / 回收場上球 → 敵人死亡 → 進獎勵 / 勝利。
+  - 賽博爆閃 cut-in（「OVERKILL / 強制清除」），純程序化。
+  - 可開關、門檻判定參數化。用詞賽博化，不用柏青術語。
+- 決議日期：2026-06-13
+- 影響範圍：Data/player.json（toggle）、Data/feel.json（cut-in FX）、Scripts/Battle.gd、Codex/11_PLAYER_ATTACK_AND_BOUNCE.md
+- 狀態：✅ 已決議
+
+### Q-024：玩家攻擊演繹（結算 / 斬殺時射出能量）
+- 提出者：Claude（Phase 11 規劃）
+- 日期：2026-06-13
+- 背景：敵人已有攻擊三拍，玩家造成傷害時卻無對應演繹；人類希望玩家「射出點什麼」。Godot 適合純程序化做。
+- 結論（人類決議）：結算（及斬殺）對敵人造成傷害時，播放玩家攻擊演繹——**能量匯聚 → 射出光束 / 能量彈飛向敵人 → 命中**（接既有敵人受擊 flash/shake/數字）。強度隨傷害放大。**純程序化**（`Line2D` + `GPUParticles2D` + `Tween`），不依賴外部素材。參數放 `feel.json`。
+- 決議日期：2026-06-13
+- 影響範圍：Data/feel.json、Scripts/Battle.gd / BattleFX.gd、Codex/11_PLAYER_ATTACK_AND_BOUNCE.md
+- 狀態：✅ 已決議
+
+### Q-025：釘子彈跳手感參數化（更脆更爽）
+- 提出者：Claude（Phase 11 規劃）
+- 日期：2026-06-13
+- 背景：球彈到一般釘的反彈感偏弱、不夠爽；人類問參數是否可調。
+- 結論（人類決議）：新增 `peg_bounce_boost`（一般釘命中時反彈速度小幅加乘，預設約 1.15，含速度上限、保留 CCD），並開放 `ball_bounce` 微調；底排 bumper（2.0）維持獨立不變。全部資料化，可手調。
+- 決議日期：2026-06-13
+- 影響範圍：Data/player.json 或 Data/field.json、Scripts/Ball.gd、Codex/11_PLAYER_ATTACK_AND_BOUNCE.md
+- 狀態：✅ 已決議
+
+### Q-026：美術 Pass（工具、範圍、做法）
+- 提出者：Claude（Phase 12/13 規劃）
+- 日期：2026-06-13
+- 背景：進入生圖階段，沿用 Codex 內建生圖（GPT IMAGE-2）+ `agent-sprite-forge` skill（去背 / 透明 PNG / Godot 匯出）。需確定範圍與做法。
+- 結論（人類決議）：
+  - **工具**：`agent-sprite-forge`（`$generate2dsprite` 出單張立繪）；**僅用靜態立繪 / icon，不用動畫 sprite sheet / 地圖功能**。
+  - **範圍**：敵人立繪 ×5、釘子底圖 ×1、球底圖 ×1、主選單 logo + 背景、戰鬥背景底圖、HP/過載槽/power 外框、升級 icon ×13。
+  - **釘子 / 球做法**：**單張中性發光底圖 + 程式 `modulate` 上色**（保留現有依類型上色、命中閃白、過載變金等特效；對應 data-driven 半徑縮放）。
+  - **一致性**：單一風格錨點（`05_ART_DIRECTION`），各類別以 base→reference 串生。
+  - **護欄**：**程序化 / 空白 fallback 全保留**（缺圖不崩）；背景必須**低對比低亮度**不可蓋過釘海；不破壞既有 tint/flash/overload；不生動畫 / 地圖；透明 PNG、檔名對 id、Godot import linear + 關 mipmaps。
+  - **拆卡**：核心美術 = `Codex/12_ART_CORE.md`；升級 icon ×13 = `Codex/13_ART_UPGRADE_ICONS.md`（分兩個 session 跑）。
+- 決議日期：2026-06-13
+- 影響範圍：assets/*、Scenes/*、Scripts/*（接線 + fallback）、Codex/12_ART_CORE.md、Codex/13_ART_UPGRADE_ICONS.md
+- 狀態：✅ 已決議

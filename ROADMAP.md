@@ -13,7 +13,12 @@
 | 5 | Polish & Demo | `Codex/05_POLISH_DEMO.md` | ✅ 完成（人類實機 + export 驗證） |
 | 6 | Field Layout（可玩性調整） | `Codex/06_FIELD_LAYOUT.md` | ✅ 完成（佈局資料化） |
 | 7 | Procedural Pegboard（可玩性擴充） | `Codex/07_PROCEDURAL_PEGBOARD.md` | ✅ 完成（人類實機驗證） |
-| 8 | Launch & Tuning（可玩性擴充） | `Codex/08_LAUNCH_AND_TUNING.md` | ⬜ 待開始（集氣發射 / 底排 bumper / 保底倍傷釘） |
+| 8 | Launch & Tuning（可玩性擴充） | `Codex/08_LAUNCH_AND_TUNING.md` | ✅ 完成（人類實機驗證） |
+| 9 | Game Feel（打磨） | `Codex/09_GAME_FEEL.md` | ✅ 完成（人類實機驗證） |
+| 10 | Overload Mode（可玩性擴充） | `Codex/10_OVERLOAD_MODE.md` | ✅ 完成（人類實機驗證） |
+| 11 | Player Attack & Bounce（擴充/打磨） | `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md` | ✅ 完成（人類實機驗證） |
+| 12 | Art Core（美術） | `Codex/12_ART_CORE.md` | ⬜ 待開始（敵人/釘球底圖/背景/logo/外框） |
+| 13 | Art Upgrade Icons（美術） | `Codex/13_ART_UPGRADE_ICONS.md` | ⬜ 待開始（升級 icon ×13） |
 
 ---
 
@@ -121,7 +126,7 @@
 
 **目標**：比賽現場可穩定展示的完成度。任務卡見 `Codex/05_POLISH_DEMO.md`。MVP 功能（Phase 1–4）已 100% 到齊，本階段不加新玩法。
 
-> **MVP 後增量軌道（人類主導，非比賽硬需求）**：Phase 6 佈局資料化（已完成）、Phase 7 程序生成釘盤 + 每回合重組 + `bounce_peg` + 場地 1024×1024（已完成）、Phase 8 集氣發射 + 底排 bumper + 保底倍傷釘（`Codex/08_LAUNCH_AND_TUNING.md`）。決策見 OPEN_QUESTIONS Q-014~Q-020。
+> **MVP 後增量軌道（人類主導，非比賽硬需求）**：Phase 6 佈局資料化（已完成）、Phase 7 程序生成釘盤 + 每回合重組 + `bounce_peg` + 場地 1024×1024（已完成）、Phase 8 集氣發射 + 底排 bumper + 保底倍傷釘（已完成）、Phase 9 Game Feel 打磨（已完成）、Phase 10 過載模式 Overclock（已完成）、Phase 11 斬殺 + 玩家攻擊演繹 + 彈跳手感（已完成）、Phase 12 核心美術 + Phase 13 升級 icon（美術 Pass，Codex 內建生圖 + agent-sprite-forge，全程保留 fallback）。決策見 OPEN_QUESTIONS Q-014~Q-026。
 
 工作項：
 - 美術一致性（霓虹賽博風、glow、UI）。

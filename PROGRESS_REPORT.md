@@ -33,42 +33,72 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`：命中後若本回合累積傷害達標會立即啟動 OVERKILL 強制清除，回收場上球並進既有獎勵 / 勝利判定；結算與斬殺都補上玩家側「匯聚 → 光束 / 能量核心 → 命中」演出；一般釘新增資料化彈跳 boost 並保留底排 bumper 獨立倍率。未新增 Peg / Ball / Enemy 種類，未改傷害公式結構，演出全為程序化。
+
+# Completed
+- `Data/player.json`：新增 `execute.enabled` / `execute.margin`、`peg_bounce_boost`、共用 `max_ball_speed`。
+- `Data/feel.json`：新增 `overkill_cutin` 與 `player_attack`，可調 cut-in、光束、能量核心、粒子、shake、camera punch、SFX pitch 與傷害強度縮放。
+- `Scripts/DataLoader.gd`：驗證新增 player / feel 參數，缺欄或非法值會啟動時報錯。
+- `Scripts/Ball.gd`：一般釘命中後套用 `peg_bounce_boost` 並夾速度上限；`bounce_peg` 維持原 bumper 倍率，不疊加一般 boost；CCD 保留。
+- `Scripts/Battle.gd`：新增 execute guard，達標後停止發射、清場回收、避免回收 signal / SETTLE 重複推 FSM；斬殺與正常結算都接玩家攻擊演出。
+- `Scripts/BattleFX.gd`：新增 OVERKILL cut-in、玩家攻擊光束 / 能量核心 / 命中粒子，傷害越高線寬、粒子與震動越強，Overclock 中使用金色調。
+- `WORK_PLAN.md`：更新為 Phase 11 本圈計畫。
+
+# Validation Results
+- ✅ 達標斬殺：`Battle.gd` 命中後用 `round_context.damage_accumulator >= enemy_hp + execute.margin` 判定，`execute.enabled` 可關閉。
+- ✅ 清場 / 不重複結算：斬殺時 `_execute_in_progress` 阻擋輸入、回收 signal 與 SETTLE 重入，所有場上球走 `recover("execute")` 後由單一路徑進 CHECK。
+- ✅ REWARD / VICTORY 分支：斬殺最終仍進 `_check_battle_end()`，沿用既有非 Boss 獎勵與 Boss 勝利判定。
+- ✅ 玩家攻擊演繹：正常結算與斬殺都播放匯聚粒子、Line2D 光束、程序化能量核心、命中粒子，之後接敵人受擊回饋與傷害數字。
+- ✅ 強度隨傷害放大：`player_attack.damage_scale_reference` 控制強度縮放，線寬、能量核心、粒子、shake、SFX pitch 隨傷害上升；Overclock 中改金色。
+- ✅ 一般釘 boost / bumper 分流：非 `bounce_peg` 命中套 `peg_bounce_boost = 1.15`；`bounce_peg` 只套 `bottom_row.bounce_multiplier`；兩者都夾 `max_ball_speed`。
+- ✅ 程序化效果：未新增外部圖片 / 音效素材；演出以 ColorRect、Label、Line2D、Polygon2D、CPUParticles2D、Tween、Camera 與合成 SFX 完成。
+- ✅ 資料化：斬殺開關 / 門檻、彈跳 boost、速度上限、cut-in 與玩家攻擊演出皆由 JSON 控制。
+- ✅ 用詞掃描：`Scripts/Scenes/Data` 無本卡禁用字詞。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ Godot 驗證：專案與 `Scenes/Battle.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功；新 `Data/player.json` / `Data/feel.json` 與腳本已打包，`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ⚠️ 完整可視化一整局：headless / export 通過；斬殺時機、攻擊演出強度、彈跳脆度與幀率體感仍需人類實機驗收。
+
+# Open Questions
+- 無新增。
+- Q-023 / Q-024 / Q-025 已依決議實作。
+
+# Risks
+- 斬殺會縮短已達標回合的等待時間，Demo 節奏會更快；若覺得太早收掉，可先調 `Data/player.json` 的 `execute.margin` 或關閉 `execute.enabled`。
+- 一般釘 boost 會提高球速與連續命中機率；若出現穿透、飛太快或太難控，優先調 `peg_bounce_boost` / `max_ball_speed`。
+- 玩家攻擊和 cut-in 是體感項；若太亮、太晃或太慢，優先調 `Data/feel.json` 的 `overkill_cutin` / `player_attack`。
+
+# Recommended Next Task
+- 建議人類用 `Builds/NanoDungeon.exe` 實機驗收 Phase 11：確認達標斬殺不等落底、OVERKILL cut-in 不遮擋太久、玩家攻擊演出與 count-up 節奏合拍、一般釘反彈更脆且底排 bumper 不失控。通過後可進美術 Pass，或只做 `player.json` / `feel.json` 體感微調。
+
+## 歷史報告 — Phase 10 Overclock
+
+# Summary
 完成 `Codex/10_OVERLOAD_MODE.md`：新增 Overclock gauge、命中累積、100 觸發、3 回合未觸發的強制同步、限定 2 回合過載狀態；過載中重抽權重偏向 `burst_peg` / `double_peg`，Peg 傷害套用全域倍率。爆發演出使用 ColorRect、Tween、Camera punch、scanline、粒子與合成 SFX，未依賴外部素材，也未改 base 傷害公式或新增種類。
 
 # Completed
 - `Data/overload.json`：新增全部過載參數，包含開關、充能、天井、持續、權重、倍率、gauge 顏色、演出強度與 SFX pitch。
-- `Scripts/RunState.gd`：新增 run-scoped 過載槽、未觸發回合、剩餘回合與 reset 歸零。
-- `Scripts/DataLoader.gd`：載入並驗證 `overload.json`，檢查 peg id、倍率、門檻與 tier 比例。
+- `Scripts/RunState.gd`：新增 run-scoped 過載槽、未觸發回合、剩餘過載回合與 reset 歸零。
+- `Scripts/DataLoader.gd`：載入並驗證 `overload.json`。
 - `Scripts/Battle.gd`：命中累積能量、達 100 觸發、ROUND_START 天井強制觸發、過載回合消耗、UI 更新、過載期間權重 / 傷害倍率接入。
 - `Scripts/FieldGenerator.gd`：重抽支援權重覆寫；內部格位命名改為 `cell`。
 - `Scripts/EffectResolver.gd`：Peg 傷害結算接受外部倍率，維持既有公式結構。
 - `Scripts/BattleFX.gd`：新增過載 gauge 脈動、臨界抖動、OVERCLOCK cut-in、全螢幕 flash、金色 overlay、scanline、Camera punch、強化命中粒子 / 文字與退場淡出。
 - `Scenes/Battle.tscn`：新增 `OverloadLabel` / `OverloadBar`。
-- `Data/pegs.json`：清除既有非賽博描述文字，未改數值。
 
 # Validation Results
-- ✅ 過載槽命中累積：`charge_per_hit` 由 JSON 控制，預設 normal/heal=1、burst=3、double=5、bounce=0；UI 顯示百分比。
-- ✅ 分階段演出：70% 進升壓文字 / 洋紅，90% 進「系統不穩 / UNSTABLE」與抖動，觸發時顯示 OVERCLOCK cut-in、flash、camera punch。
-- ✅ 天井強制觸發：連續 `pity_rounds = 3` 回合未觸發時，下個 ROUND_START 先啟動再重抽。
-- ✅ 過載期間效果：`burst_peg` / `double_peg` 權重乘上 JSON 倍率；傷害乘 `overload_damage_multiplier = 1.5`；持續回合結束後槽與計數歸零。
-- ✅ 程序化效果：未新增外部圖片 / 音效素材；演出以 Godot 內建節點、Tween、粒子、Camera 與即時合成 SFX 完成。
-- ✅ 資料化 / 可關閉：所有過載玩法與演出參數在 `Data/overload.json`，`enabled` 可關閉。
-- ✅ 用詞掃描：`Scripts/Scenes/Data` 無本卡禁用字詞；內部 `slot` 命名已改為 `cell`。
-- ✅ JSON 驗證：`Data/*.json` 全部可解析。
-- ✅ Godot 驗證：專案與 `Scenes/Battle.tscn` headless 載入通過。
-- ✅ Export 驗證：Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ✅ 命中累積、分階段演出、天井強制觸發、過載期間權重 / 傷害倍率與指定回合退場皆依 Q-022 實作。
+- ✅ 程序化效果、資料化 / 可關閉、用詞掃描、JSON 驗證、Godot headless 與 Windows Export 驗證皆通過。
 - ⚠️ 完整可視化一整局：headless / export 通過；過載爆發強度、scanline、shake、節奏屬體感項，仍需人類實機驗收。
 
 # Open Questions
-- 無新增。
-- Q-022 已依決議實作。
+- 無新增。Q-022 已依決議實作。
 
 # Risks
-- 過載權重與 1.5 倍傷害會明顯提高 Demo 輸出穩定度；若 Boss 過快被擊倒，建議先只調 `Data/overload.json` 的持續回合、權重或倍率。
-- 爆發演出已採穩定版程序化 overlay；若實機覺得太亮或太晃，優先調 `presentation.trigger_shake_strength`、`active_overlay_alpha`、`active_scanline_alpha`。
+- 過載權重與 1.5 倍傷害會明顯提高 Demo 輸出穩定度；若 Boss 過快被擊倒，建議先只調 `Data/overload.json`。
 
 # Recommended Next Task
-- 建議人類用匯出版實機驗收 Phase 10：確認 3 回合內必定看到爆發、過載中高價值 peg 明顯變多、傷害與演出強度符合現場展示節奏；通過後可進美術 Pass 或只做 `Data/overload.json` 微調。
+- 建議人類用匯出版實機驗收 Phase 10：確認 3 回合內必定看到爆發、過載中高價值 peg 明顯變多、傷害與演出強度符合現場展示節奏。
 
 ## 歷史報告 — Phase 9 Game Feel
 

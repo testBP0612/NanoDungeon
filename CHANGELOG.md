@@ -39,6 +39,35 @@
 
 ---
 
+## [Phase 11 / 1.7.0] - 2026-06-13 — 斬殺強制清除、玩家攻擊演繹與一般釘彈跳 boost
+
+- 執行者：Codex
+- 任務卡：`Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`
+
+### Added
+- `Battle.gd` 新增達標斬殺流程：命中後若本回合累積傷害達敵人目前 HP 加 `execute.margin`，立即停止發射、回收場上球、強制敵 HP 歸零並進既有 CHECK → REWARD / VICTORY。
+- `BattleFX.gd` 新增純程序化 OVERKILL cut-in：全螢幕 flash、大字 Tween、Camera punch、shake 與粒子。
+- `BattleFX.gd` 新增玩家攻擊演繹：匯聚粒子、Line2D 光束、程序化能量核心、命中粒子與 SFX，強度依本次傷害放大，Overclock 中改用金色調。
+
+### Changed
+- `Battle.gd` 在正常 SETTLE 與斬殺提前結算時都先播放玩家攻擊演繹，再接 settlement count-up、敵人受擊 flash / shake 與浮動文字。
+- `Ball.gd` 對一般動態釘命中套用 `peg_bounce_boost`，並以 `max_ball_speed` 夾住；底排 `bounce_peg` 仍只走自己的 bumper 倍率，不疊加一般 boost。
+- `DataLoader.gd` 驗證 Phase 11 新增的 player / feel 參數與基本範圍。
+- `WORK_PLAN.md` 更新為 Phase 11 本圈計畫。
+
+### Data
+- `Data/player.json` 新增 `execute.enabled` / `execute.margin`、`peg_bounce_boost = 1.15`、`max_ball_speed = 1600.0`。
+- `Data/feel.json` 新增 `overkill_cutin` 與 `player_attack` 區段，集中 cut-in、光束、能量核心、粒子、shake 與 SFX pitch 參數。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- `Scripts/Scenes/Data` 禁用字詞掃描通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Data/player.json` / `Data/feel.json` / 新腳本已打包，`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 無新增。Q-023 / Q-024 / Q-025 已依決議實作。
+
 ## [Phase 10 / 1.6.0] - 2026-06-13 — 過載模式 Overclock：張力槽、天井觸發與爆發回合
 
 - 執行者：Codex
@@ -188,6 +217,41 @@
 
 ### 未解問題
 - 無新增。Q-014 採本卡指定預設：單一基礎佈局套用全部場次；本卡不實作每層變化。
+
+## [Phase 12-13 規劃 / spec] - 2026-06-13 — 美術 Pass 決策 + 任務卡（核心美術 + 升級 icon）
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/12_ART_CORE.md`、`Codex/13_ART_UPGRADE_ICONS.md`（待 Codex 實作）
+
+### Changed
+- 人類實機驗證 Phase 11 通過；`ROADMAP.md` 標記 Phase 11 完成、新增 Phase 12 / 13 列。
+
+### Added
+- `Codex/12_ART_CORE.md`：核心美術（5 敵人立繪、釘/球單張中性底圖 + 程式上色、主選單 / 戰鬥背景、logo 圖徽、HP/過載/power 外框）+ 接線 + fallback，含現成 prompts 與風格錨點。
+- `Codex/13_ART_UPGRADE_ICONS.md`：13 個升級 icon（依 id）+ 卡片接線 + fallback，含 prompt 清單。
+
+### Docs / 決策
+- 新增並由人類決議 **Q-026**：採 `agent-sprite-forge`（Codex 內建生圖 GPT IMAGE-2，僅靜態立繪 / icon、不用動畫 / 地圖）；釘 / 球採「單張中性底圖 + 程式 modulate 上色」保留所有特效；全範圍 UI 補圖；**程序化 / 空白 fallback 全保留、背景需低對比不蓋過釘海**；核心與升級 icon 拆兩卡分 session 跑。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作。美術為視覺項，實作後須人類實機驗收（風格一致性、背景對比、fallback）。
+
+## [Phase 11 規劃 / spec] - 2026-06-13 — 斬殺 / 玩家攻擊演繹 / 彈跳手感 決策 + 任務卡
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`（待 Codex 實作）
+
+### Changed
+- 人類實機驗證 Phase 10 過載模式通過；`ROADMAP.md` 標記 Phase 10 完成、新增 Phase 11 列。
+
+### Added
+- `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`：三項任務卡——回合內達標即斬殺（OVERKILL）、玩家造成傷害的攻擊演繹（純程序化光束/能量彈）、釘子彈跳手感參數化（`peg_bounce_boost`）。
+
+### Docs / 決策
+- 新增並由人類決議 **Q-023**（斬殺，累積傷害≥敵HP即強制清除、可開關、賽博 cut-in）、**Q-024**（玩家攻擊演繹，匯聚→射出→命中，強度隨傷害、純程序化）、**Q-025**（peg_bounce_boost 一般釘反彈加乘、含上限、底排 bumper 不變）。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作。三項皆體感項，實作後須人類實機驗收。
 
 ## [Phase 10 規劃 / spec] - 2026-06-13 — 過載模式 Overclock 決策 + 任務卡
 
