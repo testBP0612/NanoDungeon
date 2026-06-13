@@ -38,6 +38,7 @@ func _refresh_ui() -> void:
 		var upgrade := options[index] as Dictionary
 		card.visible = true
 		card.disabled = false
+		_apply_card_style(card, String(upgrade["rarity"]))
 		card.text = "%s\n[%s]\n%s" % [
 			String(upgrade["name"]),
 			String(upgrade["rarity"]).to_upper(),
@@ -54,6 +55,43 @@ func _choose_option(index: int) -> void:
 	for card in [card_0, card_1, card_2]:
 		(card as Button).disabled = true
 	continue_button.visible = true
+
+
+func _apply_card_style(card: Button, rarity: String) -> void:
+	var rarity_color := _rarity_color(rarity)
+	card.add_theme_color_override("font_color", Color(0.94, 0.98, 1.0))
+	card.add_theme_color_override("font_hover_color", rarity_color)
+	card.add_theme_color_override("font_pressed_color", Color.WHITE)
+	card.add_theme_color_override("font_disabled_color", rarity_color)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.025, 0.035, 0.06, 0.96)
+		style.border_color = rarity_color
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.corner_radius_top_left = 6
+		style.corner_radius_top_right = 6
+		style.corner_radius_bottom_left = 6
+		style.corner_radius_bottom_right = 6
+		if state == "hover":
+			style.bg_color = Color(0.04, 0.06, 0.09, 1.0)
+		if state == "pressed":
+			style.bg_color = Color(0.06, 0.08, 0.11, 1.0)
+		if state == "disabled":
+			style.bg_color = Color(0.02, 0.03, 0.045, 0.86)
+		card.add_theme_stylebox_override(state, style)
+
+
+func _rarity_color(rarity: String) -> Color:
+	match rarity:
+		"legendary":
+			return Color(1.0, 0.78, 0.24)
+		"rare":
+			return Color(0.18, 0.75, 1.0)
+		_:
+			return Color(0.22, 1.0, 0.55)
 
 
 func _go_next_battle() -> void:

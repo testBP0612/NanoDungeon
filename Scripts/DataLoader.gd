@@ -41,6 +41,10 @@ func get_ball(ball_id: String) -> Dictionary:
 	return balls_by_id.get(ball_id, {}).duplicate(true)
 
 
+func get_ball_name(ball_id: String) -> String:
+	return String(balls_by_id.get(ball_id, {}).get("name", ball_id))
+
+
 func get_enemy(index: int) -> Dictionary:
 	if index < 0 or index >= enemies.size():
 		push_error("Enemy index out of range: %s" % index)
@@ -50,6 +54,14 @@ func get_enemy(index: int) -> Dictionary:
 
 func get_upgrades() -> Array:
 	return _duplicate_dictionary_array(upgrades)
+
+
+func get_upgrade_name(upgrade_id: String) -> String:
+	for item in upgrades:
+		var upgrade := item as Dictionary
+		if String(upgrade["id"]) == upgrade_id:
+			return String(upgrade["name"])
+	return upgrade_id
 
 
 func get_default_unlocked_balls() -> Array[String]:
@@ -160,7 +172,6 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		"floating_text",
 		"sfx",
 		"hp_tween_duration",
-		"reward_advance_delay_seconds",
 	]
 
 	if typeof(config) != TYPE_DICTIONARY:

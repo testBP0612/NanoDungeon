@@ -39,40 +39,40 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 / 1.5 / 2 / 3 皆已完成並經人類實機驗證。
-- Phase 3 已完成 5 場敵人、完整回合制、HP UI、Boss 強攻擊、GameOver / Victory 結算。
-- Phase 4 所需決策 Q-004 / Q-005 / Q-013 已定案，可直接依任務卡實作。
+- Phase 1 / 1.5 / 2 / 3 / 4 皆已完成並經人類實機驗證，MVP 功能到齊。
+- Phase 4 已完成三選一升級、整局成長、round-robin 球池與勝利 / 失敗結算。
+- Q-001 ~ Q-013 皆已決議；Phase 5 不再改規則，只做 demo polish、穩定性、JSON 平衡與 Windows export。
 
 # Current Phase
-- **Phase 4 — Roguelite Build**。
+- **Phase 5 — Polish & Demo**。
 
 # Recommended Task
-- 執行 `Codex/04_ROGUELITE_BUILD.md`。
-- 新增 `UpgradeScreen.tscn` 三選一流程、升級抽取器 / 套用器、RunState 整局成長狀態，並串接「非 Boss 勝利 → 升級 → 下一場」。
-- 初始球池改由 `balls.json` 的 `unlocked_by_default` 初始化；unlock 升級 append 到 round-robin 球池。
+- 執行 `Codex/05_POLISH_DEMO.md`。
+- 場景化 `GameOver.tscn` / `Victory.tscn` 的 UI，讓腳本只負責填資料與按鈕。
+- 改善 `UpgradeScreen` 霓虹賽博風與 rarity 顏色；build 摘要改顯示球種 / 升級名稱。
+- 僅透過 JSON 做 demo 平衡微調，移除 `feel.json` 的死設定，新增 Windows Desktop export preset 並嘗試匯出驗證。
 
 # Why
-- ROADMAP 顯示 Phase 3 已完成，下一個未完成目標是 Phase 4。
-- Phase 3 目前非 Boss 勝利後仍是升級占位，尚未形成 roguelite build 成長閉環。
-- Phase 4 完成後，整局 5 場 + 4 次升級才會具備 Demo 的核心 replay value。
+- ROADMAP 顯示 Phase 5 是最後一個未完成 Phase。
+- MVP 功能已齊，剩餘差距集中在比賽展示穩定度、流程順手度、場景 / UI 一致性與 export 可用性。
+- 任務卡明確要求 demo 是否達「比賽現場可穩定展示」標準。
 
 # Risks
-- 抽取規則若寫在 `Battle.gd` 會破壞 Phase 1.5 / 3 的邊界，需集中在 upgrade resolver。
-- 升級效果需持續整局但重開歸零，RunState 初始化與結算場景重來路徑必須同步。
-- 可選升級池不足、已解鎖球排除、球數封頂、精英保底 rare+ 都需要靜態與場景載入雙重驗證。
-- `upgrades.json` 既有 `add_trigger` 效果需支援，但不得新增 Peg / Ball / Enemy 種類。
+- Export 可能受本機 Godot export templates 是否已安裝影響；若模板缺失，需回報為環境限制。
+- 連續 3 局「實機」驗收需要人類可視化確認；Codex 可做 headless / export / 靜態穩定檢查與必要的自動化 smoke test。
+- UI polish 需克制，避免新增重特效造成幀率或穩定性風險。
+- 平衡只能調 JSON，不得修改戰鬥 / 升級規則來達成數值目標。
 
 # Dependencies
-- 無阻斷性前置。
-- Q-004：rarity 權重 common / rare / legendary = 60 / 30 / 10；三選一互不重複；排除已解鎖 / 已達上限。
-- Q-005：普通怪一般加權，精英怪第 1 槽保底 rare+，Boss 無三選一。
-- Q-013：球池 round-robin，初始讀 `unlocked_by_default`，unlock append。
+- 無阻斷性規格前置。
+- Q-001 ~ Q-013 全數定案，照現狀執行；若需要改規則，停止並寫 `OPEN_QUESTIONS.md`。
+- Windows Desktop Export 依賴本機 Godot export templates。
 
 # Estimated Scope
-- 大。會新增 `UpgradeScreen.tscn` / `UpgradeScreen.gd` / `UpgradeResolver.gd`，修改 `RunState.gd`、`DataLoader.gd`、`Battle.gd`、`EffectResolver.gd`，必要時微調 `GameOver` / `Victory` build 摘要；更新 CHANGELOG / PROGRESS_REPORT。
+- 中到大。會修改 `Scenes/GameOver.tscn`、`Scenes/Victory.tscn`、`Scripts/GameOver.gd`、`Scripts/Victory.gd`、`Scenes/UpgradeScreen.tscn`、`Scripts/UpgradeScreen.gd`、`RunState.gd`、`Data/feel.json`、必要的 JSON 平衡與 `export_presets.cfg`；更新 CHANGELOG / PROGRESS_REPORT。
 
 # Validation Target
-- `Codex/VALIDATION_CHECKLIST.md` **F. Roguelite Build** 全項自驗。
+- `Codex/VALIDATION_CHECKLIST.md` **G. Demo 展示驗收** 全項自驗。
 - 同步檢查 **H. 禁止偏離**。
 
 ---

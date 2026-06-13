@@ -39,6 +39,57 @@
 
 ---
 
+## [Phase 5 / 1.0.0] - 2026-06-13 — 完成 Polish & Demo 收尾
+
+- 執行者：Codex
+- 任務卡：`Codex/05_POLISH_DEMO.md`
+
+### Added
+- 新增 `export_presets.cfg`，設定 Windows Desktop export，輸出 `Builds/NanoDungeon.exe`。
+- `UpgradeScreen` 新增霓虹卡片樣式與 rarity 顏色回饋。
+
+### Changed
+- `GameOver.tscn` / `Victory.tscn` 改為場景節點 UI，腳本只負責填 summary 與按鈕連線。
+- `RunState.build_summary()` 改顯示球種 / 升級名稱，不再顯示原始 id。
+- 主選單副標題更新為 MVP Demo。
+
+### Data
+- `Data/feel.json` 移除已無引用的 `reward_advance_delay_seconds`。
+- 保留 Phase 4 已通過的人類驗收平衡值，未改戰鬥 / 升級規則。
+
+### 驗收
+- Godot 4.6.3 headless 載入 main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` 皆通過。
+- `Data/*.json` 解析通過。
+- Windows Desktop Export 成功產出 `Builds/NanoDungeon.exe`，匯出 log 確認 `Data/*.json` 打包；匯出 exe 可用 `--headless --quit` 獨立啟動。
+- 暫時 smoke test 已驗證連續 3 局 RunState reset + 4 次升級抽取 / 套用無狀態殘留；測試檔已刪除，未納入產品。
+
+### 未解問題
+- 無新增。Q-001 ~ Q-013 皆依已決議現狀執行。
+
+## [Phase 4 / 0.6.1] - 2026-06-13 — Phase 4 通過人類驗收 + 全數暫行假設定案 + Phase 5 任務卡
+
+- 執行者：Claude（Technical Reviewer 角色）+ 人類（驗收與決策）
+- 任務卡：`Codex/04_ROGUELITE_BUILD.md`（已完成驗收）
+
+### Changed
+- 人類於 Godot 實機驗證 Phase 4（完整 5 場 + 4 次三選一 + Victory），確認通過。MVP 10 項功能全部到齊。
+- `ROADMAP.md`：Phase 4 標記完成；Phase 5 改為指向新任務卡 `Codex/05_POLISH_DEMO.md`。
+- `Data/player.json`：`_meta` 描述更新，反映 Q-007 已定案為專案標準檔。
+
+### Added
+- `Codex/05_POLISH_DEMO.md`：Phase 5 收尾任務卡（實機回歸、平衡只調 JSON、UI 一致性、Windows Export、死設定清理、穩定性），含 G/H 區驗收與禁止事項。
+
+### 決策（暫行假設一次定案）
+- **Q-001**：倍傷釘每回合 1 次、×2（升級可加）。
+- **Q-002**：Blast 取含倍傷後最高單次、可隨球數疊加。
+- **Q-003**：Shield -30%、取最高不疊加。
+- **Q-006**：底部全開 + 8 秒超時回收，不做 flippers。
+- **Q-007**：保留 `Data/player.json` 為專案標準檔。
+- 以上經 Phase 1–4 實機驗證穩定，由「暫行假設」正式移入「已決議」。`OPEN_QUESTIONS.md` 待決區現已清空（Q-001~Q-013 全數定案）。
+
+### 備註
+- 本圈為審查 + 決策落地 + 任務卡建立，未撰寫 / 修改任何 GDScript 或場景。
+
 ## [Phase 4 / 0.6.0] - 2026-06-13 — 完成 Roguelite Build 三選一升級
 
 - 執行者：Codex

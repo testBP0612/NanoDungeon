@@ -9,8 +9,8 @@
 | 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ✅ 完成（人類實機驗證行為等價） |
 | 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ✅ 完成（人類實機驗證） |
 | 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ✅ 完成（人類實機驗證） |
-| 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始（Q-004/005/013 已定案） |
-| 5 | Polish & Demo | （統合，無新任務卡） | ⬜ 待開始 |
+| 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ✅ 完成（人類實機驗證） |
+| 5 | Polish & Demo | `Codex/05_POLISH_DEMO.md` | ⬜ 待開始（MVP 功能已齊） |
 
 ---
 
@@ -116,7 +116,7 @@
 
 ## Phase 5 — Polish & Demo
 
-**目標**：比賽現場可穩定展示的完成度。
+**目標**：比賽現場可穩定展示的完成度。任務卡見 `Codex/05_POLISH_DEMO.md`。MVP 功能（Phase 1–4）已 100% 到齊，本階段不加新玩法。
 
 工作項：
 - 美術一致性（霓虹賽博風、glow、UI）。

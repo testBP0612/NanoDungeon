@@ -33,64 +33,7 @@
 
 ## 目前待決策問題
 
-### Q-001：倍傷釘（Double Peg）每回合可觸發次數
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：規格寫「限一次或可控次數」，數值未定，影響 `Data/pegs.json` 的 `effect_value` 與 Phase 2 實作。
-- 選項：
-  - A. 每回合僅可觸發 1 次（最穩定、好平衡）
-  - B. 每回合可觸發 2 次但倍率不疊加（取最高）
-  - C. 可疊加但設上限（如 ×4 封頂）
-- AI 建議：A。Demo 階段最容易平衡且不會數值爆炸。
-- 影響範圍：Data/pegs.json、Docs/04_BALANCE_RULES.md、Codex/02_PINBALL_FEEL.md
-- 狀態：⚠️ 暫行假設（目前 JSON 先以「每回合 1 次、倍率 ×2」實作）
-
-### Q-002：爆破球（Blast Ball）「最高單次釘子傷害」的計算基準
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：規格寫「落底時額外加成一次本回合最高單次釘子傷害」，需定義「最高單次」是否含倍傷加成、是否每顆爆破球各自結算。
-- 選項：
-  - A. 取本回合所有命中中「單次最高傷害值」，再額外加一次（含倍傷後的數值）
-  - B. 同 A 但以倍傷前的基礎值計算
-  - C. 每顆爆破球各自記錄自己命中的最高值
-- AI 建議：A。直覺、好懂、Demo 可見效果明顯。
-- 影響範圍：Data/balls.json、Codex/02_PINBALL_FEEL.md
-- 狀態：⚠️ 暫行假設（先採 A）
-
-### Q-003：護盾球（Shield Ball）減傷是百分比還是固定值、可否疊加
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：影響 `Data/balls.json` 的 `effect_type / effect_value` 與敵人攻擊結算。
-- 選項：
-  - A. 百分比減傷（如 -30%），多顆取最高不疊加
-  - B. 固定減傷（如 -3），多顆可疊加但有下限 0
-  - C. 百分比且可疊加（風險：可能完全免傷）
-- AI 建議：A。避免完全免傷讓戰鬥失去張力。
-- 影響範圍：Data/balls.json、Docs/04_BALANCE_RULES.md、Codex/03_ENEMY_SYSTEM.md
-- 狀態：⚠️ 暫行假設（先採 A，-30%）
-
-### Q-006：球落底的「底部」與失球判定
-- 提出者：Claude
-- 日期：2026-06-13
-- 背景：彈珠台需定義底部是否有出口、是否所有球都會落底、是否有時間上限避免球卡住。
-- 選項：
-  - A. 底部全開（球碰到底線即視為落底回收），並加「N 秒未落底強制回收」保險
-  - B. 底部有擋板 / flippers（增加複雜度，暫不建議）
-- AI 建議：A。Phase 1 先不做 flippers，靠重力與超時回收確保流程不卡死。
-- 影響範圍：Codex/01_FIRST_PLAYABLE.md、Codex/02_PINBALL_FEEL.md
-- 狀態：⚠️ 暫行假設（先採 A，超時 8 秒）
-
-### Q-007：玩家初始數值與 Phase 1 物理調校值應放在哪個 JSON
-- 提出者：Codex
-- 日期：2026-06-13
-- 背景：Phase 1 需要玩家初始 HP、每回合球數、起始球種、球超時秒數、發射力度、球半徑、重力倍率與彈性等數值。既有 `Data/pegs.json` / `balls.json` / `enemies.json` / `upgrades.json` 未提供這些玩家與場地基礎設定，但任務要求數值從 `Data/*.json` 讀取且不得寫死。
-- 選項：
-  - A. 新增 `Data/player.json` 保存玩家初始狀態與 Phase 1 物理調校值
-  - B. 把玩家初始狀態加入既有 `Data/balls.json` 的 `_meta` 或新欄位
-  - C. 另建更廣義的 `Data/run_config.json` 保存整局初始設定
-- AI 建議：A。語意清楚、範圍最小，不改既有四份 JSON 的 schema；Phase 1 先以暫行資料來源推進。
-- 影響範圍：Data/player.json、Scripts/DataLoader.gd、Scripts/RunState.gd、Codex/01_FIRST_PLAYABLE.md
-- 狀態：⚠️ 暫行假設（本圈先新增 `Data/player.json`，待人類確認）
+（目前無。Q-001~Q-013 皆已決議；下方暫行假設已於 Phase 4 後一次定案。若 Phase 5 平衡微調需要新的取捨，再依模板新增。）
 
 ---
 
@@ -190,4 +133,49 @@
   - **不做**隨機抽球 / 玩家自訂球種比例（列為非目標）。
 - 決議日期：2026-06-13
 - 影響範圍：Scripts/Battle.gd（`_ball_id_for_next_launch`）、Scripts/RunState.gd（初始 unlocked_balls）、Data/balls.json（`unlocked_by_default`）、Codex/04_ROGUELITE_BUILD.md
+- 狀態：✅ 已決議
+
+### Q-001：倍傷釘（Double Peg）每回合可觸發次數
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：規格寫「限一次或可控次數」，數值未定。
+- 結論（人類決議）：**採 A — 每回合 1 次、倍率 ×2**（`pegs.json` 既有實作）。可由升級提升（`up_double_peg_boost` 倍率 +0.5、`up_double_peg_extra_trigger` 次數 +1）。經 Phase 2–4 實機驗證穩定，正式定案。
+- 決議日期：2026-06-13（Phase 4 後最終確認）
+- 影響範圍：Data/pegs.json、Data/upgrades.json、Docs/04_BALANCE_RULES.md
+- 狀態：✅ 已決議
+
+### Q-002：爆破球（Blast Ball）「最高單次釘子傷害」的計算基準
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：需定義「最高單次」是否含倍傷、是否每顆球各自結算。
+- 結論（人類決議）：**採 A — 取本回合單次最高傷害（含倍傷後數值）額外加成**；多顆 Blast 球可各加成一次（見 Q-012）。經實機驗證，正式定案。
+- 決議日期：2026-06-13（Phase 4 後最終確認）
+- 影響範圍：Data/balls.json、Scripts/EffectResolver.gd、Docs/02_GAME_DESIGN.md
+- 狀態：✅ 已決議
+
+### Q-003：護盾球（Shield Ball）減傷規則
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：百分比或固定值、可否疊加。
+- 結論（人類決議）：**採 A — 百分比減傷 -30%、多顆取最高不疊加**（`balls.json` effect_value 0.3）。經實機驗證，正式定案。
+- 決議日期：2026-06-13（Phase 4 後最終確認）
+- 影響範圍：Data/balls.json、Scripts/EffectResolver.gd、Docs/02_GAME_DESIGN.md、Docs/04_BALANCE_RULES.md
+- 狀態：✅ 已決議
+
+### Q-006：球落底的「底部」與失球判定
+- 提出者：Claude
+- 日期：2026-06-13
+- 背景：底部是否有出口、是否有超時保險避免卡球。
+- 結論（人類決議）：**採 A — 底部全開（碰底線即回收）+ 8 秒未落底強制回收**。不做 flippers / 擋板（列為非目標）。經 Phase 1–4 實機驗證，正式定案。
+- 決議日期：2026-06-13（Phase 4 後最終確認）
+- 影響範圍：Scripts/Battle.gd、Scripts/Ball.gd、Data/player.json（`ball_timeout_seconds`）
+- 狀態：✅ 已決議
+
+### Q-007：玩家初始數值與物理調校值放在哪個 JSON
+- 提出者：Codex
+- 日期：2026-06-13
+- 背景：玩家初始 HP / 球數 / 起始球 / 超時 / 發射力 / 物理參數需資料化。
+- 結論（人類決議）：**採 A — 保留 `Data/player.json`**。語意清楚、不污染其他 JSON schema，正式定案為專案標準檔案。
+- 決議日期：2026-06-13（Phase 4 後最終確認）
+- 影響範圍：Data/player.json、Scripts/DataLoader.gd、Scripts/RunState.gd
 - 狀態：✅ 已決議

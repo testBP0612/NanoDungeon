@@ -1,6 +1,26 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://Scripts/GameOver.gd" id="1_game_over"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.015, 0.05, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.18, 0.58, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.08, 0.02, 0.065, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.22, 0.56, 1)
 
 [node name="GameOver" type="Control"]
 layout_mode = 3
@@ -10,3 +30,73 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_game_over")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.005, 0.018, 1)
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 104.0
+offset_right = 1024.0
+offset_bottom = 164.0
+theme_override_colors/font_color = Color(1, 0.22, 0.56, 1)
+theme_override_font_sizes/font_size = 44
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="Panel" type="Panel" parent="Root"]
+layout_mode = 0
+offset_left = 252.0
+offset_top = 206.0
+offset_right = 772.0
+offset_bottom = 438.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="SummaryLabel" type="Label" parent="Root"]
+layout_mode = 0
+offset_left = 282.0
+offset_top = 232.0
+offset_right = 742.0
+offset_bottom = 392.0
+theme_override_colors/font_color = Color(0.96, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Summary"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="RestartButton" type="Button" parent="Root"]
+layout_mode = 0
+offset_left = 366.0
+offset_top = 470.0
+offset_right = 486.0
+offset_bottom = 512.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+text = "重來"
+
+[node name="MenuButton" type="Button" parent="Root"]
+layout_mode = 0
+offset_left = 538.0
+offset_top = 470.0
+offset_right = 658.0
+offset_bottom = 512.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button")
+text = "主選單"

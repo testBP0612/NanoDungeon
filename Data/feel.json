@@ -66,7 +66,6 @@
         "enemy_attack": 180.0
       }
     },
-    "hp_tween_duration": 0.18,
-    "reward_advance_delay_seconds": 1.0
+    "hp_tween_duration": 0.18
   }
 }

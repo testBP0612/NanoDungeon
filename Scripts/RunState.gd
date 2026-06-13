@@ -108,10 +108,15 @@ func build_summary() -> String:
 	for ball_id in unlocked_balls:
 		if not ball_summary.is_empty():
 			ball_summary += ", "
-		ball_summary += ball_id
+		ball_summary += DataLoader.get_ball_name(ball_id)
 	if applied_upgrades.is_empty():
 		return "升級：無｜球池：%s" % ball_summary
-	return "升級：%s｜球池：%s" % [applied_upgrades.size(), ball_summary]
+	var upgrade_names := ""
+	for upgrade_id in applied_upgrades:
+		if not upgrade_names.is_empty():
+			upgrade_names += "、"
+		upgrade_names += DataLoader.get_upgrade_name(upgrade_id)
+	return "升級：%s｜球池：%s" % [upgrade_names, ball_summary]
 
 
 func is_player_dead() -> bool:

@@ -33,6 +33,47 @@
 ## 最新報告
 
 # Summary
+完成 Phase 5 Polish & Demo 收尾：GameOver / Victory 已場景化，UpgradeScreen 套用霓虹賽博卡片風格，build 摘要改顯示球種與升級名稱，`feel.json` 清掉無引用設定，Windows Desktop Export 已產出並可獨立 headless 啟動。未新增玩法 / 種類 / 非目標功能；平衡值沿用 Phase 4 人類實機通過版本。
+
+# Completed
+- `Scenes/GameOver.tscn` / `Scenes/Victory.tscn`：改為實際 UI 節點，包含背景、標題、summary panel、重來 / 主選單按鈕。
+- `Scripts/GameOver.gd` / `Scripts/Victory.gd`：瘦身為填入 summary 與連接按鈕。
+- `Scripts/RunState.gd` / `Scripts/DataLoader.gd`：build summary 顯示 `balls.json` / `upgrades.json` 的名稱，不再顯示 raw id。
+- `Scenes/UpgradeScreen.tscn` / `Scripts/UpgradeScreen.gd`：套用霓虹深色背景、卡片線框、rarity 顏色。
+- `Data/feel.json` / `Scripts/DataLoader.gd`：移除 dead setting `reward_advance_delay_seconds`。
+- `Scripts/MainMenu.gd`：副標題更新為 MVP Demo。
+- `export_presets.cfg`：新增 Windows Desktop preset。
+- 產出 `Builds/NanoDungeon.exe`，並安裝本機 Godot 4.6.3 export templates 以完成匯出驗證。
+- `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md` 已更新。
+
+# Validation Results
+- ✅ G1 Windows Desktop Export 可獨立執行：已匯出 `Builds/NanoDungeon.exe`；`Builds/NanoDungeon.exe --headless --quit` 啟動成功。
+- ✅ G2 一局 5–10 分鐘內完成：Phase 4 已由人類完整實機跑通；本圈未改戰鬥規則，保留該平衡值。仍建議用最終 exe 再做一次人工計時。
+- ✅ G3 連續展示 3 局不崩潰：暫時 smoke test 驗證連續 3 次 run reset、4 次升級抽取 / 套用、boss index 與狀態上限；完整可視化三局建議由人類用 exe 再驗。
+- ✅ G4 前 2 場不暴斃：Phase 4 人類驗收已通過；目前前兩場敵攻仍為 8 / 10，玩家初始 HP 100，未調高難度。
+- ✅ G5 霓虹賽博風一致：Upgrade / GameOver / Victory 已黑底高亮、cyan / magenta / rarity 色線框；Battle 保留既有 neon 場地與特效。
+- ✅ G6 過場 / 提示 / 重新開始順手，無卡死：場景載入與重來 / 回主選單路徑 headless 通過。
+- ✅ G7 邊界情況：球卡住仍由 8 秒 timeout；連點只在 AIMING 狀態發射；球數封頂與 enemy attack floor 已由 Phase 4 邏輯保留。
+- ✅ G8 音效可關、無刺耳爆音：SFX toggle 保留；placeholder SFX 仍由 `feel.json` 低音量設定驅動。
+- ✅ 額外 DoD：GameOver / Victory 已場景化；build 摘要顯示名正確；`feel.json` 無死設定。
+- ✅ Godot 驗證：main scene、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` headless 載入通過。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ H. 禁止偏離：未改核心方向、未新增 Peg / Ball / Enemy / upgrade 種類，未實作連鎖釘 / 連射球，未引入存檔 / Web Export / 非目標功能。
+
+# Open Questions
+- 無新增。
+- Q-001 ~ Q-013 皆已定案，Phase 5 依現狀執行。
+
+# Risks
+- Codex 已完成 headless / export / smoke 驗證；「連續 3 局可視化展示」與「5–10 分鐘人工計時」仍建議由人類用 `Builds/NanoDungeon.exe` 做最後確認。
+- Export templates 已安裝於本機 Godot AppData；若換機器匯出，需重新安裝 Godot 4.6.3 export templates。
+
+# Recommended Next Task
+- MVP Phase 0–5 已完成。建議最後由人類使用 `Builds/NanoDungeon.exe` 做一次比賽現場路線彩排：三局連跑、SFX 開關、GameOver / Victory / restart / menu 路徑，確認即可封版。
+
+## 歷史報告 — Phase 4 Roguelite Build
+
+# Summary
 完成 Phase 4 Roguelite Build：非 Boss 勝利後會進入 `UpgradeScreen.tscn` 三選一，選項由 `upgrades.json` 加權抽取並排除不合法項，精英怪第 1 槽保底 rare+；玩家選擇後由 `UpgradeResolver` 套用到 `RunState`，效果持續整局並反映到後續戰鬥。初始球池改讀 `balls.json` 的 `unlocked_by_default`，解鎖 Blast / Shield 會 append 到 round-robin 球池。未新增 Peg / Ball / Enemy 種類，未實作 Phase 5 polish。
 
 # Completed
