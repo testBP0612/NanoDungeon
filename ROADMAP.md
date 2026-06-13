@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | 0 | 文件與資料結構 | （本批文件） | ✅ 完成 |
 | 1 | First Playable | `Codex/01_FIRST_PLAYABLE.md` | ✅ 完成（人類實機驗證） |
-| 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ⬜ 待開始 |
+| 1.5 | Architecture Refactor | `Codex/01b_REFACTOR.md` | ✅ 完成（人類實機驗證行為等價） |
 | 2 | Pinball Feel | `Codex/02_PINBALL_FEEL.md` | ⬜ 待開始 |
 | 3 | Enemy System | `Codex/03_ENEMY_SYSTEM.md` | ⬜ 待開始 |
 | 4 | Roguelite Build | `Codex/04_ROGUELITE_BUILD.md` | ⬜ 待開始 |

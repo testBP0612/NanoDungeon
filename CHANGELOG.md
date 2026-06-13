@@ -39,6 +39,15 @@
 
 ---
 
+## [Phase 1.5 / 0.3.2] - 2026-06-13 — Phase 1.5 通過人類實機驗收
+
+- 執行者：人類（驗收）
+- 任務卡：`Codex/01b_REFACTOR.md`
+
+### Changed
+- 人類於 Godot 編輯器實機驗證 01b 重構為行為等價（含瞄準線 / 發射點回歸點），確認通過。
+- `ROADMAP.md`：Phase 1.5 標記為完成（人類實機驗證行為等價）。放行進入 Phase 2。
+
 ## [Phase 1.5 / 0.3.1] - 2026-06-13 — 完成 Architecture Refactor 行為等價重構
 
 - 執行者：Codex
