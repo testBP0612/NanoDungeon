@@ -26,6 +26,8 @@ var bottom_peg_nodes: Array[Node] = []
 var is_charging_launch := false
 var charge_elapsed := 0.0
 var charge_power := 0.0
+var launch_direction_locked := false
+var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
 var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
 var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
@@ -183,6 +185,8 @@ func _begin_round() -> void:
 func _handle_launch_input() -> void:
 	if not is_charging_launch:
 		is_charging_launch = true
+		launch_direction_locked = true
+		locked_launch_direction = _aim_direction()
 		charge_elapsed = 0.0
 		charge_power = 0.0
 		status_label.text = "集氣中：再按一次發射"
@@ -215,7 +219,7 @@ func _fire_ball() -> void:
 	_transition_to(BattleState.LAUNCHED)
 	battle_fx.spawn_launch_feedback(launcher_position)
 	battle_fx.play_sfx("launch")
-	ball.launch(_aim_direction(), launch_speed)
+	ball.launch(_locked_or_current_aim_direction(), launch_speed)
 	_update_ui()
 
 
@@ -233,6 +237,10 @@ func _aim_direction() -> Vector2:
 	if direction.y < 0.2:
 		direction.y = 0.2
 	return direction.normalized()
+
+
+func _locked_or_current_aim_direction() -> Vector2:
+	return locked_launch_direction if launch_direction_locked else _aim_direction()
 
 
 func _update_aim_overlay() -> void:
@@ -256,6 +264,8 @@ func _update_charge(delta: float) -> void:
 
 func _reset_charge() -> void:
 	is_charging_launch = false
+	launch_direction_locked = false
+	locked_launch_direction = Vector2.DOWN
 	charge_elapsed = 0.0
 	charge_power = 0.0
 
@@ -270,13 +280,17 @@ func _aim_trajectory_points() -> PackedVector2Array:
 	var preview_config: Dictionary = feel_config.get("aim_preview", {})
 	var point_count: int = max(2, int(preview_config.get("point_count", 18)))
 	var time_step: float = max(0.01, float(preview_config.get("time_step", 0.06)))
-	var velocity := _aim_direction() * _launch_speed_for_power(charge_power)
+	var velocity := _locked_or_current_aim_direction() * _aim_preview_speed()
 	var gravity := Vector2.DOWN * float(ProjectSettings.get_setting("physics/2d/default_gravity")) * float(player_config.get("ball_gravity_scale", 1.0))
 	var points := PackedVector2Array()
 	for index in range(point_count):
 		var time: float = float(index) * time_step
 		points.append(launcher_position + velocity * time + gravity * 0.5 * time * time)
 	return points
+
+
+func _aim_preview_speed() -> float:
+	return float(player_config.get("launch_speed", player_config.get("launch_speed_min", 900.0)))
 
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color) -> void:

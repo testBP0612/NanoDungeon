@@ -50,8 +50,8 @@
       "rise_y": -42.0
     },
     "aim_preview": {
-      "point_count": 24,
-      "time_step": 0.055
+      "point_count": 8,
+      "time_step": 0.035
     },
     "sfx": {
       "enabled": true,
