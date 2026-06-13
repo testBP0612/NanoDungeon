@@ -78,6 +78,19 @@ position = Vector2(512, 118)
 
 [node name="BallContainer" type="Node2D" parent="PinballField"]
 
+[node name="AimOverlay" type="Node2D" parent="."]
+z_index = 10
+
+[node name="AimLine" type="Line2D" parent="AimOverlay"]
+width = 3.0
+default_color = Color(1, 0.9, 0.35, 1)
+points = PackedVector2Array(512, 118, 512, 233)
+
+[node name="LauncherVisual" type="Polygon2D" parent="AimOverlay"]
+position = Vector2(512, 118)
+color = Color(0.9, 0.25, 1, 1)
+polygon = PackedVector2Array(13, 0, 12.0104, 4.97488, 9.19239, 9.19239, 4.97488, 12.0104, 0, 13, -4.97488, 12.0104, -9.19239, 9.19239, -12.0104, 4.97488, -13, 0, -12.0104, -4.97488, -9.19239, -9.19239, -4.97488, -12.0104, 0, -13, 4.97488, -12.0104, 9.19239, -9.19239, 12.0104, -4.97488)
+
 [node name="BattleUI" type="CanvasLayer" parent="."]
 
 [node name="UIRoot" type="Control" parent="BattleUI"]

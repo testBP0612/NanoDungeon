@@ -40,6 +40,7 @@
 - 新增 `Scripts/RoundContext.gd`：集中 `damage_accumulator`、球數與結算旗標；Phase 2 欄位僅宣告不啟用。
 - 重構 `Scripts/Battle.gd`：移除 inline `effect_type` 判斷、移除散落回合暫存、統一 FSM 入口。
 - 重構 `Scenes/Battle.tscn`：場地、牆、BottomSensor、Launcher、容器與 BattleUI 成為實際節點。
+- 修正重構後瞄準器被場地節點遮住的問題，新增 `AimOverlay` 顯示原本的瞄準線與發射點。
 - 移除 `node_2d.tscn`，並確認無場景 / 腳本引用。
 - 更新 `WORK_PLAN.md`、`CHANGELOG.md`、`PROGRESS_REPORT.md`。
 
@@ -47,6 +48,7 @@
 - ✅ C1 主選單可進入戰鬥，不報錯：Godot 4.6.3 headless 載入 main scene 無錯。
 - ✅ C2 依 `balls_per_round` 給正確球數：仍由 `RunState.balls_per_round` 進入 `RoundContext.start_round()`，數值來源未變。
 - ✅ C3 可瞄準並逐顆發射；球受重力、會與牆 / 釘碰撞彈跳：發射、Ball 設定與牆碰撞 shape 的座標 / 尺寸維持 Phase 1 等價；需人類再做一次可視化實機確認。
+- ✅ 回歸修正：瞄準線與發射點已改由 `AimOverlay` 顯示，避免被場地節點覆蓋。
 - ✅ C4 命中 Normal Peg 累積傷害：傷害值仍取自 `pegs.json`，分派移至 `EffectResolver`。
 - ✅ C5 所有球落底 / 超時後一次結算，敵人 HP 正確下降：BottomSensor 與 timeout 邏輯保留，結算改讀 `RoundContext.damage_accumulator`。
 - ✅ C6 敵人 HP ≤ 0 有結束提示，可回主選單 / 重來：按鈕節點改在場景內，連線與文字維持。

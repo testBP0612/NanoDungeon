@@ -22,6 +22,8 @@ var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
 @onready var peg_container: Node2D = $PinballField/PegContainer
 @onready var ball_container: Node2D = $PinballField/BallContainer
 @onready var bottom_sensor: Area2D = $PinballField/BottomSensor
+@onready var launcher_visual: Polygon2D = $AimOverlay/LauncherVisual
+@onready var aim_line: Line2D = $AimOverlay/AimLine
 @onready var player_hp_label: Label = $BattleUI/UIRoot/PlayerHPLabel
 @onready var enemy_hp_label: Label = $BattleUI/UIRoot/EnemyHPLabel
 @onready var round_label: Label = $BattleUI/UIRoot/RoundLabel
@@ -43,8 +45,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_aim_overlay()
 	_update_ui()
-	queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
@@ -52,14 +54,6 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_fire_ball()
-
-
-func _draw() -> void:
-	draw_circle(launcher_position, 13.0, Color(0.9, 0.25, 1.0))
-
-	if state == BattleState.AIMING:
-		var direction := _aim_direction()
-		draw_line(launcher_position, launcher_position + direction * 115.0, Color(1.0, 0.9, 0.35), 3.0)
 
 
 func _load_definitions() -> void:
@@ -75,6 +69,7 @@ func _connect_scene_nodes() -> void:
 	bottom_sensor.body_entered.connect(_on_bottom_sensor_body_entered)
 	restart_button.pressed.connect(_on_restart_pressed)
 	menu_button.pressed.connect(_on_menu_pressed)
+	launcher_visual.position = launcher_position
 
 
 func _spawn_pegs() -> void:
@@ -145,6 +140,17 @@ func _aim_direction() -> Vector2:
 	if direction.y < 0.2:
 		direction.y = 0.2
 	return direction.normalized()
+
+
+func _update_aim_overlay() -> void:
+	launcher_visual.visible = true
+	aim_line.visible = state == BattleState.AIMING
+	if aim_line.visible:
+		var direction := _aim_direction()
+		aim_line.points = PackedVector2Array([
+			launcher_position,
+			launcher_position + direction * 115.0,
+		])
 
 
 func _on_ball_peg_hit(peg_id: String) -> void:
