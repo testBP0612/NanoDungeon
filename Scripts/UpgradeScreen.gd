@@ -4,6 +4,7 @@ const UPGRADE_RESOLVER_SCRIPT := preload("res://Scripts/UpgradeResolver.gd")
 
 var upgrade_resolver: RefCounted = UPGRADE_RESOLVER_SCRIPT.new()
 var options: Array = []
+var feel_config: Dictionary = {}
 
 @onready var subtitle_label: Label = $Root/SubtitleLabel
 @onready var card_0: Button = $Root/CardRow/Card0
@@ -14,15 +15,22 @@ var options: Array = []
 
 func _ready() -> void:
 	RunState.ensure_run_started()
+	feel_config = DataLoader.get_feel_config()
 	options = upgrade_resolver.draw_upgrade_options(RunState.pending_upgrade_enemy_type)
 	_connect_buttons()
 	_refresh_ui()
+	await get_tree().process_frame
+	for card in [card_0, card_1, card_2]:
+		(card as Button).pivot_offset = (card as Button).size * 0.5
 
 
 func _connect_buttons() -> void:
 	card_0.pressed.connect(_choose_option.bind(0))
 	card_1.pressed.connect(_choose_option.bind(1))
 	card_2.pressed.connect(_choose_option.bind(2))
+	for card in [card_0, card_1, card_2]:
+		(card as Button).mouse_entered.connect(_animate_card_hover.bind(card, true))
+		(card as Button).mouse_exited.connect(_animate_card_hover.bind(card, false))
 	continue_button.pressed.connect(_go_next_battle)
 	continue_button.visible = false
 
@@ -52,6 +60,7 @@ func _choose_option(index: int) -> void:
 	upgrade_resolver.apply_upgrade(options[index] as Dictionary)
 	var selected := options[index] as Dictionary
 	subtitle_label.text = "已選擇：%s" % String(selected["name"])
+	_animate_card_selected(([card_0, card_1, card_2][index] as Button))
 	for card in [card_0, card_1, card_2]:
 		(card as Button).disabled = true
 	continue_button.visible = true
@@ -96,4 +105,22 @@ func _rarity_color(rarity: String) -> Color:
 
 func _go_next_battle() -> void:
 	RunState.current_battle_index = min(RunState.current_battle_index + 1, DataLoader.enemies.size() - 1)
-	get_tree().change_scene_to_file("res://Scenes/Battle.tscn")
+	SceneTransition.change_scene("res://Scenes/Battle.tscn")
+
+
+func _animate_card_hover(card: Button, hovered: bool) -> void:
+	if card.disabled:
+		return
+	var config: Dictionary = feel_config.get("upgrade_card", {})
+	var target_scale := Vector2.ONE * (float(config.get("hover_scale", 1.04)) if hovered else 1.0)
+	var tween := create_tween()
+	tween.tween_property(card, "scale", target_scale, float(config.get("hover_seconds", 0.1)))
+
+
+func _animate_card_selected(card: Button) -> void:
+	var config: Dictionary = feel_config.get("upgrade_card", {})
+	var pulse_scale := Vector2.ONE * float(config.get("select_pulse_scale", 1.08))
+	var pulse_seconds := float(config.get("select_pulse_seconds", 0.16))
+	var tween := create_tween()
+	tween.tween_property(card, "scale", pulse_scale, pulse_seconds)
+	tween.tween_property(card, "scale", Vector2.ONE, pulse_seconds)

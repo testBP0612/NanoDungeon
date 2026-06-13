@@ -39,6 +39,35 @@
 
 ---
 
+## [Phase 9 / 1.5.0] - 2026-06-13 — Game Feel 轉場、回合節奏與反饋打磨
+
+- 執行者：Codex
+- 任務卡：`Codex/09_GAME_FEEL.md`
+
+### Added
+- 新增 `Scripts/SceneTransition.gd` autoload，MainMenu / Battle / UpgradeScreen / GameOver / Victory 切場改走共用淡入淡出。
+- `BattleFX.gd` 新增回合提示橫幅、Boss 必殺 telegraph、低血紅色邊緣脈動、玩家受擊 flash、敵人受擊閃白 / 抖動、結算 count-up / HP drain、combo 文字與升階粒子、漏球提示、發射後座力與重組快閃。
+- `Ball.gd` 追蹤單顆球命中次數並傳給 BattleFX 作 combo 表現；回收時用命中數判斷 miss 提示。
+- `Peg.gd` 新增每回合重組用的輕量快閃 / 縮放回饋。
+- `UpgradeScreen.gd` 新增升級卡 hover 放大與選定 pulse。
+
+### Changed
+- `Battle.gd` 在 SETTLE → ENEMY_TURN → CHECK → ROUND_START 之間加入資料化 beat，敵人攻擊改成預兆 / 衝擊 / 收手三拍。
+- 發射集氣期間 power bar / launcher 視覺漸強，發射瞬間有 launcher recoil；SFX 關閉時所有流程仍正常。
+- 所有場景切換按鈕與流程切場改用 `SceneTransition.change_scene()`。
+
+### Data
+- `Data/feel.json` 新增 `transitions`、`turn_pacing`、`enemy_attack`、`combo`、`telegraph`、`low_hp`、`charge`、`drain`、`reroll_flash`、`upgrade_card`、`settlement` 區段；未改傷害 / HP / 敵人 / 抽取等平衡資料。
+- `DataLoader.gd` 驗證新增 feel 區段。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 無新增。Q-021 已依決議實作。
+
 ## [Phase 8 / 1.4.1] - 2026-06-13 — 鎖定集氣角度並縮短拋物線提示
 
 - 執行者：Codex
@@ -129,6 +158,40 @@
 
 ### 未解問題
 - 無新增。Q-014 採本卡指定預設：單一基礎佈局套用全部場次；本卡不實作每層變化。
+
+## [Phase 10 規劃 / spec] - 2026-06-13 — 過載模式 Overclock 決策 + 任務卡
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/10_OVERLOAD_MODE.md`（待 Codex 實作）
+
+### Changed
+- 人類實機驗證 Phase 9 通過；`ROADMAP.md` 標記 Phase 9 完成、新增 Phase 10 列。
+
+### Added
+- `Codex/10_OVERLOAD_MODE.md`：過載模式任務卡（過載槽 UI、命中累積、3 回合天井保底、升壓/臨界/觸發三階段演出、過載期間高價值權重 + 傷害倍率、純程序化爆發效果、全參數放 `Data/overload.json`）。
+
+### Docs / 決策
+- 新增並由人類決議 **Q-022**：借柏青哥「張力→爆發」情緒結構，但**賽博化用詞、純程序化效果（不依賴外部美術）、限定回合 + 天井保底、全參數化**；明確不做拉霸、不用柏青術語。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作。爽度為體感項，實作後須人類實機驗收。
+
+## [Phase 9 規劃 / spec] - 2026-06-13 — Game Feel 打磨決策 + 任務卡
+
+- 執行者：Claude（規格 / 任務卡作者）+ 人類（決策）
+- 任務卡：`Codex/09_GAME_FEEL.md`（待 Codex 實作）
+
+### Changed
+- 人類實機驗證 Phase 8 通過；`ROADMAP.md` 標記 Phase 8 完成、新增 Phase 9 列（美術 Pass 排於其後）。
+
+### Added
+- `Codex/09_GAME_FEEL.md`：純表現層打磨任務卡（轉場柔化、回合 beats、敵人攻擊三拍、受擊/結算反饋、回合橫幅 + A 連擊升階、B Boss 必殺預兆、C 低血警示、D 漏球反饋、E 集氣手感、F 升級卡 juice、G 釘盤重組輕量閃光）。
+
+### Docs / 決策
+- 新增並由人類決議 **Q-021**（Game Feel 打磨範圍，全部純表現、參數進 feel.json、不改玩法）。G 項即 Phase 7 緩做的漸變特效，現以「輕量閃光版」納入。
+
+### 備註
+- 本筆為規格 / 任務卡層異動，未撰寫實作。Phase 9 為體感項，實作後須人類實機驗收。
 
 ## [Phase 8 規劃 / spec] - 2026-06-13 — 集氣發射 / 底排 bumper / 保底倍傷釘 決策 + 任務卡
 

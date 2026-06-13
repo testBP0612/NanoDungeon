@@ -26,6 +26,8 @@ var bottom_peg_nodes: Array[Node] = []
 var is_charging_launch := false
 var charge_elapsed := 0.0
 var charge_power := 0.0
+var _last_charge_sfx_step := -1
+var _settlement_animating := false
 var launch_direction_locked := false
 var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
@@ -64,12 +66,14 @@ func _ready() -> void:
 	_connect_scene_nodes()
 	_spawn_pegs()
 	_load_enemy_from_run_state()
-	_transition_to(BattleState.ROUND_START)
+	await _transition_to(BattleState.ROUND_START)
 
 
 func _process(delta: float) -> void:
 	battle_fx.update(delta)
+	battle_fx.update_low_hp(RunState.player_hp, RunState.player_max_hp, delta)
 	_update_charge(delta)
+	battle_fx.update_charge_feedback(charge_power, power_bar, launcher_visual)
 	_update_aim_overlay()
 	_update_ui()
 
@@ -145,33 +149,36 @@ func _spawn_pegs() -> void:
 
 func _reroll_dynamic_pegs() -> void:
 	var rolled_slots: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_slots, RunState.guaranteed_double_peg_count)
+	var reroll_flash: Dictionary = feel_config.get("reroll_flash", {})
+	var stagger := float(reroll_flash.get("stagger_seconds", 0.004))
 	for index in range(min(dynamic_peg_nodes.size(), rolled_slots.size())):
 		var slot := rolled_slots[index] as Dictionary
 		var peg := dynamic_peg_nodes[index]
 		var peg_id := String(slot["id"])
 		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
+		battle_fx.flash_reroll_peg(peg, float(index) * stagger)
 
 
 func _transition_to(next_state: BattleState, message := "") -> void:
 	state = next_state
 	match state:
 		BattleState.ROUND_START:
-			_begin_round()
+			await _begin_round()
 		BattleState.AIMING:
 			_reset_charge()
 			status_label.text = "瞄準後點擊 / 空白鍵開始集氣"
 		BattleState.SETTLE:
-			_settle_round()
+			await _settle_round()
 		BattleState.ENEMY_TURN:
-			_enemy_turn()
+			await _enemy_turn()
 		BattleState.CHECK:
-			_check_battle_end()
+			await _check_battle_end()
 		BattleState.REWARD:
 			_advance_to_next_battle()
 		BattleState.GAME_OVER:
-			get_tree().change_scene_to_file("res://Scenes/GameOver.tscn")
+			SceneTransition.change_scene("res://Scenes/GameOver.tscn")
 		BattleState.VICTORY:
-			get_tree().change_scene_to_file("res://Scenes/Victory.tscn")
+			SceneTransition.change_scene("res://Scenes/Victory.tscn")
 
 
 func _begin_round() -> void:
@@ -179,7 +186,9 @@ func _begin_round() -> void:
 	if bool(field_config["generator"].get("reroll_each_round", true)) or round_index == 1:
 		_reroll_dynamic_pegs()
 	round_context.start_round(RunState.balls_per_round)
-	_transition_to(BattleState.AIMING)
+	await _wait_pacing("round_start_delay")
+	await battle_fx.show_turn_banner("你的回合", Color(0.0, 0.92, 1.0))
+	await _transition_to(BattleState.AIMING)
 
 
 func _handle_launch_input() -> void:
@@ -199,6 +208,7 @@ func _fire_ball() -> void:
 		return
 
 	var launch_speed := _launch_speed_for_power(charge_power)
+	var launch_direction := _locked_or_current_aim_direction()
 	is_charging_launch = false
 	var ball := BALL_SCENE.instantiate()
 	var ball_id := _ball_id_for_next_launch()
@@ -218,8 +228,9 @@ func _fire_ball() -> void:
 		status_label.text = "%s 飛行中" % String(ball_def.get("name", "Ball"))
 	_transition_to(BattleState.LAUNCHED)
 	battle_fx.spawn_launch_feedback(launcher_position)
-	battle_fx.play_sfx("launch")
-	ball.launch(_locked_or_current_aim_direction(), launch_speed)
+	battle_fx.play_launcher_recoil(launcher_visual, launch_direction)
+	battle_fx.play_sfx("launch", 0.9 + charge_power / 250.0)
+	ball.launch(launch_direction, launch_speed)
 	_update_ui()
 
 
@@ -260,6 +271,12 @@ func _update_charge(delta: float) -> void:
 	if normalized > 1.0:
 		normalized = 2.0 - normalized
 	charge_power = clamp(normalized * 100.0, 0.0, 100.0)
+	var charge_config: Dictionary = feel_config.get("charge", {})
+	var step_size: int = max(1, int(charge_config.get("sfx_power_step", 25)))
+	var current_step: int = int(int(charge_power) / step_size)
+	if current_step != _last_charge_sfx_step:
+		_last_charge_sfx_step = current_step
+		battle_fx.play_sfx("launch", 0.55 + charge_power / 180.0)
 
 
 func _reset_charge() -> void:
@@ -268,6 +285,7 @@ func _reset_charge() -> void:
 	locked_launch_direction = Vector2.DOWN
 	charge_elapsed = 0.0
 	charge_power = 0.0
+	_last_charge_sfx_step = -1
 
 
 func _launch_speed_for_power(power: float) -> float:
@@ -293,7 +311,7 @@ func _aim_preview_speed() -> float:
 	return float(player_config.get("launch_speed", player_config.get("launch_speed_min", 900.0)))
 
 
-func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color) -> void:
+func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int) -> void:
 	var peg_def := RunState.get_modified_peg_def(DataLoader.get_peg(peg_id))
 	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context)
 	var message := String(result.get("message", ""))
@@ -309,9 +327,11 @@ func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color) -
 		battle_fx.show_floating_text(feedback_text, hit_position, Color(0.22, 1.0, 0.08))
 	if multiplier_applied:
 		battle_fx.show_floating_text(feedback_text, hit_position, Color(1.0, 0.78, 0.24))
-	battle_fx.spawn_hit_particles(hit_position, hit_color)
+	battle_fx.spawn_hit_particles(hit_position, hit_color, combo_count)
+	battle_fx.show_combo_feedback(combo_count, hit_position)
 	battle_fx.start_hit_shake()
-	battle_fx.play_sfx("hit")
+	var combo_config: Dictionary = feel_config.get("combo", {})
+	battle_fx.play_sfx("hit", 1.0 + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06)))
 	_update_ui()
 
 
@@ -319,16 +339,22 @@ func _on_ball_wall_hit(_hit_position: Vector2) -> void:
 	battle_fx.play_sfx("wall")
 
 
-func _on_ball_recovered(_ball: RigidBody2D, reason: String) -> void:
+func _on_ball_recovered(ball: RigidBody2D, reason: String) -> void:
+	var hit_count := 0
+	if ball != null and ball.has_method("get_combo_hits"):
+		hit_count = int(ball.get_combo_hits())
 	round_context.balls_in_play = max(0, round_context.balls_in_play - 1)
 	status_label.text = "球已回收：%s" % reason
+	var drain_config: Dictionary = feel_config.get("drain", {})
+	if hit_count <= int(drain_config.get("miss_hit_threshold", 1)):
+		battle_fx.show_miss_feedback(Vector2(512, 900))
 	battle_fx.play_sfx("drop")
 	if round_context.balls_in_play > 0:
 		return
 	if round_context.balls_remaining > 0:
 		_transition_to(BattleState.AIMING)
 	else:
-		_transition_to(BattleState.SETTLE)
+		await _transition_to(BattleState.SETTLE)
 
 
 func _on_bottom_sensor_body_entered(body: Node) -> void:
@@ -337,25 +363,41 @@ func _on_bottom_sensor_body_entered(body: Node) -> void:
 
 
 func _settle_round() -> void:
+	await _wait_pacing("settle_pre_delay")
 	var settlement: Dictionary = effect_resolver.apply_settlement_effects(round_context)
 	var bonus_damage := int(settlement.get("bonus_damage", 0))
 	var heal_amount := int(settlement.get("heal_amount", 0))
 	if heal_amount > 0:
 		RunState.heal_player(heal_amount)
 	round_context.mark_settled()
-	enemy_hp = max(0, enemy_hp - round_context.damage_accumulator)
+	var previous_enemy_hp: int = enemy_hp
+	var next_enemy_hp: int = max(0, enemy_hp - round_context.damage_accumulator)
 	status_label.text = "結算 %s 傷害" % round_context.damage_accumulator
 	if bonus_damage > 0:
 		status_label.text += "（Blast +%s）" % bonus_damage
 	if heal_amount > 0:
 		status_label.text += "，回復 %s HP" % heal_amount
+	_settlement_animating = true
+	await battle_fx.animate_settlement(damage_label, enemy_hp_bar, round_context.damage_accumulator, previous_enemy_hp, next_enemy_hp)
+	_settlement_animating = false
+	enemy_hp = next_enemy_hp
+	_last_enemy_hp = enemy_hp
 	battle_fx.show_floating_text("TOTAL %s" % round_context.damage_accumulator, Vector2(512, 610), Color(1.0, 0.9, 0.35))
+	await battle_fx.flash_enemy_hit(enemy_portrait)
 	battle_fx.play_sfx("settle")
-	_transition_to(BattleState.CHECK)
+	await _wait_pacing("settle_post_delay")
+	await _transition_to(BattleState.CHECK)
 
 
 func _enemy_turn() -> void:
+	await _wait_pacing("enemy_turn_pre_delay")
 	var attack_info := _enemy_attack_value()
+	if bool(attack_info.get("special", false)):
+		await battle_fx.show_boss_telegraph()
+	await battle_fx.show_turn_banner("敵人回合", Color(1.0, 0.2, 0.28))
+	await battle_fx.play_enemy_windup(enemy_portrait)
+	var attack_config: Dictionary = feel_config.get("enemy_attack", {})
+	await get_tree().create_timer(float(attack_config.get("impact_seconds", 0.12))).timeout
 	var base_attack := int(attack_info["attack"])
 	var attack: int = effect_resolver.resolve_enemy_attack(base_attack, round_context)
 	RunState.damage_player(attack)
@@ -364,9 +406,12 @@ func _enemy_turn() -> void:
 	if attack < base_attack:
 		status_label.text += "（Shield 減免）"
 	battle_fx.show_floating_text("-%s HP" % attack, Vector2(132, 48), Color(1.0, 0.2, 0.2))
+	battle_fx.flash_player_hit()
 	battle_fx.start_enemy_attack_shake()
 	battle_fx.play_sfx("enemy_attack")
-	_transition_to(BattleState.CHECK)
+	await battle_fx.play_enemy_recover(enemy_portrait)
+	await _wait_pacing("enemy_turn_post_delay")
+	await _transition_to(BattleState.CHECK)
 
 
 func _enemy_attack_value() -> Dictionary:
@@ -377,34 +422,37 @@ func _enemy_attack_value() -> Dictionary:
 			return {
 				"attack": RunState.get_modified_enemy_attack(int(special.get("attack", enemy_def["attack"]))),
 				"message": "%s 施放 %s" % [String(enemy_def["name"]), String(special.get("name", "強攻擊"))],
+				"special": true,
 			}
 	return {
 		"attack": RunState.get_modified_enemy_attack(int(enemy_def["attack"])),
 		"message": "%s 反擊" % String(enemy_def["name"]),
+		"special": false,
 	}
 
 
 func _check_battle_end() -> void:
+	await _wait_pacing("check_delay")
 	if RunState.is_player_dead():
-		_transition_to(BattleState.GAME_OVER)
+		await _transition_to(BattleState.GAME_OVER)
 		return
 	if enemy_hp <= 0:
 		RunState.kills += 1
 		if String(enemy_def.get("type", "")) == "boss" or RunState.current_battle_index >= DataLoader.enemies.size() - 1:
-			_transition_to(BattleState.VICTORY)
+			await _transition_to(BattleState.VICTORY)
 		else:
-			_transition_to(BattleState.REWARD)
+			await _transition_to(BattleState.REWARD)
 		return
 	if not round_context.enemy_acted_this_settlement:
-		_transition_to(BattleState.ENEMY_TURN)
+		await _transition_to(BattleState.ENEMY_TURN)
 	else:
-		_transition_to(BattleState.ROUND_START)
+		await _transition_to(BattleState.ROUND_START)
 
 
 func _advance_to_next_battle() -> void:
 	RunState.pending_upgrade_enemy_type = String(enemy_def.get("type", "normal"))
 	status_label.text = "選擇升級"
-	get_tree().change_scene_to_file("res://Scenes/UpgradeScreen.tscn")
+	SceneTransition.change_scene("res://Scenes/UpgradeScreen.tscn")
 
 
 func _update_ui() -> void:
@@ -413,12 +461,14 @@ func _update_ui() -> void:
 	player_hp_label.text = "玩家 HP：%s / %s" % [RunState.player_hp, RunState.player_max_hp]
 	enemy_hp_label.text = "敵人 HP：%s / %s  %s" % [enemy_hp, enemy_max_hp, String(enemy_def.get("name", ""))]
 	round_label.text = "回合：%s" % round_index
-	damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator
+	if not _settlement_animating:
+		damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator
 	balls_label.text = "剩餘球：%s｜場上球：%s" % [round_context.balls_remaining, round_context.balls_in_play]
 	power_label.text = "POWER：%03d" % int(round(charge_power))
 	power_bar.value = charge_power
 	sfx_toggle_button.text = "SFX: %s" % ("ON" if sfx_enabled else "OFF")
-	_update_hp_bars()
+	if not _settlement_animating:
+		_update_hp_bars()
 
 
 func _update_hp_bars() -> void:
@@ -446,8 +496,15 @@ func _on_sfx_toggle_pressed() -> void:
 
 func _on_restart_pressed() -> void:
 	RunState.reset_new_run()
-	get_tree().reload_current_scene()
+	SceneTransition.reload_current_scene()
 
 
 func _on_menu_pressed() -> void:
-	get_tree().change_scene_to_file("res://Scenes/MainMenu.tscn")
+	SceneTransition.change_scene("res://Scenes/MainMenu.tscn")
+
+
+func _wait_pacing(key: String) -> void:
+	var pacing: Dictionary = feel_config.get("turn_pacing", {})
+	var seconds := float(pacing.get(key, 0.0))
+	if seconds > 0.0:
+		await get_tree().create_timer(seconds).timeout

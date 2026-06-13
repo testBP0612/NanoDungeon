@@ -39,41 +39,38 @@
 ## 當前工作計畫
 
 # Current State
-- MVP Phase 1 ~ 5 已完成並經人類驗收，Demo 可獨立匯出與展示。
-- Phase 6 已將 peg 位置 / 半徑資料化到 `Data/field.json`。
-- Phase 7 已完成程序生成釘盤、每回合重抽動態釘類型、底排 `bounce_peg` 與 1024×1024 場地，並經人類實機驗收。
-- 新任務卡 `Codex/08_LAUNCH_AND_TUNING.md` 已指定：底排 bumper 主動加速、兩段式集氣發射 + 拋物線瞄準、double_peg 每回合保底與對應升級。
+- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底皆已落地。
+- 目前已存在 `Data/feel.json`、`Scripts/BattleFX.gd` 與基本 hit / launch / SFX 回饋，可作為 Phase 9 Game Feel 的表現層接點。
+- Q-021 已決議：Game Feel 打磨限於純表現，不改玩法數值、傷害公式、敵人規則、抽取或種類。
 
 # Current Phase
-- **Post-MVP Playability Increment — Launch & Tuning**。
+- **Phase 9 — Game Feel（轉場、回合節奏與反饋打磨）**。
 
 # Recommended Task
-- 執行 `Codex/08_LAUNCH_AND_TUNING.md`。
-- `bounce_peg` 命中時依 `field.json` 的 `bottom_row.bounce_multiplier` 主動放大速度，並以 `max_ball_speed` 夾住。
-- 將 AIMING 輸入改為左鍵 / 空白鍵第一下集氣、第二下依 power 發射；AimLine 改為拋物線預覽，power 表 UI 可見。
-- 在 `FieldGenerator` 加入 `guaranteed_double_peg_count` 保底抽取，並新增 `up_guaranteed_double` 讓 RunState 整局提升保底數。
+- 執行 `Codex/09_GAME_FEEL.md`。
+- 新增共用場景淡入淡出 helper，替換 MainMenu / Battle / UpgradeScreen / GameOver / Victory 的硬切。
+- 擴充 `feel.json` 與 `BattleFX`：回合 banner、敵人三拍、Boss special telegraph、受擊 / 低血 / combo / miss / charge / settlement count-up / reroll flash / upgrade card juice。
+- 在 `Battle.gd` 只接入表現節奏與 await beat，不改傷害、HP、球池、敵人與升級規則。
 
 # Why
-- Q-018 / Q-019 / Q-020 已決議，Phase 8 的目標是補足發射策略、底部反彈手感與倍傷釘可預期性。
-- 這些都是可玩性調校，不應改動既有傷害公式、敵人規則、釘 / 球種類或位置骨架。
-- 新數值必須 JSON 化，讓後續只調資料即可微調手感。
+- ROADMAP 指出美術 Pass 前需完成 Phase 9 Game Feel，補齊純色 placeholder 上的成品感。
+- 目前回合結算、敵人攻擊與下一回合切換過快，且 scene change 仍硬切，與任務卡 DoD 有明顯差距。
+- 所有新增節奏 / 強度 / 開關放入 `Data/feel.json`，後續可只調資料微調體感。
 
 # Risks
-- 主動 bumper 若速度過高可能造成穿透、飛出或 timeout 變多，需保留 CCD 並夾 `max_ball_speed`。
-- 兩段式輸入可能和舊「點一下發射」衝突，需確保未集氣不誤射、飛行中輸入無效。
-- double 保底會提高輸出波動與強度，需設上限並讓升級在達上限後排除。
+- async 回合節奏若接錯可能卡住 FSM；需保持每段 beat 可完成且不依賴 SFX。
+- 表現層容易侵入規則層；需把新邏輯集中於 `BattleFX` / UI / Peg feedback，`Battle.gd` 只負責呼叫與等待。
+- combo / miss / charge 必須純表現，不能改變傷害、power 映射或球回收規則。
 
 # Dependencies
-- Q-018：底排 `bounce_peg` 改主動 bumper，倍率與速度上限資料化。
-- Q-019：集氣發射、拋物線瞄準、power 表與發射速度資料化。
-- Q-020：`double_peg` 每回合保底數量與升級增加已決議。
+- Q-021 已決議，無阻斷性未決問題。
 
 # Estimated Scope
-- 大。會修改 `Data/field.json`、`Data/player.json`、`Data/upgrades.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/Ball.gd`、`Scripts/FieldGenerator.gd`、`Scripts/RunState.gd`、`Scripts/UpgradeResolver.gd`、`Scenes/Battle.tscn`，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 大。會修改 `Data/feel.json`、`Scripts/DataLoader.gd`、`Scripts/BattleFX.gd`、`Scripts/Battle.gd`、`Scripts/Ball.gd`、`Scripts/Peg.gd`、`Scripts/UpgradeScreen.gd`、各畫面切場腳本、`project.godot` autoload，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/08_LAUNCH_AND_TUNING.md` DoD：bumper 加速與上限、集氣表與兩段式輸入、拋物線預覽、power 影響初速、double_peg 保底與升級、JSON 驗證、Godot headless / export 驗證。
-- 同步檢查禁止事項：不新增種類、不改傷害 / 敵人 / 既有升級規則、不擾動位置骨架、不把數值寫死。
+- 對照 `Codex/09_GAME_FEEL.md` DoD：淡入淡出、回合 beats、敵攻三拍、Boss telegraph、受擊 / HP / count-up、combo、低血、漏球、集氣、升級卡、重組快閃。
+- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：Demo 展示相關穩定性與禁止偏離項目。
 
 ---
 

@@ -8,8 +8,88 @@
     "shake": {
       "hit_strength": 2.5,
       "hit_duration": 0.1,
-      "enemy_attack_strength": 4.0,
-      "enemy_attack_duration": 0.16
+      "enemy_attack_strength": 6.0,
+      "enemy_attack_duration": 0.2,
+      "telegraph_strength": 7.0,
+      "telegraph_duration": 0.18,
+      "miss_strength": 1.5,
+      "miss_duration": 0.08
+    },
+    "transitions": {
+      "enabled": true,
+      "fade_out_seconds": 0.16,
+      "fade_in_seconds": 0.18,
+      "color": "#02040A"
+    },
+    "turn_pacing": {
+      "settle_pre_delay": 0.18,
+      "settle_post_delay": 0.28,
+      "enemy_turn_pre_delay": 0.22,
+      "enemy_turn_post_delay": 0.3,
+      "check_delay": 0.18,
+      "round_start_delay": 0.2,
+      "banner_duration": 0.72
+    },
+    "enemy_attack": {
+      "windup_seconds": 0.34,
+      "impact_seconds": 0.12,
+      "recover_seconds": 0.22,
+      "windup_flash_count": 3,
+      "enemy_lunge_pixels": 14.0,
+      "player_hit_flash_seconds": 0.22,
+      "enemy_hit_flash_seconds": 0.18,
+      "enemy_hit_shake_pixels": 6.0
+    },
+    "combo": {
+      "enabled": true,
+      "show_at": 2,
+      "particle_amount_step": 3,
+      "particle_lifetime_step": 0.025,
+      "max_visual_level": 6,
+      "text_color": "#FFE66D",
+      "sfx_pitch_step": 0.06
+    },
+    "telegraph": {
+      "enabled": true,
+      "boss_warning_text": "核心過載 來襲",
+      "banner_duration": 0.95,
+      "flash_alpha": 0.28,
+      "flash_seconds": 0.34
+    },
+    "low_hp": {
+      "enabled": true,
+      "threshold_ratio": 0.25,
+      "pulse_speed": 4.0,
+      "max_alpha": 0.28
+    },
+    "charge": {
+      "bar_min_alpha": 0.55,
+      "bar_max_alpha": 1.0,
+      "launcher_recoil_pixels": 10.0,
+      "launcher_recoil_seconds": 0.11,
+      "sfx_min_interval": 0.16,
+      "sfx_power_step": 25
+    },
+    "drain": {
+      "miss_hit_threshold": 1,
+      "miss_text": "MISS",
+      "miss_color": "#6F748A"
+    },
+    "reroll_flash": {
+      "enabled": true,
+      "duration": 0.18,
+      "scale": 1.18,
+      "stagger_seconds": 0.004
+    },
+    "upgrade_card": {
+      "hover_scale": 1.04,
+      "hover_seconds": 0.1,
+      "select_pulse_scale": 1.08,
+      "select_pulse_seconds": 0.16
+    },
+    "settlement": {
+      "count_up_seconds": 0.42,
+      "enemy_hp_drain_seconds": 0.46
     },
     "particles": {
       "launch_amount": 8,

@@ -20,8 +20,8 @@ func _ready() -> void:
 
 func _on_restart_pressed() -> void:
 	RunState.reset_new_run()
-	get_tree().change_scene_to_file("res://Scenes/Battle.tscn")
+	SceneTransition.change_scene("res://Scenes/Battle.tscn")
 
 
 func _on_menu_pressed() -> void:
-	get_tree().change_scene_to_file("res://Scenes/MainMenu.tscn")
+	SceneTransition.change_scene("res://Scenes/MainMenu.tscn")

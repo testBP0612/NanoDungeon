@@ -1,6 +1,6 @@
 extends RigidBody2D
 
-signal peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color)
+signal peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int)
 signal wall_hit(hit_position: Vector2)
 signal recovered(ball: RigidBody2D, reason: String)
 
@@ -15,6 +15,7 @@ var _ball_color := Color(1.0, 0.86, 0.25)
 var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
 var _feel_config: Dictionary = {}
+var _combo_hits := 0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -82,9 +83,14 @@ func _on_body_entered(body: Node) -> void:
 		var hit_color := Color(0.2, 0.85, 1.0)
 		if body.has_method("get_peg_color"):
 			hit_color = body.get_peg_color()
-		peg_hit.emit(body.get_peg_id(), body.global_position, hit_color)
+		_combo_hits += 1
+		peg_hit.emit(body.get_peg_id(), body.global_position, hit_color, _combo_hits)
 	else:
 		wall_hit.emit(global_position)
+
+
+func get_combo_hits() -> int:
+	return _combo_hits
 
 
 func _apply_bumper_boost() -> void:

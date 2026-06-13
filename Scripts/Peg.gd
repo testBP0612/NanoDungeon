@@ -34,6 +34,16 @@ func play_hit_feedback() -> void:
 	tween.tween_method(_set_flash, 1.0, 0.0, 0.16)
 
 
+func play_reroll_feedback(duration: float, scale_multiplier: float) -> void:
+	var original_scale: Vector2 = scale
+	var first_leg: float = max(0.01, duration * 0.33)
+	var second_leg: float = max(0.01, duration - first_leg)
+	var tween := create_tween()
+	tween.parallel().tween_method(_set_flash, 0.8, 0.0, duration)
+	tween.parallel().tween_property(self, "scale", original_scale * scale_multiplier, first_leg)
+	tween.tween_property(self, "scale", original_scale, second_leg)
+
+
 func get_peg_color() -> Color:
 	return _base_color
 

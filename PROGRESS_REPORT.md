@@ -33,6 +33,45 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/09_GAME_FEEL.md`：新增共用淡入淡出轉場，將戰鬥結算、敵人攻擊、下一回合拆成可感知 beat；敵人攻擊具備預兆 / 衝擊 / 收手三拍，Boss special 會先 telegraph；補上敵人受擊、玩家低血、combo、miss、集氣、升級卡與每回合重組快閃等純表現回饋。未改傷害、HP、球池、敵人、抽取或升級規則。
+
+# Completed
+- `Data/feel.json`：新增 `transitions / turn_pacing / enemy_attack / combo / telegraph / low_hp / charge / drain / reroll_flash / upgrade_card / settlement` 表現參數。
+- `Scripts/SceneTransition.gd` / `project.godot`：新增 autoload，所有場景切換改走淡入淡出 helper。
+- `Scripts/BattleFX.gd`：集中處理回合 banner、Boss telegraph、低血邊緣、玩家受擊 flash、敵人受擊閃白 / 抖動、settlement count-up / HP drain、combo、miss、launcher recoil、reroll flash。
+- `Scripts/Battle.gd`：SETTLE / ENEMY_TURN / CHECK / ROUND_START 接入資料化 await beat；敵人攻擊拆成三拍；結算總傷 count-up 與 HP bar 分段下降。
+- `Scripts/Ball.gd` / `Scripts/Peg.gd`：Ball 回報單顆命中次數供 combo/miss 表現；Peg 支援重組快閃。
+- `Scripts/UpgradeScreen.gd`：升級卡 hover 放大、選定 pulse；下一場切換走 SceneTransition。
+- `Scripts/MainMenu.gd`、`GameOver.gd`、`Victory.gd`：切場按鈕改用淡入淡出。
+
+# Validation Results
+- ✅ 場景切換淡入淡出：所有 `change_scene_to_file()` 呼叫集中於 `SceneTransition.gd`，其餘畫面改呼叫 `SceneTransition.change_scene()`。
+- ✅ 回合節奏：`turn_pacing` 控制 settle / enemy / check / round start 等待，避免一幀內跑完。
+- ✅ 敵人攻擊三拍：敵人回合顯示 banner，Boss special 先 telegraph，攻擊流程為 wind-up → impact flash/shake/damage text → recover。
+- ✅ 受擊與結算：敵人受傷閃白 / 抖動，玩家受擊紅 flash + shake；結算總傷 count-up，敵人 HP bar drain。
+- ✅ combo 純表現：Ball 只回報 hit count；傷害仍由 `EffectResolver.apply_peg_effect()` 計算，combo 不進傷害公式。
+- ✅ 低血 / miss / charge / upgrade / reroll：低血邊緣脈動、低命中落底 miss、集氣視覺 / 音高漸強與發射後座力、升級卡 hover/select、每回合 peg 重組快閃皆已接入。
+- ✅ 新參數資料化：新增時間、強度、文字、門檻、開關皆在 `Data/feel.json`；`DataLoader` 驗證新增區段。
+- ✅ 玩法 / 平衡不變：未改 `Data/player.json`、`Data/pegs.json`、`Data/balls.json`、`Data/enemies.json`、`Data/upgrades.json`，未改 EffectResolver 傷害公式或 RunState 成長規則。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ Godot 驗證：專案、`Battle.tscn`、`UpgradeScreen.tscn`、`GameOver.tscn`、`Victory.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ⚠️ 一整局 5 場 + 4 次升級：headless / export 驗證通過；game feel 強度、節奏停頓長短、低血脈動與 SFX 體感仍需人類實機驗收。
+
+# Open Questions
+- 無新增。
+- Q-021 已依決議實作。
+
+# Risks
+- 轉場、回合停頓與 SFX pitch 是體感項；若過慢或過吵，建議只調 `Data/feel.json`。
+- 新增 overlay 為純 UI 節點，headless / export 通過；仍建議用 1024×1024 視窗實機確認不遮擋關鍵 UI。
+
+# Recommended Next Task
+- 建議人類用 export 版實機驗收 Phase 9：完整打一局，確認回合節奏、Boss telegraph、低血提示、升級卡手感與重組快閃強度。通過後下一條軌道為美術 Pass。
+
+## 歷史報告 — Phase 8 Launch & Tuning
+
+# Summary
 完成 `Codex/08_LAUNCH_AND_TUNING.md`：底排 `bounce_peg` 改為主動 bumper，命中後依 JSON 倍率加速且有速度上限；發射流程改為 AIMING 狀態兩段式集氣，左鍵 / 空白鍵第一下集氣、第二下發射，AimLine 改拋物線預覽；每回合重抽 peg 類型時保證 `double_peg` 至少出現指定數量，並新增整局升級可增加保底數。未新增球 / 敵人 / 釘種類，未改既有傷害、敵人或升級抽取規則，位置骨架不變。
 
 # Completed

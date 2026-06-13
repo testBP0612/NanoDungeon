@@ -44,7 +44,7 @@ func _build_ui() -> void:
 
 func _on_start_pressed() -> void:
 	RunState.reset_new_run()
-	get_tree().change_scene_to_file("res://Scenes/Battle.tscn")
+	SceneTransition.change_scene("res://Scenes/Battle.tscn")
 
 
 func _on_quit_pressed() -> void:
