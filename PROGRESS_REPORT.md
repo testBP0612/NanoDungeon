@@ -33,6 +33,46 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/10_OVERLOAD_MODE.md`：新增 Overclock gauge、命中累積、100 觸發、3 回合未觸發的強制同步、限定 2 回合過載狀態；過載中重抽權重偏向 `burst_peg` / `double_peg`，Peg 傷害套用全域倍率。爆發演出使用 ColorRect、Tween、Camera punch、scanline、粒子與合成 SFX，未依賴外部素材，也未改 base 傷害公式或新增種類。
+
+# Completed
+- `Data/overload.json`：新增全部過載參數，包含開關、充能、天井、持續、權重、倍率、gauge 顏色、演出強度與 SFX pitch。
+- `Scripts/RunState.gd`：新增 run-scoped 過載槽、未觸發回合、剩餘回合與 reset 歸零。
+- `Scripts/DataLoader.gd`：載入並驗證 `overload.json`，檢查 peg id、倍率、門檻與 tier 比例。
+- `Scripts/Battle.gd`：命中累積能量、達 100 觸發、ROUND_START 天井強制觸發、過載回合消耗、UI 更新、過載期間權重 / 傷害倍率接入。
+- `Scripts/FieldGenerator.gd`：重抽支援權重覆寫；內部格位命名改為 `cell`。
+- `Scripts/EffectResolver.gd`：Peg 傷害結算接受外部倍率，維持既有公式結構。
+- `Scripts/BattleFX.gd`：新增過載 gauge 脈動、臨界抖動、OVERCLOCK cut-in、全螢幕 flash、金色 overlay、scanline、Camera punch、強化命中粒子 / 文字與退場淡出。
+- `Scenes/Battle.tscn`：新增 `OverloadLabel` / `OverloadBar`。
+- `Data/pegs.json`：清除既有非賽博描述文字，未改數值。
+
+# Validation Results
+- ✅ 過載槽命中累積：`charge_per_hit` 由 JSON 控制，預設 normal/heal=1、burst=3、double=5、bounce=0；UI 顯示百分比。
+- ✅ 分階段演出：70% 進升壓文字 / 洋紅，90% 進「系統不穩 / UNSTABLE」與抖動，觸發時顯示 OVERCLOCK cut-in、flash、camera punch。
+- ✅ 天井強制觸發：連續 `pity_rounds = 3` 回合未觸發時，下個 ROUND_START 先啟動再重抽。
+- ✅ 過載期間效果：`burst_peg` / `double_peg` 權重乘上 JSON 倍率；傷害乘 `overload_damage_multiplier = 1.5`；持續回合結束後槽與計數歸零。
+- ✅ 程序化效果：未新增外部圖片 / 音效素材；演出以 Godot 內建節點、Tween、粒子、Camera 與即時合成 SFX 完成。
+- ✅ 資料化 / 可關閉：所有過載玩法與演出參數在 `Data/overload.json`，`enabled` 可關閉。
+- ✅ 用詞掃描：`Scripts/Scenes/Data` 無本卡禁用字詞；內部 `slot` 命名已改為 `cell`。
+- ✅ JSON 驗證：`Data/*.json` 全部可解析。
+- ✅ Godot 驗證：專案與 `Scenes/Battle.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ⚠️ 完整可視化一整局：headless / export 通過；過載爆發強度、scanline、shake、節奏屬體感項，仍需人類實機驗收。
+
+# Open Questions
+- 無新增。
+- Q-022 已依決議實作。
+
+# Risks
+- 過載權重與 1.5 倍傷害會明顯提高 Demo 輸出穩定度；若 Boss 過快被擊倒，建議先只調 `Data/overload.json` 的持續回合、權重或倍率。
+- 爆發演出已採穩定版程序化 overlay；若實機覺得太亮或太晃，優先調 `presentation.trigger_shake_strength`、`active_overlay_alpha`、`active_scanline_alpha`。
+
+# Recommended Next Task
+- 建議人類用匯出版實機驗收 Phase 10：確認 3 回合內必定看到爆發、過載中高價值 peg 明顯變多、傷害與演出強度符合現場展示節奏；通過後可進美術 Pass 或只做 `Data/overload.json` 微調。
+
+## 歷史報告 — Phase 9 Game Feel
+
+# Summary
 完成 `Codex/09_GAME_FEEL.md`：新增共用淡入淡出轉場，將戰鬥結算、敵人攻擊、下一回合拆成可感知 beat；敵人攻擊具備預兆 / 衝擊 / 收手三拍，Boss special 會先 telegraph；補上敵人受擊、玩家低血、combo、miss、集氣、升級卡與每回合重組快閃等純表現回饋。未改傷害、HP、球池、敵人、抽取或升級規則。
 
 # Completed

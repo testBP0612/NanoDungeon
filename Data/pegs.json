@@ -7,7 +7,7 @@
     {
       "id": "normal_peg",
       "name": "普通釘 Normal Peg",
-      "description": "基礎能量節點，命中時造成基礎傷害。柏青哥釘海主體，單顆傷害低、靠數量與彈跳累積。",
+      "description": "基礎能量節點，命中時造成基礎傷害。節點陣列主體，單顆傷害低、靠數量與彈跳累積。",
       "base_damage": 1,
       "effect_type": "damage",
       "effect_value": 0

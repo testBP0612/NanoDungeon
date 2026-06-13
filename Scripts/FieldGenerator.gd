@@ -14,9 +14,9 @@ func configure(generator_config: Dictionary) -> void:
 		_seeded = true
 
 
-func build_dynamic_slots(field_config: Dictionary) -> Array:
+func build_dynamic_cells(field_config: Dictionary) -> Array:
 	var generator: Dictionary = field_config["generator"]
-	var slots := []
+	var cells := []
 	var row_count := int(generator["row_count"])
 	var top_y := float(generator["top_y"])
 	var row_spacing := float(generator["row_spacing"])
@@ -24,17 +24,17 @@ func build_dynamic_slots(field_config: Dictionary) -> Array:
 		var is_wide := row % 2 == 0
 		var column_count := int(generator["wide_cols"] if is_wide else generator["narrow_cols"])
 		for column in range(column_count):
-			slots.append({
+			cells.append({
 				"x": _column_x(generator, column, column_count),
 				"y": top_y + float(row) * row_spacing,
 			})
-	return slots
+	return cells
 
 
-func build_bottom_slots(field_config: Dictionary) -> Array:
+func build_bottom_cells(field_config: Dictionary) -> Array:
 	var bounds: Dictionary = field_config["bounds"]
 	var bottom_row: Dictionary = field_config["bottom_row"]
-	var slots := []
+	var cells := []
 	var count := int(bottom_row["count"])
 	var left := float(bounds["left"])
 	var right := float(bounds["right"])
@@ -43,33 +43,43 @@ func build_bottom_slots(field_config: Dictionary) -> Array:
 	if count > 1:
 		spacing = (right - left) / float(count - 1)
 	for index in range(count):
-		slots.append({
+		cells.append({
 			"id": String(bottom_row["id"]),
 			"x": left + spacing * float(index),
 			"y": y,
 			"radius": float(bottom_row["radius"]),
 			"fixed": true,
 		})
-	return slots
+	return cells
 
 
-func roll_dynamic_types(field_config: Dictionary, dynamic_slots: Array, guaranteed_double_count := -1) -> Array:
+func roll_dynamic_types(field_config: Dictionary, dynamic_cells: Array, guaranteed_double_count := -1, weight_multiplier := {}) -> Array:
 	var generator: Dictionary = field_config["generator"]
 	var default_radius := float(field_config["default_peg_radius"])
 	var special_radius: Dictionary = generator.get("special_radius", {})
+	var type_weights := _weighted_type_pool(generator["type_weights"], weight_multiplier)
 	var rolled := []
-	var guaranteed_indices := _guaranteed_double_indices(dynamic_slots.size(), int(generator.get("guaranteed_double_peg_count", 0)) if guaranteed_double_count < 0 else guaranteed_double_count)
-	for index in range(dynamic_slots.size()):
-		var slot := dynamic_slots[index] as Dictionary
-		var peg_id := "double_peg" if guaranteed_indices.has(index) else _weighted_peg_id(generator["type_weights"])
+	var guaranteed_indices := _guaranteed_double_indices(dynamic_cells.size(), int(generator.get("guaranteed_double_peg_count", 0)) if guaranteed_double_count < 0 else guaranteed_double_count)
+	for index in range(dynamic_cells.size()):
+		var cell := dynamic_cells[index] as Dictionary
+		var peg_id := "double_peg" if guaranteed_indices.has(index) else _weighted_peg_id(type_weights)
 		rolled.append({
 			"id": peg_id,
-			"x": float(slot["x"]),
-			"y": float(slot["y"]),
+			"x": float(cell["x"]),
+			"y": float(cell["y"]),
 			"radius": float(special_radius.get(peg_id, default_radius)),
 			"fixed": false,
 		})
 	return rolled
+
+
+func _weighted_type_pool(type_weights: Dictionary, weight_multiplier: Dictionary) -> Dictionary:
+	var weighted := {}
+	for peg_id in type_weights.keys():
+		var id := String(peg_id)
+		var multiplier := float(weight_multiplier.get(id, 1.0))
+		weighted[id] = max(1, int(round(float(type_weights[peg_id]) * multiplier)))
+	return weighted
 
 
 func _column_x(generator: Dictionary, column: int, column_count: int) -> float:
@@ -91,9 +101,9 @@ func _weighted_peg_id(type_weights: Dictionary) -> String:
 	return String(type_weights.keys()[0])
 
 
-func _guaranteed_double_indices(slot_count: int, requested_count: int) -> Dictionary:
+func _guaranteed_double_indices(cell_count: int, requested_count: int) -> Dictionary:
 	var indices := {}
-	var target_count = clamp(requested_count, 0, slot_count)
+	var target_count = clamp(requested_count, 0, cell_count)
 	while indices.size() < target_count:
-		indices[_rng.randi_range(0, slot_count - 1)] = true
+		indices[_rng.randi_range(0, cell_count - 1)] = true
 	return indices

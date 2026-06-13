@@ -39,38 +39,38 @@
 ## 當前工作計畫
 
 # Current State
-- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底皆已落地。
-- 目前已存在 `Data/feel.json`、`Scripts/BattleFX.gd` 與基本 hit / launch / SFX 回饋，可作為 Phase 9 Game Feel 的表現層接點。
-- Q-021 已決議：Game Feel 打磨限於純表現，不改玩法數值、傷害公式、敵人規則、抽取或種類。
+- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底、Phase 9 Game Feel 皆已落地。
+- 目前已有 `Data/feel.json`、`Scripts/BattleFX.gd`、每回合重抽與資料化場地，可作為 Phase 10 過載模式接點。
+- Q-022 已決議：過載槽累積、天井保底、限定回合、過載中權重與傷害倍率、純程序化演出，全參數放 `Data/overload.json`。
 
 # Current Phase
-- **Phase 9 — Game Feel（轉場、回合節奏與反饋打磨）**。
+- **Phase 10 — OVERLOAD MODE（過載模式：張力鋪陳 → 爆發）**。
 
 # Recommended Task
-- 執行 `Codex/09_GAME_FEEL.md`。
-- 新增共用場景淡入淡出 helper，替換 MainMenu / Battle / UpgradeScreen / GameOver / Victory 的硬切。
-- 擴充 `feel.json` 與 `BattleFX`：回合 banner、敵人三拍、Boss special telegraph、受擊 / 低血 / combo / miss / charge / settlement count-up / reroll flash / upgrade card juice。
-- 在 `Battle.gd` 只接入表現節奏與 await beat，不改傷害、HP、球池、敵人與升級規則。
+- 執行 `Codex/10_OVERLOAD_MODE.md`。
+- 新增 `Data/overload.json`，集中過載槽、命中累積、trigger、pity、持續回合、權重倍率、傷害倍率與演出參數。
+- 擴充 `RunState` / `Battle` / `FieldGenerator` / `EffectResolver` / `BattleFX` / `Battle.tscn`，接入過載狀態、UI、重抽權重覆寫與程序化演出。
 
 # Why
-- ROADMAP 指出美術 Pass 前需完成 Phase 9 Game Feel，補齊純色 placeholder 上的成品感。
-- 目前回合結算、敵人攻擊與下一回合切換過快，且 scene change 仍硬切，與任務卡 DoD 有明顯差距。
-- 所有新增節奏 / 強度 / 開關放入 `Data/feel.json`，後續可只調資料微調體感。
+- ROADMAP 將 Phase 10 排在 Phase 9 之後，目標是補上可展示的張力鋪陳與爆發節奏。
+- Q-022 已決議且無阻斷問題，任務卡明確要求全資料化、限定回合、可關閉與賽博化用詞。
+- 既有 BattleFX 與每回合重抽架構已能小步接入，不需重寫核心戰鬥流程。
 
 # Risks
-- async 回合節奏若接錯可能卡住 FSM；需保持每段 beat 可完成且不依賴 SFX。
-- 表現層容易侵入規則層；需把新邏輯集中於 `BattleFX` / UI / Peg feedback，`Battle.gd` 只負責呼叫與等待。
-- combo / miss / charge 必須純表現，不能改變傷害、power 映射或球回收規則。
+- 過載觸發若接在 FSM 錯誤位置，可能導致天井或持續回合計數錯位；需明確在 ROUND_START / SETTLE 更新。
+- 傷害倍率必須是清楚的全域狀態乘數，不改 base 傷害與既有公式結構。
+- shader / overlay / shake 需以穩定為先，可用 ColorRect、Tween、粒子、Camera punch 降級完成。
+- 用詞需避開任務卡禁用術語，包含畫面文字、變數名與註解。
 
 # Dependencies
-- Q-021 已決議，無阻斷性未決問題。
+- Q-022 已決議，無阻斷性未決問題。
 
 # Estimated Scope
-- 大。會修改 `Data/feel.json`、`Scripts/DataLoader.gd`、`Scripts/BattleFX.gd`、`Scripts/Battle.gd`、`Scripts/Ball.gd`、`Scripts/Peg.gd`、`Scripts/UpgradeScreen.gd`、各畫面切場腳本、`project.godot` autoload，更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 大。會新增 `Data/overload.json`，修改 `Scripts/DataLoader.gd`、`Scripts/RunState.gd`、`Scripts/Battle.gd`、`Scripts/FieldGenerator.gd`、`Scripts/EffectResolver.gd`、`Scripts/BattleFX.gd`、`Scenes/Battle.tscn`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/09_GAME_FEEL.md` DoD：淡入淡出、回合 beats、敵攻三拍、Boss telegraph、受擊 / HP / count-up、combo、低血、漏球、集氣、升級卡、重組快閃。
-- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：Demo 展示相關穩定性與禁止偏離項目。
+- 對照 `Codex/10_OVERLOAD_MODE.md` DoD：命中累積、double 加最多、70% / 90% / 觸發演出、3 回合天井、過載期間 burst/double 變多與傷害倍率、指定回合退場、全參數資料化、可關閉、程序化效果與賽博用詞。
+- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：Demo 展示穩定性與禁止偏離項目。
 
 ---
 

@@ -11,6 +11,7 @@ const FIELD_GENERATOR_SCRIPT := preload("res://Scripts/FieldGenerator.gd")
 var state := BattleState.INIT
 var player_config: Dictionary = {}
 var feel_config: Dictionary = {}
+var overload_config: Dictionary = {}
 var enemy_def: Dictionary = {}
 var enemy_hp := 0
 var enemy_max_hp := 0
@@ -20,7 +21,7 @@ var sfx_enabled := true
 var _last_player_hp := -1
 var _last_enemy_hp := -1
 var field_config: Dictionary = {}
-var dynamic_peg_slots: Array = []
+var dynamic_peg_cells: Array = []
 var dynamic_peg_nodes: Array[Node] = []
 var bottom_peg_nodes: Array[Node] = []
 var is_charging_launch := false
@@ -28,6 +29,8 @@ var charge_elapsed := 0.0
 var charge_power := 0.0
 var _last_charge_sfx_step := -1
 var _settlement_animating := false
+var _overload_triggered_this_round := false
+var _overload_active_this_round := false
 var launch_direction_locked := false
 var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
@@ -50,6 +53,8 @@ var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 @onready var balls_label: Label = $BattleUI/UIRoot/BallsLabel
 @onready var power_label: Label = $BattleUI/UIRoot/PowerLabel
 @onready var power_bar: ProgressBar = $BattleUI/UIRoot/PowerBar
+@onready var overload_label: Label = $BattleUI/UIRoot/OverloadLabel
+@onready var overload_bar: ProgressBar = $BattleUI/UIRoot/OverloadBar
 @onready var floor_label: Label = $BattleUI/UIRoot/FloorLabel
 @onready var enemy_type_label: Label = $BattleUI/UIRoot/EnemyTypeLabel
 @onready var enemy_dialogue_label: Label = $BattleUI/UIRoot/EnemyDialogueLabel
@@ -58,6 +63,7 @@ var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 @onready var sfx_toggle_button: Button = $BattleUI/UIRoot/SfxToggleButton
 @onready var restart_button: Button = $BattleUI/UIRoot/RestartButton
 @onready var menu_button: Button = $BattleUI/UIRoot/MenuButton
+@onready var field_border: Line2D = $PinballField/FieldBorder
 
 
 func _ready() -> void:
@@ -93,11 +99,13 @@ func _load_definitions() -> void:
 	player_config = DataLoader.get_player_config()
 	feel_config = DataLoader.get_feel_config()
 	field_config = DataLoader.get_field_config()
+	overload_config = DataLoader.get_overload_config()
 	sfx_enabled = bool(feel_config["sfx"]["enabled"])
 
 
 func _connect_scene_nodes() -> void:
 	battle_fx.configure(battle_camera, $BattleUI/UIRoot, feel_config)
+	battle_fx.configure_overload(overload_config)
 	battle_fx.set_sfx_enabled(sfx_enabled)
 	bottom_sensor.body_entered.connect(_on_bottom_sensor_body_entered)
 	restart_button.pressed.connect(_on_restart_pressed)
@@ -131,31 +139,34 @@ func _update_enemy_display() -> void:
 
 func _spawn_pegs() -> void:
 	field_generator.configure(field_config["generator"])
-	dynamic_peg_slots = field_generator.build_dynamic_slots(field_config)
-	for slot in dynamic_peg_slots:
+	dynamic_peg_cells = field_generator.build_dynamic_cells(field_config)
+	for cell in dynamic_peg_cells:
 		var peg := PEG_SCENE.instantiate()
 		peg_container.add_child(peg)
-		peg.position = Vector2(float(slot["x"]), float(slot["y"]))
+		peg.position = Vector2(float(cell["x"]), float(cell["y"]))
 		dynamic_peg_nodes.append(peg)
 
-	for slot in field_generator.build_bottom_slots(field_config):
-		var peg_id := String((slot as Dictionary)["id"])
+	for cell in field_generator.build_bottom_cells(field_config):
+		var peg_id := String((cell as Dictionary)["id"])
 		var peg := PEG_SCENE.instantiate()
 		peg_container.add_child(peg)
-		peg.position = Vector2(float((slot as Dictionary)["x"]), float((slot as Dictionary)["y"]))
-		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
+		peg.position = Vector2(float((cell as Dictionary)["x"]), float((cell as Dictionary)["y"]))
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]))
 		bottom_peg_nodes.append(peg)
 
 
 func _reroll_dynamic_pegs() -> void:
-	var rolled_slots: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_slots, RunState.guaranteed_double_peg_count)
+	var weight_multiplier := _overload_weight_multiplier()
+	var rolled_cells: Array = field_generator.roll_dynamic_types(field_config, dynamic_peg_cells, RunState.guaranteed_double_peg_count, weight_multiplier)
 	var reroll_flash: Dictionary = feel_config.get("reroll_flash", {})
 	var stagger := float(reroll_flash.get("stagger_seconds", 0.004))
-	for index in range(min(dynamic_peg_nodes.size(), rolled_slots.size())):
-		var slot := rolled_slots[index] as Dictionary
+	if RunState.is_overload_active():
+		stagger *= float(overload_config.get("presentation", {}).get("reroll_stagger_multiplier", 1.0))
+	for index in range(min(dynamic_peg_nodes.size(), rolled_cells.size())):
+		var cell := rolled_cells[index] as Dictionary
 		var peg := dynamic_peg_nodes[index]
-		var peg_id := String(slot["id"])
-		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(slot["radius"]))
+		var peg_id := String(cell["id"])
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]))
 		battle_fx.flash_reroll_peg(peg, float(index) * stagger)
 
 
@@ -183,6 +194,11 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 
 func _begin_round() -> void:
 	round_index += 1
+	_overload_triggered_this_round = false
+	if RunState.should_force_overload(overload_config):
+		_trigger_overload(true)
+	_overload_active_this_round = RunState.is_overload_active()
+	battle_fx.set_overload_active_visual(_overload_active_this_round)
 	if bool(field_config["generator"].get("reroll_each_round", true)) or round_index == 1:
 		_reroll_dynamic_pegs()
 	round_context.start_round(RunState.balls_per_round)
@@ -313,7 +329,9 @@ func _aim_preview_speed() -> float:
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int) -> void:
 	var peg_def := RunState.get_modified_peg_def(DataLoader.get_peg(peg_id))
-	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context)
+	var damage_multiplier := _overload_damage_multiplier()
+	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context, damage_multiplier)
+	_apply_overload_charge(peg_id)
 	var message := String(result.get("message", ""))
 	if not message.is_empty():
 		status_label.text = message
@@ -331,7 +349,8 @@ func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, c
 	battle_fx.show_combo_feedback(combo_count, hit_position)
 	battle_fx.start_hit_shake()
 	var combo_config: Dictionary = feel_config.get("combo", {})
-	battle_fx.play_sfx("hit", 1.0 + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06)))
+	var overload_pitch_bonus := float(overload_config.get("sfx", {}).get("active_hit_pitch_bonus", 0.0)) if RunState.is_overload_active() else 0.0
+	battle_fx.play_sfx("hit", 1.0 + overload_pitch_bonus + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06)))
 	_update_ui()
 
 
@@ -369,6 +388,8 @@ func _settle_round() -> void:
 	var heal_amount := int(settlement.get("heal_amount", 0))
 	if heal_amount > 0:
 		RunState.heal_player(heal_amount)
+	if not _overload_triggered_this_round:
+		RunState.record_overload_miss_round(overload_config)
 	round_context.mark_settled()
 	var previous_enemy_hp: int = enemy_hp
 	var next_enemy_hp: int = max(0, enemy_hp - round_context.damage_accumulator)
@@ -386,6 +407,7 @@ func _settle_round() -> void:
 	await battle_fx.flash_enemy_hit(enemy_portrait)
 	battle_fx.play_sfx("settle")
 	await _wait_pacing("settle_post_delay")
+	_finish_overload_round()
 	await _transition_to(BattleState.CHECK)
 
 
@@ -466,6 +488,14 @@ func _update_ui() -> void:
 	balls_label.text = "剩餘球：%s｜場上球：%s" % [round_context.balls_remaining, round_context.balls_in_play]
 	power_label.text = "POWER：%03d" % int(round(charge_power))
 	power_bar.value = charge_power
+	battle_fx.update_overload_gauge(
+		overload_bar,
+		overload_label,
+		field_border,
+		RunState.get_overload_charge_ratio(overload_config),
+		RunState.overload_rounds_remaining,
+		get_process_delta_time()
+	)
 	sfx_toggle_button.text = "SFX: %s" % ("ON" if sfx_enabled else "OFF")
 	if not _settlement_animating:
 		_update_hp_bars()
@@ -508,3 +538,45 @@ func _wait_pacing(key: String) -> void:
 	var seconds := float(pacing.get(key, 0.0))
 	if seconds > 0.0:
 		await get_tree().create_timer(seconds).timeout
+
+
+func _overload_weight_multiplier() -> Dictionary:
+	if RunState.is_overload_active():
+		return overload_config.get("overload_weight_multiplier", {})
+	return {}
+
+
+func _overload_damage_multiplier() -> float:
+	if RunState.is_overload_active():
+		return float(overload_config.get("overload_damage_multiplier", 1.0))
+	return 1.0
+
+
+func _apply_overload_charge(peg_id: String) -> void:
+	if _overload_triggered_this_round or RunState.is_overload_active():
+		return
+	var charge_per_hit: Dictionary = overload_config.get("charge_per_hit", {})
+	var charge := int(charge_per_hit.get(peg_id, 0))
+	var reached := RunState.add_overload_charge(charge, overload_config)
+	var ratio := RunState.get_overload_charge_ratio(overload_config)
+	battle_fx.show_overload_tier_feedback(ratio)
+	if reached:
+		_trigger_overload(false)
+
+
+func _trigger_overload(forced: bool) -> void:
+	if RunState.trigger_overload(overload_config):
+		_overload_triggered_this_round = true
+		_overload_active_this_round = true
+		status_label.text = "OVERCLOCK 啟動"
+		battle_fx.set_overload_active_visual(true)
+		battle_fx.show_overload_trigger(forced)
+
+
+func _finish_overload_round() -> void:
+	if not _overload_active_this_round:
+		return
+	var ended := RunState.consume_overload_round()
+	if ended:
+		_overload_active_this_round = false
+		battle_fx.set_overload_active_visual(false)

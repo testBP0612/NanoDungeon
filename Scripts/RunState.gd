@@ -13,6 +13,9 @@ var peg_trigger_mods: Dictionary = {}
 var enemy_attack_down := 0
 var guaranteed_double_peg_count := 0
 var max_guaranteed_double_peg_count := 0
+var overload_charge := 0
+var overload_rounds_without_trigger := 0
+var overload_rounds_remaining := 0
 var applied_upgrades: Array[String] = []
 var pending_upgrade_enemy_type := "normal"
 
@@ -30,6 +33,9 @@ func reset_new_run() -> void:
 	balls_per_round = int(player_config["balls_per_round"])
 	guaranteed_double_peg_count = int(generator_config.get("guaranteed_double_peg_count", 0))
 	max_guaranteed_double_peg_count = int(generator_config.get("max_guaranteed_double_peg_count", guaranteed_double_peg_count))
+	overload_charge = 0
+	overload_rounds_without_trigger = 0
+	overload_rounds_remaining = 0
 	current_battle_index = 0
 	kills = 0
 	started_at_msec = Time.get_ticks_msec()
@@ -49,6 +55,60 @@ func reset_new_run() -> void:
 func ensure_run_started() -> void:
 	if player_max_hp <= 0 or player_hp <= 0 or balls_per_round <= 0 or max_guaranteed_double_peg_count <= 0:
 		reset_new_run()
+
+
+func is_overload_enabled(overload_config: Dictionary) -> bool:
+	return bool(overload_config.get("enabled", true))
+
+
+func is_overload_active() -> bool:
+	return overload_rounds_remaining > 0
+
+
+func get_overload_charge_ratio(overload_config: Dictionary) -> float:
+	var threshold: int = max(1, int(overload_config.get("trigger_threshold", 100)))
+	return clamp(float(overload_charge) / float(threshold), 0.0, 1.0)
+
+
+func add_overload_charge(amount: int, overload_config: Dictionary) -> bool:
+	if not is_overload_enabled(overload_config) or is_overload_active() or amount <= 0:
+		return false
+	var threshold: int = max(1, int(overload_config.get("trigger_threshold", 100)))
+	overload_charge = min(threshold, overload_charge + amount)
+	return overload_charge >= threshold
+
+
+func trigger_overload(overload_config: Dictionary) -> bool:
+	if not is_overload_enabled(overload_config):
+		return false
+	overload_rounds_remaining = max(1, int(overload_config.get("overload_duration_rounds", 1)))
+	overload_charge = max(1, int(overload_config.get("trigger_threshold", 100)))
+	overload_rounds_without_trigger = 0
+	return true
+
+
+func record_overload_miss_round(overload_config: Dictionary) -> void:
+	if not is_overload_enabled(overload_config) or is_overload_active():
+		return
+	overload_rounds_without_trigger += 1
+
+
+func should_force_overload(overload_config: Dictionary) -> bool:
+	if not is_overload_enabled(overload_config) or is_overload_active():
+		return false
+	var pity_rounds := int(overload_config.get("pity_rounds", 0))
+	return pity_rounds > 0 and overload_rounds_without_trigger >= pity_rounds
+
+
+func consume_overload_round() -> bool:
+	if overload_rounds_remaining <= 0:
+		return false
+	overload_rounds_remaining -= 1
+	if overload_rounds_remaining <= 0:
+		overload_charge = 0
+		overload_rounds_without_trigger = 0
+		return true
+	return false
 
 
 func damage_player(amount: int) -> void:

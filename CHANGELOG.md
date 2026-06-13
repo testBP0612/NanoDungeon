@@ -39,6 +39,36 @@
 
 ---
 
+## [Phase 10 / 1.6.0] - 2026-06-13 — 過載模式 Overclock：張力槽、天井觸發與爆發回合
+
+- 執行者：Codex
+- 任務卡：`Codex/10_OVERLOAD_MODE.md`
+
+### Added
+- 新增 `Data/overload.json`，集中控制過載開關、命中充能、`trigger_threshold = 100`、`pity_rounds = 3`、持續回合、重抽權重倍率、傷害倍率與程序化演出參數。
+- `RunState.gd` 新增整局過載槽、未觸發回合計數、剩餘過載回合；重新開始會歸零。
+- `Scenes/Battle.tscn` 新增 Overclock gauge UI，顯示充能百分比、升壓 / 臨界 / 啟動狀態。
+- `BattleFX.gd` 新增純程序化過載演出：gauge 脈動、場地邊框升壓、臨界抖動、全螢幕 flash、OVERCLOCK cut-in、Camera zoom punch、金色 overlay、scanline、命中粒子 / 浮動文字強化與退場淡出。
+
+### Changed
+- `Battle.gd` 在命中 peg 時依 `overload.json.charge_per_hit` 累積能量；`double_peg` 預設加最多，達 100 立即啟動。
+- `Battle.gd` 於 ROUND_START 檢查 3 回合未觸發天井，強制啟動後再重抽，讓該回合直接套用高價值權重。
+- `FieldGenerator.gd` 支援重抽權重覆寫；過載中 `burst_peg` / `double_peg` 權重依 JSON 倍率提高，既有保底 `double_peg` 機制保留。
+- `EffectResolver.gd` 支援傳入全域傷害倍率；過載中只在既有傷害公式外乘 `overload_damage_multiplier`，未改 base 傷害資料。
+- 將內部格位命名由 `slot` 改為 `cell`，避開本卡禁用語境歧義。
+
+### Data
+- `Data/pegs.json` 清掉既有非賽博化描述文字，改為中性的節點陣列描述；未改 peg 數值或效果。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- `Scripts/Scenes/Data` 禁用字詞掃描通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Data/overload.json` 已打包，`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 無新增。Q-022 已依決議實作。
+
 ## [Phase 9 / 1.5.0] - 2026-06-13 — Game Feel 轉場、回合節奏與反饋打磨
 
 - 執行者：Codex

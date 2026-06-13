@@ -1,0 +1,65 @@
+{
+  "_meta": {
+    "description": "Overclock mode tuning. All values are run-scoped or presentation-only; base combat definitions stay in their own data files.",
+    "version": "1.0.0"
+  },
+  "overload": {
+    "enabled": true,
+    "trigger_threshold": 100,
+    "pity_rounds": 3,
+    "overload_duration_rounds": 2,
+    "charge_per_hit": {
+      "normal_peg": 1,
+      "heal_peg": 1,
+      "burst_peg": 3,
+      "double_peg": 5,
+      "bounce_peg": 0
+    },
+    "overload_weight_multiplier": {
+      "burst_peg": 3.0,
+      "double_peg": 4.0
+    },
+    "overload_damage_multiplier": 1.5,
+    "gauge": {
+      "tier1_ratio": 0.7,
+      "tier2_ratio": 0.9,
+      "idle_color": "#00E5FF",
+      "tier1_color": "#FF2D95",
+      "tier2_color": "#FF3B3B",
+      "active_color": "#FFC83D",
+      "pulse_seconds": 0.75,
+      "pulse_alpha_min": 0.72,
+      "pulse_alpha_max": 1.0
+    },
+    "presentation": {
+      "enabled": true,
+      "tier1_border_width": 4.0,
+      "tier2_border_width": 6.0,
+      "tier2_shake_strength": 1.4,
+      "tier2_shake_duration": 0.08,
+      "trigger_flash_seconds": 0.48,
+      "trigger_flash_alpha": 0.84,
+      "trigger_cut_in_seconds": 0.72,
+      "trigger_shake_strength": 13.0,
+      "trigger_shake_duration": 0.34,
+      "camera_zoom_punch": 0.08,
+      "active_overlay_alpha": 0.16,
+      "active_scanline_alpha": 0.18,
+      "exit_seconds": 0.38,
+      "hit_particle_multiplier": 1.55,
+      "floating_text_scale": 1.18,
+      "reroll_stagger_multiplier": 1.7,
+      "reroll_flash_scale_multiplier": 1.16,
+      "status_unstable_text": "系統不穩 / UNSTABLE",
+      "trigger_text": "OVERCLOCK",
+      "active_text": "OVERCLOCK x%s 回合"
+    },
+    "sfx": {
+      "hum_pitch_min": 0.55,
+      "hum_pitch_max": 1.2,
+      "critical_pitch": 0.38,
+      "trigger_pitch": 0.24,
+      "active_hit_pitch_bonus": 0.18
+    }
+  }
+}

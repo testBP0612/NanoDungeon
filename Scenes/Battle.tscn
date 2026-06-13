@@ -181,6 +181,25 @@ mouse_filter = 2
 max_value = 100.0
 show_percentage = false
 
+[node name="OverloadLabel" type="Label" parent="BattleUI/UIRoot"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 276.0
+offset_right = 300.0
+offset_bottom = 304.0
+theme_override_font_sizes/font_size = 18
+text = "OVERCLOCK 000%"
+
+[node name="OverloadBar" type="ProgressBar" parent="BattleUI/UIRoot"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 304.0
+offset_right = 300.0
+offset_bottom = 320.0
+mouse_filter = 2
+max_value = 100.0
+show_percentage = false
+
 [node name="FloorLabel" type="Label" parent="BattleUI/UIRoot" unique_id=20945791]
 layout_mode = 0
 offset_left = 740.0

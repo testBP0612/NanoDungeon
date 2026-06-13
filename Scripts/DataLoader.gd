@@ -8,6 +8,7 @@ var upgrades: Array = []
 var player_config: Dictionary = {}
 var feel_config: Dictionary = {}
 var field_config: Dictionary = {}
+var overload_config: Dictionary = {}
 var loaded := false
 
 
@@ -23,6 +24,7 @@ func load_all() -> void:
 	var player_data := _load_json("res://Data/player.json")
 	var feel_data := _load_json("res://Data/feel.json")
 	var field_data := _load_json("res://Data/field.json")
+	var overload_data := _load_json("res://Data/overload.json")
 
 	pegs_by_id = _index_collection(pegs_data, "pegs", ["id", "name", "base_damage", "effect_type", "effect_value"])
 	balls = _validate_collection(balls_data, "balls", ["id", "name", "effect_type", "effect_value", "unlocked_by_default"])
@@ -32,6 +34,7 @@ func load_all() -> void:
 	player_config = _validate_player_config(player_data)
 	feel_config = _validate_feel_config(feel_data)
 	field_config = _validate_field_config(field_data)
+	overload_config = _validate_overload_config(overload_data)
 	_validate_upgrades(upgrades_data)
 	loaded = true
 
@@ -86,6 +89,10 @@ func get_feel_config() -> Dictionary:
 
 func get_field_config() -> Dictionary:
 	return field_config.duplicate(true)
+
+
+func get_overload_config() -> Dictionary:
+	return overload_config.duplicate(true)
 
 
 func _load_json(path: String) -> Dictionary:
@@ -303,15 +310,15 @@ func _validate_field_generator(generator: Dictionary, left: float, right: float,
 		push_error("Field generator spacing must be > 0")
 	var guaranteed_double := int(generator.get("guaranteed_double_peg_count", 0))
 	var max_guaranteed_double := int(generator.get("max_guaranteed_double_peg_count", 0))
-	var slot_count := 0
+	var cell_count := 0
 	for row in range(row_count):
-		slot_count += int(wide_cols if row % 2 == 0 else narrow_cols)
+		cell_count += int(wide_cols if row % 2 == 0 else narrow_cols)
 	if guaranteed_double < 0:
 		push_error("Field guaranteed_double_peg_count must be >= 0")
 	if max_guaranteed_double < guaranteed_double:
 		push_error("Field max_guaranteed_double_peg_count must be >= guaranteed_double_peg_count")
-	if max_guaranteed_double > slot_count:
-		push_error("Field max_guaranteed_double_peg_count must not exceed dynamic slot count")
+	if max_guaranteed_double > cell_count:
+		push_error("Field max_guaranteed_double_peg_count must not exceed dynamic cell count")
 	if top_y < top or top_y + float(max(0, row_count - 1)) * row_spacing > bottom:
 		push_error("Field generator y range out of bounds")
 	for columns in [wide_cols, narrow_cols]:
@@ -344,6 +351,64 @@ func _validate_bottom_row(bottom_row: Dictionary, left: float, right: float, top
 		push_error("Field bottom_row max_ball_speed must be > 0")
 	if count > 1 and right <= left:
 		push_error("Field bottom_row bounds are invalid")
+
+
+func _validate_overload_config(data: Dictionary) -> Dictionary:
+	var config: Dictionary = data.get("overload", {})
+	var required_fields := [
+		"enabled",
+		"trigger_threshold",
+		"pity_rounds",
+		"overload_duration_rounds",
+		"charge_per_hit",
+		"overload_weight_multiplier",
+		"overload_damage_multiplier",
+		"gauge",
+		"presentation",
+		"sfx",
+	]
+	if typeof(config) != TYPE_DICTIONARY:
+		push_error("Missing overload config in Data/overload.json")
+		return {}
+	for field in required_fields:
+		if not config.has(field):
+			push_error("Missing overload config field: %s" % field)
+
+	var threshold := int(config.get("trigger_threshold", 0))
+	var pity_rounds := int(config.get("pity_rounds", 0))
+	var duration_rounds := int(config.get("overload_duration_rounds", 0))
+	if threshold <= 0:
+		push_error("overload.trigger_threshold must be > 0")
+	if pity_rounds < 0:
+		push_error("overload.pity_rounds must be >= 0")
+	if duration_rounds <= 0:
+		push_error("overload.overload_duration_rounds must be > 0")
+	if float(config.get("overload_damage_multiplier", 0.0)) <= 0.0:
+		push_error("overload.overload_damage_multiplier must be > 0")
+
+	var charge_per_hit: Dictionary = config.get("charge_per_hit", {})
+	for peg_id in charge_per_hit.keys():
+		var id := String(peg_id)
+		if not pegs_by_id.has(id):
+			push_error("overload charge peg id not found: %s" % id)
+		if int(charge_per_hit[peg_id]) < 0:
+			push_error("overload charge must be >= 0: %s" % id)
+
+	var weight_multiplier: Dictionary = config.get("overload_weight_multiplier", {})
+	for peg_id in weight_multiplier.keys():
+		var id := String(peg_id)
+		if not pegs_by_id.has(id):
+			push_error("overload weight peg id not found: %s" % id)
+		if float(weight_multiplier[peg_id]) <= 0.0:
+			push_error("overload weight multiplier must be > 0: %s" % id)
+
+	var gauge: Dictionary = config.get("gauge", {})
+	if float(gauge.get("tier1_ratio", 0.0)) <= 0.0 or float(gauge.get("tier1_ratio", 0.0)) >= 1.0:
+		push_error("overload.gauge.tier1_ratio must be between 0 and 1")
+	if float(gauge.get("tier2_ratio", 0.0)) <= float(gauge.get("tier1_ratio", 0.0)) or float(gauge.get("tier2_ratio", 0.0)) >= 1.0:
+		push_error("overload.gauge.tier2_ratio must be above tier1 and below 1")
+
+	return config.duplicate(true)
 
 
 func _validate_upgrades(data: Dictionary) -> void:

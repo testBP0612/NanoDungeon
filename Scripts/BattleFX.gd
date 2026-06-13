@@ -10,8 +10,15 @@ var _shake_strength := 0.0
 var _turn_banner: Label
 var _telegraph_flash: ColorRect
 var _player_hit_flash: ColorRect
+var _overload_flash: ColorRect
+var _overload_wash: ColorRect
+var _overload_scanlines: Control
+var _overload_cut_in: Label
 var _low_hp_edges: Array[ColorRect] = []
 var _low_hp_phase := 0.0
+var _overload_phase := 0.0
+var _overload_config: Dictionary = {}
+var _overload_active_visual := false
 
 
 func configure(camera: Camera2D, ui_root: Control, new_feel_config: Dictionary) -> void:
@@ -22,8 +29,14 @@ func configure(camera: Camera2D, ui_root: Control, new_feel_config: Dictionary) 
 	_ensure_overlay_nodes()
 
 
+func configure_overload(new_overload_config: Dictionary) -> void:
+	_overload_config = new_overload_config.duplicate(true)
+	_ensure_overlay_nodes()
+
+
 func update(delta: float) -> void:
 	_update_screen_shake(delta)
+	_update_overload_overlay(delta)
 
 
 func update_low_hp(player_hp: int, player_max_hp: int, delta: float) -> void:
@@ -58,10 +71,11 @@ func spawn_hit_particles(position: Vector2, color: Color, combo_count := 1) -> v
 	var particles := _particles_config()
 	var combo := _combo_config()
 	var visual_level = min(max(combo_count - 1, 0), int(combo.get("max_visual_level", 6)))
+	var overload_multiplier := _overload_hit_particle_multiplier()
 	spawn_particles(
 		position,
 		color,
-		int(particles["hit_amount"]) + visual_level * int(combo.get("particle_amount_step", 0)),
+		int(round(float(int(particles["hit_amount"]) + visual_level * int(combo.get("particle_amount_step", 0))) * overload_multiplier)),
 		float(particles["hit_lifetime"]) + float(visual_level) * float(combo.get("particle_lifetime_step", 0.0))
 	)
 
@@ -101,6 +115,8 @@ func show_floating_text(text: String, world_position: Vector2, color: Color) -> 
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", int(config["font_size"]))
 	label.modulate = color
+	if _overload_active_visual:
+		label.scale = Vector2.ONE * float(_overload_presentation_config().get("floating_text_scale", 1.0))
 	_ui_root.add_child(label)
 
 	var rise := Vector2(float(config["rise_x"]), float(config["rise_y"]))
@@ -290,7 +306,110 @@ func flash_reroll_peg(peg: Node, delay: float) -> void:
 		return
 	if delay > 0.0:
 		await get_tree().create_timer(delay).timeout
-	peg.play_reroll_feedback(float(config.get("duration", 0.18)), float(config.get("scale", 1.18)))
+	var scale_multiplier := float(config.get("scale", 1.18))
+	if _overload_active_visual:
+		scale_multiplier *= float(_overload_presentation_config().get("reroll_flash_scale_multiplier", 1.0))
+	peg.play_reroll_feedback(float(config.get("duration", 0.18)), scale_multiplier)
+
+
+func update_overload_gauge(bar: ProgressBar, label: Label, field_border: Line2D, ratio: float, active_rounds: int, delta: float) -> void:
+	if _overload_config.is_empty():
+		return
+	var gauge := _overload_gauge_config()
+	_overload_phase += delta
+	var is_active := active_rounds > 0
+	var tier2_ratio := float(gauge.get("tier2_ratio", 0.9))
+	var tier1_ratio := float(gauge.get("tier1_ratio", 0.7))
+	var color := Color(String(gauge.get("idle_color", "#00E5FF")))
+	var label_text := "OVERCLOCK %03d%%" % int(round(ratio * 100.0))
+	if is_active:
+		color = Color(String(gauge.get("active_color", "#FFC83D")))
+		label_text = String(_overload_presentation_config().get("active_text", "OVERCLOCK x%s 回合")) % active_rounds
+	elif ratio >= tier2_ratio:
+		color = Color(String(gauge.get("tier2_color", "#FF3B3B")))
+		label_text = String(_overload_presentation_config().get("status_unstable_text", "系統不穩 / UNSTABLE"))
+	elif ratio >= tier1_ratio:
+		color = Color(String(gauge.get("tier1_color", "#FF2D95")))
+		label_text = "升壓 %03d%%" % int(round(ratio * 100.0))
+
+	var pulse_seconds: float = max(0.01, float(gauge.get("pulse_seconds", 0.75)))
+	var pulse: float = (sin(_overload_phase / pulse_seconds * TAU) + 1.0) * 0.5
+	var alpha: float = lerp(float(gauge.get("pulse_alpha_min", 0.72)), float(gauge.get("pulse_alpha_max", 1.0)), pulse)
+	color.a = alpha
+	if bar != null:
+		bar.max_value = 100.0
+		bar.value = ratio * 100.0
+		bar.modulate = color
+	if label != null:
+		label.text = label_text
+		label.modulate = color
+	if field_border != null:
+		field_border.default_color = color
+		var target_width := 2.0
+		if is_active:
+			target_width = float(_overload_presentation_config().get("tier2_border_width", 6.0))
+		elif ratio >= tier2_ratio:
+			target_width = float(_overload_presentation_config().get("tier2_border_width", 6.0))
+		elif ratio >= tier1_ratio:
+			target_width = float(_overload_presentation_config().get("tier1_border_width", 4.0))
+		field_border.width = lerp(field_border.width, target_width, min(1.0, delta * 8.0))
+
+
+func show_overload_tier_feedback(ratio: float) -> void:
+	if _overload_config.is_empty() or not bool(_overload_presentation_config().get("enabled", true)):
+		return
+	var tier2_ratio := float(_overload_gauge_config().get("tier2_ratio", 0.9))
+	if ratio >= tier2_ratio:
+		start_screen_shake(
+			float(_overload_presentation_config().get("tier2_shake_strength", 1.4)),
+			float(_overload_presentation_config().get("tier2_shake_duration", 0.08))
+		)
+		play_sfx("hit", float(_overload_sfx_config().get("critical_pitch", 0.38)))
+
+
+func show_overload_trigger(forced: bool) -> void:
+	if _overload_config.is_empty() or not bool(_overload_presentation_config().get("enabled", true)):
+		return
+	var presentation := _overload_presentation_config()
+	_overload_active_visual = true
+	_flash_overlay(
+		_overload_flash,
+		Color(1.0, 0.92, 0.38, float(presentation.get("trigger_flash_alpha", 0.84))),
+		float(presentation.get("trigger_flash_seconds", 0.48))
+	)
+	if _overload_cut_in != null:
+		_overload_cut_in.text = String(presentation.get("trigger_text", "OVERCLOCK"))
+		if forced:
+			_overload_cut_in.text += " / FORCED SYNC"
+		_overload_cut_in.modulate = Color(1.0, 0.84, 0.22, 0.0)
+		_overload_cut_in.scale = Vector2(0.76, 0.76)
+		var tween := create_tween()
+		tween.parallel().tween_property(_overload_cut_in, "modulate:a", 1.0, 0.1)
+		tween.parallel().tween_property(_overload_cut_in, "scale", Vector2(1.08, 1.08), 0.16)
+		tween.tween_interval(float(presentation.get("trigger_cut_in_seconds", 0.72)) * 0.48)
+		tween.parallel().tween_property(_overload_cut_in, "modulate:a", 0.0, 0.2)
+		tween.parallel().tween_property(_overload_cut_in, "scale", Vector2(1.2, 1.2), 0.2)
+	start_screen_shake(float(presentation.get("trigger_shake_strength", 13.0)), float(presentation.get("trigger_shake_duration", 0.34)))
+	_punch_camera_zoom(float(presentation.get("camera_zoom_punch", 0.08)), float(presentation.get("trigger_flash_seconds", 0.48)))
+	play_sfx("settle", float(_overload_sfx_config().get("trigger_pitch", 0.24)))
+
+
+func set_overload_active_visual(active: bool) -> void:
+	_overload_active_visual = active
+	if not active:
+		play_overload_exit()
+
+
+func play_overload_exit() -> void:
+	var presentation := _overload_presentation_config()
+	var duration := float(presentation.get("exit_seconds", 0.38))
+	if _overload_wash != null:
+		var tween := create_tween()
+		tween.tween_property(_overload_wash, "color:a", 0.0, duration)
+	if _overload_scanlines != null:
+		var tween2 := create_tween()
+		tween2.tween_property(_overload_scanlines, "modulate:a", 0.0, duration)
+	play_sfx("drop", float(_overload_sfx_config().get("hum_pitch_min", 0.55)))
 
 
 func _update_screen_shake(delta: float) -> void:
@@ -326,6 +445,26 @@ func _ensure_overlay_nodes() -> void:
 	if _player_hit_flash == null:
 		_player_hit_flash = _make_full_rect("PlayerHitFlash", Color.TRANSPARENT)
 		_ui_root.add_child(_player_hit_flash)
+	if _overload_flash == null:
+		_overload_flash = _make_full_rect("OverclockFlash", Color.TRANSPARENT)
+		_ui_root.add_child(_overload_flash)
+	if _overload_wash == null:
+		_overload_wash = _make_full_rect("OverclockWash", Color(1.0, 0.78, 0.18, 0.0))
+		_ui_root.add_child(_overload_wash)
+	if _overload_scanlines == null:
+		_overload_scanlines = _make_scanline_overlay()
+		_ui_root.add_child(_overload_scanlines)
+	if _overload_cut_in == null:
+		_overload_cut_in = Label.new()
+		_overload_cut_in.name = "OverclockCutIn"
+		_overload_cut_in.position = Vector2(142, 392)
+		_overload_cut_in.size = Vector2(740, 112)
+		_overload_cut_in.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_overload_cut_in.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_overload_cut_in.add_theme_font_size_override("font_size", 64)
+		_overload_cut_in.modulate.a = 0.0
+		_overload_cut_in.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ui_root.add_child(_overload_cut_in)
 	if _low_hp_edges.is_empty():
 		_low_hp_edges.append(_make_edge_rect("LowHpTop", Vector2(0, 0), Vector2(1024, 90)))
 		_low_hp_edges.append(_make_edge_rect("LowHpBottom", Vector2(0, 934), Vector2(1024, 90)))
@@ -354,6 +493,24 @@ func _make_edge_rect(node_name: String, position: Vector2, size: Vector2) -> Col
 	return rect
 
 
+func _make_scanline_overlay() -> Control:
+	var root := Control.new()
+	root.name = "OverclockScanlines"
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.modulate.a = 0.0
+	var y := 0
+	while y < 1024:
+		var line := ColorRect.new()
+		line.position = Vector2(0, y)
+		line.size = Vector2(1024, 2)
+		line.color = Color(0.0, 0.95, 1.0, 0.35)
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(line)
+		y += 16
+	return root
+
+
 func _flash_overlay(rect: ColorRect, color: Color, duration: float) -> void:
 	if rect == null:
 		return
@@ -367,6 +524,42 @@ func _flash_overlay(rect: ColorRect, color: Color, duration: float) -> void:
 func _set_low_hp_alpha(alpha: float) -> void:
 	for edge in _low_hp_edges:
 		edge.color.a = alpha
+
+
+func _update_overload_overlay(delta: float) -> void:
+	if _overload_wash == null or _overload_scanlines == null:
+		return
+	var presentation := _overload_presentation_config()
+	if _overload_active_visual:
+		_overload_wash.color.a = lerp(_overload_wash.color.a, float(presentation.get("active_overlay_alpha", 0.16)), min(1.0, delta * 6.0))
+		_overload_scanlines.modulate.a = lerp(_overload_scanlines.modulate.a, float(presentation.get("active_scanline_alpha", 0.18)), min(1.0, delta * 5.0))
+		_overload_scanlines.position.y = fmod(_overload_scanlines.position.y + delta * 32.0, 16.0)
+
+
+func _punch_camera_zoom(amount: float, duration: float) -> void:
+	if _camera == null:
+		return
+	var original_zoom := _camera.zoom
+	var target_zoom := original_zoom * (1.0 - amount)
+	var tween := create_tween()
+	tween.tween_property(_camera, "zoom", target_zoom, duration * 0.3)
+	tween.tween_property(_camera, "zoom", original_zoom, duration * 0.7)
+
+
+func _overload_hit_particle_multiplier() -> float:
+	return float(_overload_presentation_config().get("hit_particle_multiplier", 1.0)) if _overload_active_visual else 1.0
+
+
+func _overload_gauge_config() -> Dictionary:
+	return _overload_config.get("gauge", {})
+
+
+func _overload_presentation_config() -> Dictionary:
+	return _overload_config.get("presentation", {})
+
+
+func _overload_sfx_config() -> Dictionary:
+	return _overload_config.get("sfx", {})
 
 
 func _shake_config() -> Dictionary:

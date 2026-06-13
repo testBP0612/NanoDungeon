@@ -1,12 +1,12 @@
 extends RefCounted
 
 
-func apply_peg_effect(peg_def: Dictionary, round_context: RefCounted) -> Dictionary:
+func apply_peg_effect(peg_def: Dictionary, round_context: RefCounted, damage_multiplier := 1.0) -> Dictionary:
 	match String(peg_def.get("effect_type", "")):
 		"none":
 			return _empty_peg_result()
 		"damage":
-			return _apply_damage_peg(peg_def, round_context)
+			return _apply_damage_peg(peg_def, round_context, damage_multiplier)
 		"heal":
 			return _apply_heal_peg(peg_def, round_context)
 		"damage_multiplier":
@@ -25,8 +25,8 @@ func _empty_peg_result() -> Dictionary:
 	}
 
 
-func _apply_damage_peg(peg_def: Dictionary, round_context: RefCounted) -> Dictionary:
-	var hit_damage := int(round(float(peg_def["base_damage"]) * round_context.round_multiplier))
+func _apply_damage_peg(peg_def: Dictionary, round_context: RefCounted, damage_multiplier: float) -> Dictionary:
+	var hit_damage := int(round(float(peg_def["base_damage"]) * round_context.round_multiplier * damage_multiplier))
 	round_context.add_damage(hit_damage)
 	return {
 		"damage_added": hit_damage,
