@@ -1,26 +1,26 @@
 {
   "_meta": {
-    "description": "玩家與彈珠場基礎數值（HP、球數、起始球、球超時、發射力與物理參數）。Q-007 已定案：此檔為專案標準資料檔，程式不得寫死這些值。",
-    "version": "0.1.0"
+	"description": "玩家與彈珠場基礎數值（HP、球數、起始球、球超時、發射力與物理參數）。Q-007 已定案：此檔為專案標準資料檔，程式不得寫死這些值。",
+	"version": "0.1.0"
   },
   "player": {
-    "max_hp": 100,
-    "balls_per_round": 3,
-    "starting_ball_id": "normal_ball",
-    "ball_timeout_seconds": 8.0,
-    "launch_speed": 900.0,
-    "launch_speed_min": 650.0,
-    "launch_speed_max": 1150.0,
-    "charge_cycle_seconds": 1.4,
-    "ball_radius": 10.0,
-    "ball_gravity_scale": 1.0,
-    "ball_bounce": 0.9,
-    "ball_friction": 0.0,
-    "peg_bounce_boost": 1.15,
-    "max_ball_speed": 1600.0,
-    "execute": {
-      "enabled": true,
-      "margin": 0
-    }
+	"max_hp": 100,
+	"balls_per_round": 3,
+	"starting_ball_id": "normal_ball",
+	"ball_timeout_seconds": 8.0,
+	"launch_speed": 900.0,
+	"launch_speed_min": 650.0,
+	"launch_speed_max": 1150.0,
+	"charge_cycle_seconds": 1.4,
+	"ball_radius": 5.0,
+	"ball_gravity_scale": 1.0,
+	"ball_bounce": 0.9,
+	"ball_friction": 0.0,
+	"peg_bounce_boost": 1.15,
+	"max_ball_speed": 1600.0,
+	"execute": {
+	  "enabled": true,
+	  "margin": 0
+	}
   }
 }

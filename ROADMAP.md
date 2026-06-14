@@ -19,6 +19,7 @@
 | 11 | Player Attack & Bounce（擴充/打磨） | `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md` | ✅ 完成（人類實機驗證） |
 | 12 | Art Core（美術） | `Codex/12_ART_CORE.md` | ⬜ 待開始（敵人/釘球底圖/背景/logo/外框） |
 | 13 | Art Upgrade Icons（美術） | `Codex/13_ART_UPGRADE_ICONS.md` | ⬜ 待開始（升級 icon ×13） |
+| 14 | Scene Polish（場景視覺打磨） | `Codex/14_SCENE_POLISH.md` | ⬜ 待開始（發光 / bumper / HUD 字體 / 敵人區） |
 
 ---
 

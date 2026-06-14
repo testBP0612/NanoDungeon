@@ -23,8 +23,8 @@ SceneTransition="*res://Scripts/SceneTransition.gd"
 
 [display]
 
-window/size/viewport_width=1024
-window/size/viewport_height=1024
+window/size/viewport_width=1680
+window/size/viewport_height=1050
 
 [physics]
 
@@ -32,4 +32,4 @@ window/size/viewport_height=1024
 
 [rendering]
 
-rendering_device/driver.windows="d3d12"
+rendering_device/driver.windows="vulkan"

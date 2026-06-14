@@ -348,8 +348,9 @@ func play_player_attack(from_position: Vector2, to_position: Vector2, damage: in
 	projectile.color = attack_color
 	projectile.position = from_position
 	projectile.scale = Vector2.ONE
-	projectile.z_index = 22
-	add_child(projectile)
+	projectile.z_index = 1000
+	var attack_parent: Node = _ui_root if _ui_root != null else self
+	attack_parent.add_child(projectile)
 	spawn_particles(
 		from_position,
 		attack_color,
@@ -364,14 +365,14 @@ func play_player_attack(from_position: Vector2, to_position: Vector2, damage: in
 	beam.width = beam_width
 	beam.default_color = attack_color
 	beam.points = PackedVector2Array([from_position, from_position])
-	beam.z_index = 20
-	add_child(beam)
+	beam.z_index = 998
+	attack_parent.add_child(beam)
 	var core := Line2D.new()
 	core.width = max(1.0, beam_width * 0.36)
 	core.default_color = core_color
 	core.points = PackedVector2Array([from_position, from_position])
-	core.z_index = 21
-	add_child(core)
+	core.z_index = 999
+	attack_parent.add_child(core)
 
 	var travel_seconds := float(config.get("travel_seconds", 0.18))
 	var tween := create_tween()
@@ -536,11 +537,12 @@ func _update_screen_shake(delta: float) -> void:
 func _ensure_overlay_nodes() -> void:
 	if _ui_root == null:
 		return
+	var viewport_size := _viewport_size()
 	if _turn_banner == null:
 		_turn_banner = Label.new()
 		_turn_banner.name = "TurnBanner"
-		_turn_banner.position = Vector2(260, 420)
-		_turn_banner.size = Vector2(504, 68)
+		_turn_banner.position = Vector2((viewport_size.x - 640.0) * 0.5, viewport_size.y * 0.42)
+		_turn_banner.size = Vector2(640, 76)
 		_turn_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_turn_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_turn_banner.add_theme_font_size_override("font_size", 34)
@@ -564,8 +566,8 @@ func _ensure_overlay_nodes() -> void:
 	if _overload_cut_in == null:
 		_overload_cut_in = Label.new()
 		_overload_cut_in.name = "OverclockCutIn"
-		_overload_cut_in.position = Vector2(142, 392)
-		_overload_cut_in.size = Vector2(740, 112)
+		_overload_cut_in.position = Vector2((viewport_size.x - 960.0) * 0.5, viewport_size.y * 0.38)
+		_overload_cut_in.size = Vector2(960, 124)
 		_overload_cut_in.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_overload_cut_in.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_overload_cut_in.add_theme_font_size_override("font_size", 64)
@@ -578,8 +580,8 @@ func _ensure_overlay_nodes() -> void:
 	if _overkill_cut_in == null:
 		_overkill_cut_in = Label.new()
 		_overkill_cut_in.name = "OverkillCutIn"
-		_overkill_cut_in.position = Vector2(118, 384)
-		_overkill_cut_in.size = Vector2(788, 128)
+		_overkill_cut_in.position = Vector2((viewport_size.x - 960.0) * 0.5, viewport_size.y * 0.37)
+		_overkill_cut_in.size = Vector2(960, 136)
 		_overkill_cut_in.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_overkill_cut_in.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_overkill_cut_in.add_theme_font_size_override("font_size", 68)
@@ -587,10 +589,10 @@ func _ensure_overlay_nodes() -> void:
 		_overkill_cut_in.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_ui_root.add_child(_overkill_cut_in)
 	if _low_hp_edges.is_empty():
-		_low_hp_edges.append(_make_edge_rect("LowHpTop", Vector2(0, 0), Vector2(1024, 90)))
-		_low_hp_edges.append(_make_edge_rect("LowHpBottom", Vector2(0, 934), Vector2(1024, 90)))
-		_low_hp_edges.append(_make_edge_rect("LowHpLeft", Vector2(0, 0), Vector2(76, 1024)))
-		_low_hp_edges.append(_make_edge_rect("LowHpRight", Vector2(948, 0), Vector2(76, 1024)))
+		_low_hp_edges.append(_make_edge_rect("LowHpTop", Vector2(0, 0), Vector2(viewport_size.x, 90)))
+		_low_hp_edges.append(_make_edge_rect("LowHpBottom", Vector2(0, viewport_size.y - 90.0), Vector2(viewport_size.x, 90)))
+		_low_hp_edges.append(_make_edge_rect("LowHpLeft", Vector2(0, 0), Vector2(76, viewport_size.y)))
+		_low_hp_edges.append(_make_edge_rect("LowHpRight", Vector2(viewport_size.x - 76.0, 0), Vector2(76, viewport_size.y)))
 		for edge in _low_hp_edges:
 			_ui_root.add_child(edge)
 
@@ -620,16 +622,23 @@ func _make_scanline_overlay() -> Control:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.modulate.a = 0.0
+	var viewport_size := _viewport_size()
 	var y := 0
-	while y < 1024:
+	while y < int(viewport_size.y):
 		var line := ColorRect.new()
 		line.position = Vector2(0, y)
-		line.size = Vector2(1024, 2)
+		line.size = Vector2(viewport_size.x, 2)
 		line.color = Color(0.0, 0.95, 1.0, 0.35)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(line)
 		y += 16
 	return root
+
+
+func _viewport_size() -> Vector2:
+	if _ui_root != null and _ui_root.size.x > 0.0 and _ui_root.size.y > 0.0:
+		return _ui_root.size
+	return get_viewport().get_visible_rect().size
 
 
 func _circle_points(radius: float, point_count: int) -> PackedVector2Array:

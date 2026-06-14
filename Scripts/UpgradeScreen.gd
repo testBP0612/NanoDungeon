@@ -1,6 +1,7 @@
 extends Control
 
 const UPGRADE_RESOLVER_SCRIPT := preload("res://Scripts/UpgradeResolver.gd")
+const UI_THEME_SCRIPT := preload("res://Scripts/UITheme.gd")
 
 var upgrade_resolver: RefCounted = UPGRADE_RESOLVER_SCRIPT.new()
 var options: Array = []
@@ -16,12 +17,34 @@ var feel_config: Dictionary = {}
 func _ready() -> void:
 	RunState.ensure_run_started()
 	feel_config = DataLoader.get_feel_config()
+	UI_THEME_SCRIPT.apply_to($Root, feel_config.get("hud", {}))
+	_layout_for_viewport()
 	options = upgrade_resolver.draw_upgrade_options(RunState.pending_upgrade_enemy_type)
 	_connect_buttons()
 	_refresh_ui()
 	await get_tree().process_frame
 	for card in [card_0, card_1, card_2]:
 		(card as Button).pivot_offset = (card as Button).size * 0.5
+
+
+func _layout_for_viewport() -> void:
+	var viewport_size := get_viewport_rect().size
+	var content_width: float = min(1280.0, viewport_size.x - 160.0)
+	var left: float = (viewport_size.x - content_width) * 0.5
+	$Root/TitleLabel.position = Vector2(0, 82)
+	$Root/TitleLabel.size = Vector2(viewport_size.x, 58)
+	subtitle_label.position = Vector2(0, 146)
+	subtitle_label.size = Vector2(viewport_size.x, 40)
+	var card_row := $Root/CardRow as HBoxContainer
+	card_row.position = Vector2(left, 250)
+	card_row.size = Vector2(content_width, 330)
+	card_row.add_theme_constant_override("separation", 32)
+	var card_width: float = (content_width - 64.0) / 3.0
+	for card in [card_0, card_1, card_2]:
+		(card as Button).custom_minimum_size = Vector2(card_width, 330)
+		(card as Button).add_theme_font_size_override("font_size", 20)
+	continue_button.position = Vector2((viewport_size.x - 190.0) * 0.5, 630)
+	continue_button.size = Vector2(190, 52)
 
 
 func _connect_buttons() -> void:

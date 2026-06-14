@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "WebFetch(domain:github.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Implement Phase 11: overkill execute, player attack VFX, peg bounce tuning' -m '- Ball.gd: generalize bumper into _apply_speed_boost; normal pegs use peg_bounce_boost, bottom row keeps bounce_multiplier; both capped by max_ball_speed. *)",
+      "Bash(git commit -m 'Add task cards 09-13 and update loop/planning docs' -m '- Codex/09-11: game feel, overload mode, player attack & bounce \\(implemented\\). *)",
+      "Bash(awk '{print $5\"\\\\t\"$9}')",
+      "Bash(python -)"
+    ]
+  }
+}

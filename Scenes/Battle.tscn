@@ -25,17 +25,17 @@ script = ExtResource("2_battle_fx")
 
 [node name="FieldFill" type="Polygon2D" parent="PinballField" unique_id=1200036783]
 color = Color(0.055, 0.065, 0.095, 1)
-polygon = PackedVector2Array(196, 72, 828, 72, 828, 960, 196, 960)
+polygon = PackedVector2Array(500, 72, 1132, 72, 1132, 960, 500, 960)
 
 [node name="FieldBorder" type="Line2D" parent="PinballField" unique_id=1197852572]
-points = PackedVector2Array(196, 72, 828, 72, 828, 960, 196, 960, 196, 72)
+points = PackedVector2Array(500, 72, 1132, 72, 1132, 960, 500, 960, 500, 72)
 width = 2.0
 default_color = Color(0.25, 0.95, 1, 1)
 
 [node name="Walls" type="Node2D" parent="PinballField" unique_id=1363598999]
 
 [node name="LeftWall" type="StaticBody2D" parent="PinballField/Walls" unique_id=1442507105]
-position = Vector2(176, 516)
+position = Vector2(480, 516)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/LeftWall" unique_id=1467048870]
 shape = SubResource("RectangleShape2D_left_wall")
@@ -45,7 +45,7 @@ color = Color(0.09, 0.14, 0.2, 1)
 polygon = PackedVector2Array(-20, -444, 20, -444, 20, 444, -20, 444)
 
 [node name="RightWall" type="StaticBody2D" parent="PinballField/Walls" unique_id=1021040139]
-position = Vector2(848, 516)
+position = Vector2(1152, 516)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/RightWall" unique_id=2126867807]
 shape = SubResource("RectangleShape2D_right_wall")
@@ -55,7 +55,7 @@ color = Color(0.09, 0.14, 0.2, 1)
 polygon = PackedVector2Array(-20, -444, 20, -444, 20, 444, -20, 444)
 
 [node name="TopWall" type="StaticBody2D" parent="PinballField/Walls" unique_id=378274914]
-position = Vector2(512, 52)
+position = Vector2(816, 52)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/TopWall" unique_id=1678190956]
 shape = SubResource("RectangleShape2D_top_wall")
@@ -67,13 +67,13 @@ polygon = PackedVector2Array(-336, -20, 336, -20, 336, 20, -336, 20)
 [node name="PegContainer" type="Node2D" parent="PinballField" unique_id=69516438]
 
 [node name="BottomSensor" type="Area2D" parent="PinballField" unique_id=1921909966]
-position = Vector2(512, 986)
+position = Vector2(816, 986)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/BottomSensor" unique_id=815123221]
 shape = SubResource("RectangleShape2D_bottom_sensor")
 
 [node name="Launcher" type="Node2D" parent="PinballField" unique_id=371040683]
-position = Vector2(512, 118)
+position = Vector2(816, 118)
 
 [node name="BallContainer" type="Node2D" parent="PinballField" unique_id=2050505875]
 
@@ -81,17 +81,17 @@ position = Vector2(512, 118)
 z_index = 10
 
 [node name="AimLine" type="Line2D" parent="AimOverlay" unique_id=1124369905]
-points = PackedVector2Array(512, 118, 512, 233)
+points = PackedVector2Array(816, 118, 816, 233)
 width = 3.0
 default_color = Color(1, 0.9, 0.35, 1)
 
 [node name="LauncherVisual" type="Polygon2D" parent="AimOverlay" unique_id=1446668512]
-position = Vector2(512, 118)
+position = Vector2(816, 118)
 color = Color(0.9, 0.25, 1, 1)
 polygon = PackedVector2Array(13, 0, 12.0104, 4.97488, 9.19239, 9.19239, 4.97488, 12.0104, 0, 13, -4.97488, 12.0104, -9.19239, 9.19239, -12.0104, 4.97488, -13, 0, -12.0104, -4.97488, -9.19239, -9.19239, -4.97488, -12.0104, 0, -13, 4.97488, -12.0104, 9.19239, -9.19239, 12.0104, -4.97488)
 
 [node name="BattleCamera" type="Camera2D" parent="." unique_id=1405705917]
-position = Vector2(512, 512)
+position = Vector2(840, 525)
 
 [node name="BattleUI" type="CanvasLayer" parent="." unique_id=798775018]
 
@@ -106,151 +106,162 @@ mouse_filter = 2
 
 [node name="PlayerHPLabel" type="Label" parent="BattleUI/UIRoot" unique_id=942099492]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 264.0
-offset_bottom = 52.0
+offset_left = 42.0
+offset_top = 40.0
+offset_right = 342.0
+offset_bottom = 70.0
 theme_override_font_sizes/font_size = 18
 
 [node name="PlayerHPBar" type="ProgressBar" parent="BattleUI/UIRoot" unique_id=710917124]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 52.0
-offset_right = 264.0
-offset_bottom = 66.0
+offset_left = 42.0
+offset_top = 74.0
+offset_right = 322.0
+offset_bottom = 90.0
 mouse_filter = 2
 show_percentage = false
 
 [node name="EnemyHPLabel" type="Label" parent="BattleUI/UIRoot" unique_id=1717014172]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 72.0
-offset_right = 384.0
-offset_bottom = 100.0
+offset_left = 1216.0
+offset_top = 392.0
+offset_right = 1616.0
+offset_bottom = 444.0
 theme_override_font_sizes/font_size = 18
 
 [node name="EnemyHPBar" type="ProgressBar" parent="BattleUI/UIRoot" unique_id=1696688142]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 100.0
-offset_right = 384.0
-offset_bottom = 114.0
+offset_left = 1228.0
+offset_top = 452.0
+offset_right = 1604.0
+offset_bottom = 468.0
 mouse_filter = 2
 show_percentage = false
 
 [node name="RoundLabel" type="Label" parent="BattleUI/UIRoot" unique_id=1276819735]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 124.0
-offset_right = 244.0
-offset_bottom = 152.0
+offset_left = 42.0
+offset_top = 112.0
+offset_right = 262.0
+offset_bottom = 140.0
 theme_override_font_sizes/font_size = 18
 
 [node name="DamageLabel" type="Label" parent="BattleUI/UIRoot" unique_id=440104224]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 156.0
-offset_right = 284.0
-offset_bottom = 184.0
+offset_left = 42.0
+offset_top = 146.0
+offset_right = 302.0
+offset_bottom = 174.0
 theme_override_font_sizes/font_size = 18
 
 [node name="BallsLabel" type="Label" parent="BattleUI/UIRoot" unique_id=419632041]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 188.0
-offset_right = 284.0
-offset_bottom = 216.0
+offset_left = 42.0
+offset_top = 180.0
+offset_right = 302.0
+offset_bottom = 208.0
 theme_override_font_sizes/font_size = 18
 
 [node name="PowerLabel" type="Label" parent="BattleUI/UIRoot"]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 220.0
-offset_right = 224.0
-offset_bottom = 248.0
+offset_left = 42.0
+offset_top = 222.0
+offset_right = 242.0
+offset_bottom = 250.0
 theme_override_font_sizes/font_size = 18
 text = "POWER：000"
 
 [node name="PowerBar" type="ProgressBar" parent="BattleUI/UIRoot"]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 248.0
-offset_right = 264.0
-offset_bottom = 264.0
+offset_left = 42.0
+offset_top = 256.0
+offset_right = 322.0
+offset_bottom = 272.0
 mouse_filter = 2
 max_value = 100.0
 show_percentage = false
 
 [node name="OverloadLabel" type="Label" parent="BattleUI/UIRoot"]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 276.0
-offset_right = 300.0
-offset_bottom = 304.0
+offset_left = 42.0
+offset_top = 294.0
+offset_right = 318.0
+offset_bottom = 322.0
 theme_override_font_sizes/font_size = 18
 text = "OVERCLOCK 000%"
 
 [node name="OverloadBar" type="ProgressBar" parent="BattleUI/UIRoot"]
 layout_mode = 0
-offset_left = 24.0
-offset_top = 304.0
-offset_right = 300.0
-offset_bottom = 320.0
+offset_left = 42.0
+offset_top = 328.0
+offset_right = 322.0
+offset_bottom = 344.0
 mouse_filter = 2
 max_value = 100.0
 show_percentage = false
 
 [node name="FloorLabel" type="Label" parent="BattleUI/UIRoot" unique_id=20945791]
 layout_mode = 0
-offset_left = 740.0
-offset_top = 72.0
-offset_right = 1000.0
-offset_bottom = 100.0
+offset_left = 1340.0
+offset_top = 64.0
+offset_right = 1640.0
+offset_bottom = 92.0
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 2
 
 [node name="EnemyPortrait" type="ColorRect" parent="BattleUI/UIRoot" unique_id=1079671148]
 layout_mode = 0
-offset_left = 790.0
-offset_top = 120.0
-offset_right = 990.0
-offset_bottom = 260.0
+offset_left = 1238.0
+offset_top = 118.0
+offset_right = 1594.0
+offset_bottom = 370.0
 mouse_filter = 2
 color = Color(1, 0.18, 0.58, 0.45)
 
+[node name="EnemyPortraitTexture" type="TextureRect" parent="BattleUI/UIRoot/EnemyPortrait"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="EnemyTypeLabel" type="Label" parent="BattleUI/UIRoot" unique_id=1965597050]
 layout_mode = 0
-offset_left = 790.0
-offset_top = 270.0
-offset_right = 990.0
-offset_bottom = 298.0
+offset_left = 1216.0
+offset_top = 484.0
+offset_right = 1616.0
+offset_bottom = 514.0
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 
 [node name="EnemyDialogueLabel" type="Label" parent="BattleUI/UIRoot" unique_id=1763085935]
 layout_mode = 0
-offset_left = 690.0
-offset_top = 306.0
-offset_right = 1000.0
-offset_bottom = 376.0
+offset_left = 1216.0
+offset_top = 528.0
+offset_right = 1616.0
+offset_bottom = 590.0
 theme_override_font_sizes/font_size = 14
 autowrap_mode = 2
 
 [node name="StatusLabel" type="Label" parent="BattleUI/UIRoot" unique_id=589342895]
 layout_mode = 0
-offset_left = 260.0
-offset_top = 966.0
-offset_right = 764.0
-offset_bottom = 1002.0
+offset_left = 560.0
+offset_top = 990.0
+offset_right = 1080.0
+offset_bottom = 1026.0
 theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 
 [node name="SfxToggleButton" type="Button" parent="BattleUI/UIRoot" unique_id=505187556]
 layout_mode = 0
-offset_left = 890.0
+offset_left = 1536.0
 offset_top = 24.0
-offset_right = 1000.0
-offset_bottom = 56.0
+offset_right = 1656.0
+offset_bottom = 62.0
 text = "SFX: ON"
 
 [node name="RestartButton" type="Button" parent="BattleUI/UIRoot" unique_id=132463842]

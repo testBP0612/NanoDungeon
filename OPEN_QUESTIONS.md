@@ -321,3 +321,16 @@
 - 決議日期：2026-06-13
 - 影響範圍：assets/*、Scenes/*、Scripts/*（接線 + fallback）、Codex/12_ART_CORE.md、Codex/13_ART_UPGRADE_ICONS.md
 - 狀態：✅ 已決議
+
+### Q-027：場景視覺打磨（釘球發光 / bumper / HUD 字體 / 敵人區）
+- 提出者：Claude（Phase 14 規劃）
+- 日期：2026-06-14
+- 背景：實機畫面檢視後，釘 / 球發光偏弱、底排 bumper 灰齒輪破壞一致性、HUD 為系統字且外框鬆散、敵人立繪與血條脫節。
+- 結論（人類決議）：
+  - **字體**：採用 `assets/fonts/JiangChengJianRenHei.ttf`，透過 Theme 套用到全 UI（取代系統字），強化資料介面感。
+  - **底排 bumper**：採**純程序化發光環**（不重生 PNG）；命中脈動，回到霓虹語言。
+  - 範圍：① 釘 / 球發光強化（亮核 + 外暈 + 待機脈動，保留類型 modulate）② 底排 bumper 霓虹環 ③ HUD 資料面板 + 字體（對齊、刻度、顏色編碼）④ 敵人區整合（立繪放大、血條 / 名稱移到立繪下、底座 + 待機浮動）。⑤ 場地深度（vignette + 低對比資料流粒子）、⑥ 瞄準線虛線發光 + 落點准心 為選配。
+  - **護欄**：純程序化（shader / glow / Light2D / 粒子 / Line2D / Tween）+ 一個字體；數值進 `feel.json`；**不改玩法 / 數值 / 種類**；保留 fallback；**注意效能**（避免每顆釘各放一個 Light2D，優先 WorldEnvironment glow + 輕量脈動）。
+- 決議日期：2026-06-14
+- 影響範圍：assets/fonts/、Data/feel.json、Scenes/*、Scripts/BattleFX.gd / Peg.gd / Ball.gd / Battle.gd、Codex/14_SCENE_POLISH.md
+- 狀態：✅ 已決議

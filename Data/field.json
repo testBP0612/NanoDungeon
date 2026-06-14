@@ -5,8 +5,8 @@
   },
   "field": {
 	"bounds": {
-	  "left": 196,
-	  "right": 828,
+	  "left": 500,
+	  "right": 1132,
 	  "top": 72,
 	  "bottom": 960
 	},
@@ -18,12 +18,12 @@
 	  "wide_cols": 5,
 	  "narrow_cols": 4,
 	  "col_spacing": 88,
-	  "center_x": 512,
+	  "center_x": 816,
 	  "type_weights": {
 		"normal_peg": 60,
 		"heal_peg": 22,
 		"burst_peg": 10,
-		"double_peg": 8
+		"double_peg": 8 
 	  },
 	  "special_radius": {
 		"burst_peg": 8,

@@ -16,7 +16,11 @@ var _ball_color := Color(1.0, 0.86, 0.25)
 var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
 var _feel_config: Dictionary = {}
+var _scene_fx: Dictionary = {}
 var _combo_hits := 0
+var _sprite: Sprite2D
+var _texture: Texture2D
+var _pulse_phase := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -26,12 +30,15 @@ func _ready() -> void:
 	max_contacts_reported = 8
 	continuous_cd = RigidBody2D.CCD_MODE_CAST_RAY
 	body_entered.connect(_on_body_entered)
+	_load_texture()
 
 
 func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dictionary, feel_config: Dictionary, field_config: Dictionary = {}) -> void:
 	ball_id = new_ball_id
 	ball_def = new_ball_def.duplicate(true)
 	_feel_config = feel_config.duplicate(true)
+	var scene_fx_config: Dictionary = _feel_config.get("scene_fx", {})
+	_scene_fx = scene_fx_config.duplicate(true)
 	_peg_rehit_cooldown = float(_feel_config["peg_rehit_cooldown_seconds"])
 	var bottom_row: Dictionary = field_config.get("bottom_row", {})
 	_bounce_multiplier = float(bottom_row.get("bounce_multiplier", 1.0))
@@ -56,6 +63,15 @@ func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dic
 	add_child(timer)
 	timer.start(float(player_config["ball_timeout_seconds"]))
 	_add_trail()
+	_update_sprite()
+	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if radius <= 0.0:
+		return
+	_pulse_phase += delta * float(_scene_fx.get("ball_pulse_speed", 3.2))
+	_update_sprite()
 	queue_redraw()
 
 
@@ -113,8 +129,8 @@ func _add_trail() -> void:
 	var trail: Dictionary = _feel_config.get("trail", {})
 	var particles := CPUParticles2D.new()
 	particles.name = "Trail"
-	particles.amount = int(trail["amount"])
-	particles.lifetime = float(trail["lifetime"])
+	particles.amount = int(round(float(trail["amount"]) * float(_scene_fx.get("ball_trail_amount_multiplier", 1.25))))
+	particles.lifetime = float(trail["lifetime"]) * float(_scene_fx.get("ball_trail_lifetime_multiplier", 1.15))
 	particles.local_coords = false
 	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
 	particles.emission_sphere_radius = radius * float(trail["radius_multiplier"])
@@ -150,5 +166,45 @@ func _color_for_ball(id: String) -> Color:
 
 
 func _draw() -> void:
+	if radius <= 0.0:
+		return
+	var pulse := _pulse_amount()
+	var halo := _ball_color
+	halo.a = float(_scene_fx.get("ball_halo_alpha", 0.28))
+	draw_circle(Vector2.ZERO, radius * float(_scene_fx.get("ball_halo_radius", 1.95)) * pulse, halo)
+	var core := Color.WHITE
+	core.a = float(_scene_fx.get("ball_core_alpha", 0.82))
+	draw_circle(Vector2.ZERO, radius * 0.42 * pulse, core)
+	if _texture != null:
+		return
 	draw_circle(Vector2.ZERO, radius, _ball_color)
 	draw_circle(Vector2.ZERO, radius * 0.45, Color(1.0, 1.0, 0.9))
+
+
+func _load_texture() -> void:
+	var path := "res://assets/balls/ball_base.png"
+	if not ResourceLoader.exists(path):
+		return
+	_texture = load(path)
+	if _texture == null:
+		return
+	_sprite = Sprite2D.new()
+	_sprite.name = "ArtSprite"
+	_sprite.texture = _texture
+	_sprite.centered = true
+	_sprite.z_index = 1
+	add_child(_sprite)
+
+
+func _update_sprite() -> void:
+	if _sprite == null or _texture == null or radius <= 0.0:
+		return
+	var target_diameter := radius * 2.45 * _pulse_amount()
+	var texture_diameter := float(max(_texture.get_width(), _texture.get_height()))
+	_sprite.scale = Vector2.ONE * (target_diameter / texture_diameter)
+	_sprite.modulate = _ball_color
+
+
+func _pulse_amount() -> float:
+	var amount := float(_scene_fx.get("ball_pulse_scale", 0.055))
+	return 1.0 + sin(_pulse_phase) * amount

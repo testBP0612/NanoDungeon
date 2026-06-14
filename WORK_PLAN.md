@@ -39,38 +39,39 @@
 ## 當前工作計畫
 
 # Current State
-- MVP Phase 1 ~ 5 已完成，Phase 6 佈局資料化、Phase 7 程序釘盤、Phase 8 集氣發射 / bumper / double_peg 保底、Phase 9 Game Feel、Phase 10 Overclock 皆已落地。
-- 目前已有 `Data/feel.json`、`Scripts/BattleFX.gd`、settlement count-up、Overclock 倍率與底排 bumper，可作為 Phase 11 三項手感增量接點。
-- Q-023 / Q-024 / Q-025 已決議：回合內累積傷害達標即斬殺、結算 / 斬殺時播放玩家攻擊演繹、一般釘彈跳 boost 並資料化。
+- Phase 1 ~ 12 已完成，核心美術資產、背景、logo 圖徽、敵人立繪、釘 / 球中性底圖與 fallback 接線已落地。
+- 人類已確認主選單 GUI crash 根因是 Godot 4.6.3 `d3d12` 後端 bug，專案改用 `vulkan`；本圈不再改渲染相關設定。
+- Q-027 已決議：Phase 14 只做純程序化場景 polish，字體使用 `assets/fonts/JiangChengJianRenHei.ttf`，表現參數集中於 `Data/feel.json`，不改玩法數值。
 
 # Current Phase
-- **Phase 11 — PLAYER ATTACK & BOUNCE（斬殺、玩家攻擊演繹、彈跳手感）**。
+- **Phase 14 — Scene Polish（場景視覺打磨）**。
 
 # Recommended Task
-- 執行 `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md`。
-- 新增 `Data/player.json` 的 `execute`、`peg_bounce_boost`、共用 `max_ball_speed`，以及 `Data/feel.json` 的 `overkill_cutin` / `player_attack`。
-- 擴充 `Battle.gd`、`BattleFX.gd`、`Ball.gd`、`DataLoader.gd`，接入提前斬殺、玩家攻擊演出與一般釘彈跳 boost。
+- 執行 `Codex/14_SCENE_POLISH.md`。
+- 以 shader / draw / Line2D / Tween / 粒子等純程序化方式完成：釘球發光、底排 bumper 霓虹環、HUD 資料面板 + 字體、敵人區整合。
+- 全 UI 套用 `assets/fonts/JiangChengJianRenHei.ttf`，缺字體時回到 Godot 預設字體。
 
 # Why
-- ROADMAP 已將 Phase 11 排在 Phase 10 之後，目標是縮短達標後的等待時間，補足玩家輸出視覺重量，並強化一般釘反彈手感。
-- Q-023 / Q-024 / Q-025 已決議且無阻斷問題，任務卡明確要求全資料化、純程序化、不新增種類、不改傷害公式。
-- 既有 BattleFX、count-up、Overclock 與 bumper 架構已能小步接入，不需重寫核心戰鬥流程。
+- Phase 12 圖像已接線，但場景仍需要更完整的發光、資料化 HUD 與敵人區視覺整合，才能符合 `Docs/05_ART_DIRECTION.md` 的低對比資料層與霓虹核心感。
+- Q-027 已收斂工具與護欄：不用外部新圖、不做逐釘 Light2D、不碰 gameplay / physics / render settings。
+- 這一圈是純表現層，可在不破壞 Phase 12 fallback 的前提下提升可視讀性。
 
 # Risks
-- 斬殺若與球回收 signal / SETTLE 同時觸發，可能造成重複結算；需加明確 execution guard。
-- 玩家攻擊演出需與 settlement count-up 對齊，避免卡住 FSM 或讓敵人受擊回饋重複太多。
-- 一般釘 boost 改變物理速度，必須夾 `max_ball_speed` 並保留底排 bumper 獨立倍率。
-- 用詞需避開任務卡禁用術語，畫面文字維持賽博化。
+- 發光若使用大量 Light2D 會有性能風險；本圈改用 `_draw()` / Line2D / ColorRect，不逐釘加燈。
+- HUD runtime 重排需避免遮擋彈珠場與互動輸入；UI 背景節點必須 `MOUSE_FILTER_IGNORE`。
+- 字體缺失時不能 crash；字體套用需保守，以節點 override 為主。
+- MainMenu 背景 / logo 載入需維持正常，不因 polish 重做而短路。
 
 # Dependencies
-- Q-023 / Q-024 / Q-025 已決議，無阻斷性未決問題。
+- Q-027 已決議，無阻斷性未決問題。
+- `assets/fonts/JiangChengJianRenHei.ttf` 已存在；Phase 12 圖像資產與 fallback 接線已存在。
 
 # Estimated Scope
-- 中。會修改 `Data/player.json`、`Data/feel.json`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scripts/BattleFX.gd`、`Scripts/Ball.gd`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 中。修改 `Data/feel.json`、`Scripts/Peg.gd`、`Scripts/Ball.gd`、`Scripts/Battle.gd`、全 UI 入口腳本，新增 `Scripts/UITheme.gd`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
 
 # Validation Target
-- 對照 `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md` DoD：達標立即斬殺、場上球清除、OVERKILL cut-in、玩家攻擊匯聚→射出→命中、強度隨傷害、一般釘 boost、底排 bumper 不疊加、全參數資料化、可關閉。
-- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：Demo 展示穩定性與禁止偏離項目。
+- 對照 `Codex/14_SCENE_POLISH.md` DoD：釘 / 球發光與 idle pulse、底排 bumper 霓虹環與 hit pulse、HUD 字體 / 面板 / 刻度、敵人 portrait 放大與 HP/name 下移、fallback、無逐釘 Light2D。
+- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：視覺一致、未改玩法 / 數值 / 種類、Godot 載入、JSON 解析、export smoke。
 
 ---
 

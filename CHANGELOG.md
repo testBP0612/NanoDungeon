@@ -39,6 +39,130 @@
 
 ---
 
+## [Phase 14 / 1.9.2] - 2026-06-14 — 修正發射球顯示、敵人框層級、寬版 UI 與光束層級
+
+- 執行者：Codex
+- 任務卡：`Codex/14_SCENE_POLISH.md` follow-up
+
+### Fixed
+- `Battle.gd` 新增 `LauncherBallArt`，用 `assets/balls/ball_base.png` 取代舊紫色 `LauncherVisual` Polygon；集氣亮度與發射後座力改作用在新球圖上。
+- `Battle.gd` 將 HUD / 敵人資料框 panel 與 border 改為負 z-index，並提高敵人 name / HP / HP bar / type / dialogue 的 z-index，避免文字與血條被框底覆蓋。
+- `BattleFX.gd` 的玩家攻擊光束 / core / projectile 改掛到 UI root 並使用高 z-index，確保光線顯示在敵人框上方。
+- `BattleFX.gd` 的 Turn banner、Overclock cut-in、Overkill cut-in、低血邊框與 scanline overlay 改依目前 viewport 尺寸建立，不再寫死 1024。
+- `UpgradeScreen.gd` 新增 viewport-based layout，標題、三張升級卡與下一場按鈕會依 1680×1050 寬版置中放大。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案、`Scenes/Battle.tscn`、`Scenes/UpgradeScreen.tscn` 通過。
+- Vulkan GUI 直接載入 `Scenes/Battle.tscn` 與 `Scenes/UpgradeScreen.tscn` 通過，輸出確認 RTX 4080 SUPER / Vulkan Forward+。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+## [Phase 14 / 1.9.1] - 2026-06-14 — 寬版 Battle 版面、敵人框修正與新球圖
+
+- 執行者：Codex
+- 任務卡：`Codex/14_SCENE_POLISH.md` follow-up
+
+### Changed
+- 視窗尺寸改為 1680×1050；Battle 彈珠場整體平移到寬版畫面中央區，HUD 留左側、敵人資料框留右側，降低 1024 方形畫面的擁擠感。
+- `Data/field.json` 同步平移 field bounds / center_x；釘盤寬度、row/col spacing、釘數、半徑、bottom bumper 數值與 gameplay 規則不變。
+- `Data/feel.json` 更新 HUD、SFX 按鈕、status、enemy_display 位置；敵人名字 / HP / HP bar / 類型 / 台詞都排入右側框內，避免被 portrait 或框線遮住。
+- `Scenes/Battle.tscn` 同步更新牆、底部偵測、launcher、camera、初始 UI 座標，讓場景預覽與 runtime layout 一致。
+- `MainMenu.gd` 改用 viewport 寬度置中 logo、標題與按鈕，適配 1680 寬版。
+
+### Added
+- 使用 `generate2dsprite` / built-in image generation 重新產出 `assets/balls/ball_base.png`：透明 PNG 能量玻璃球，與 peg 機械圓盤視覺分離；保留 runtime tint。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Vulkan GUI 直接載入 `Scenes/Battle.tscn` 通過，輸出確認 RTX 4080 SUPER / Vulkan Forward+。
+- Windows Desktop Export 成功；export log 確認重新匯入 `ball_base.png`。
+- `Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+## [Phase 14 / 1.9.0] - 2026-06-14 — 純程序化場景 Polish 與全 UI 字體
+
+- 執行者：Codex
+- 任務卡：`Codex/14_SCENE_POLISH.md`
+
+### Added
+- 新增 `Scripts/UITheme.gd`，將 `assets/fonts/JiangChengJianRenHei.ttf` 套用到 Label / Button / ProgressBar / RichTextLabel；字體缺失時保留 Godot 預設 fallback。
+- `Data/feel.json` 新增 `scene_fx`、`hud`、`enemy_display` 表現參數，集中控制釘 / 球 halo、bumper ring、HUD 面板與敵人區位置 / 浮動。
+
+### Changed
+- `Peg.gd` 在貼圖存在時仍繪製發光 halo / core 與 idle pulse；底排 `bounce_peg` 改以純程序化霓虹環、tick 與 hit pulse 顯示，未新增 Light2D。
+- `Ball.gd` 在貼圖存在時補上球體 halo / core / idle pulse，拖尾強度只讀 `feel.scene_fx` 表現倍率，不改物理或速度。
+- `Battle.gd` 套用 UI 字體、加入 HUD 資料面板 / 邊框 / 刻度 / 色彩分區，並將敵人 portrait 放大、HP/name 移到 portrait 下方，加入敵人區底板與 portrait idle float。
+- `MainMenu.gd`、`UpgradeScreen.gd`、`GameOver.gd`、`Victory.gd` 接入共用字體 helper；主選單背景與 logo 仍正常載入並保留缺圖 fallback。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案、`Scenes/Battle.tscn`、`Scenes/UpgradeScreen.tscn`、`Scenes/GameOver.tscn`、`Scenes/Victory.tscn` 通過。
+- 靜態掃描 `Scripts/Scenes/Data` 無 `Light2D` / `PointLight2D` / `DirectionalLight2D`，確認未逐釘加燈。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- Vulkan GUI 初始化通過，並可直接載入 `Scenes/MainMenu.tscn` 後退出；輸出確認使用 NVIDIA RTX 4080 SUPER / Vulkan Forward+。
+- 備註：`Scenes/MainMenu.tscn --headless --quit` 仍觸發 Godot 原生 signal 11 backtrace，未回報 GDScript 解析錯誤；Vulkan GUI 路徑已通過。
+
+### 未解問題
+- 無新增。Q-027 已依決議實作。
+
+## [Phase 12 / 1.8.1] - 2026-06-14 — 修復釘子底圖被場地遮住
+
+- 執行者：Codex
+- 任務卡：`Codex/12_ART_CORE.md` follow-up
+
+### Fixed
+- `Peg.gd` 的 `ArtSprite` 改回前景 z 層，修正貼圖載入後 `_draw()` fallback 停用、但 Sprite 被場地底色蓋住，導致釘子在實機中消失的問題。
+- `Ball.gd` 同步調整球底圖 z 層，避免球貼圖也被場地底色遮住。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 已重新產出；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+## [環境修正 + Phase 14 規劃] - 2026-06-14 — vulkan 修 d3d12 崩潰 + 場景打磨任務卡
+
+- 執行者：Claude（診斷 / 規格）+ 人類（決策）
+
+### Fixed
+- `project.godot`：`rendering_device/driver.windows` 由 `d3d12` 改為 `vulkan`，修正 GUI 啟動原生記憶體存取違規崩潰（headless 正常、d3d12 GUI 崩、vulkan GUI 正常；經 RTX 4080 SUPER 實測）。確認為 Godot 4.6.3 d3d12 後端問題，非美術 / GDScript 問題。**重新 export 後執行檔才會帶 vulkan。**
+
+### Added
+- `Codex/14_SCENE_POLISH.md`：場景視覺打磨任務卡（釘 / 球發光、底排 bumper 霓虹環、HUD 資料面板 + 字體、敵人區整合；選配場地深度 / 瞄準線）。
+
+### Docs / 決策
+- 新增並由人類決議 **Q-027**：字體採 `assets/fonts/JiangChengJianRenHei.ttf`、底排 bumper 走純程序化發光環、其餘純程序化、數值進 feel.json、不改玩法、效能優先（避免逐釘 Light2D）。
+- `ROADMAP.md`：新增 Phase 14 列。
+
+### 備註
+- vulkan 修正尚未 commit；建議與 Phase 12 美術一起 review 後提交。
+
+## [Phase 12 / 1.8.0] - 2026-06-14 — 核心美術資產與 fallback 接線
+
+- 執行者：Codex
+- 任務卡：`Codex/12_ART_CORE.md`
+
+### Added
+- 新增核心美術資產：`assets/enemies/*.png` 5 張敵人立繪、`assets/pegs/peg_base.png`、`assets/balls/ball_base.png`、`assets/bg/menu_bg.png`、`assets/bg/battle_bg.png`、`assets/ui/bar_frame.png`、`assets/ui/logo.png`。
+- 新增 `assets/art_core_prompts.md`，記錄 Phase 12 風格錨點、各資產 prompt 與透明 PNG 後處理方式。
+- `Battle.tscn` 的 `EnemyPortrait` 增加子 `TextureRect` 顯示敵人立繪，父 `ColorRect` 保留作為缺圖 fallback。
+
+### Changed
+- `Peg.gd` / `Ball.gd` 改為優先載入中性底圖並用既有類型色 `modulate` 上色；缺圖時仍回到原本 `_draw()` 畫圓。
+- `Battle.gd` 依 `enemy_def.id` 載入 `assets/enemies/<id>.png`，戰鬥背景以低 alpha 置於最底層，HP / Enemy HP / Power / Overclock bar 增加 HUD frame。
+- `MainMenu.gd` 接入低亮度背景與 logo 圖徽，標題文字仍由引擎 Label 繪製；缺圖時維持原本純色主選單 fallback。
+- `WORK_PLAN.md` 更新為 Phase 12 本圈計畫。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；export log 確認所有 `assets/` PNG、`MainMenu` / `Battle` 場景與腳本皆已打包。
+- `Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- 圖片 import 檢查：新 PNG import 皆為 texture，`mipmaps/generate=false`。
+- 備註：人類已確認先前主選單 crash 根因為 `d3d12` 後端，並將專案改為 `vulkan`；本圈未再修改渲染設定。GUI 可視化啟動請求被取消，仍建議用可視化執行檔確認主選單背景 / logo。
+
+### 未解問題
+- 無新增。Q-026 已依決議實作；升級 icon 留待 `Codex/13_ART_UPGRADE_ICONS.md`。
+
 ## [Phase 11 / 1.7.0] - 2026-06-13 — 斬殺強制清除、玩家攻擊演繹與一般釘彈跳 boost
 
 - 執行者：Codex

@@ -7,6 +7,7 @@ const PEG_SCENE := preload("res://Scenes/Peg.tscn")
 const ROUND_CONTEXT_SCRIPT := preload("res://Scripts/RoundContext.gd")
 const EFFECT_RESOLVER_SCRIPT := preload("res://Scripts/EffectResolver.gd")
 const FIELD_GENERATOR_SCRIPT := preload("res://Scripts/FieldGenerator.gd")
+const UI_THEME_SCRIPT := preload("res://Scripts/UITheme.gd")
 
 var state := BattleState.INIT
 var player_config: Dictionary = {}
@@ -16,7 +17,7 @@ var enemy_def: Dictionary = {}
 var enemy_hp := 0
 var enemy_max_hp := 0
 var round_index := 0
-var launcher_position := Vector2(512, 118)
+var launcher_position := Vector2(816, 118)
 var sfx_enabled := true
 var _last_player_hp := -1
 var _last_enemy_hp := -1
@@ -37,6 +38,9 @@ var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
 var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
 var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
+var _enemy_float_phase := 0.0
+var _enemy_portrait_base_position := Vector2.ZERO
+var _launcher_ball_sprite: Sprite2D
 
 @onready var battle_camera: Camera2D = $BattleCamera
 @onready var battle_fx: Node = $BattleFX
@@ -60,6 +64,7 @@ var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 @onready var enemy_type_label: Label = $BattleUI/UIRoot/EnemyTypeLabel
 @onready var enemy_dialogue_label: Label = $BattleUI/UIRoot/EnemyDialogueLabel
 @onready var enemy_portrait: ColorRect = $BattleUI/UIRoot/EnemyPortrait
+@onready var enemy_portrait_texture: TextureRect = $BattleUI/UIRoot/EnemyPortrait/EnemyPortraitTexture
 @onready var status_label: Label = $BattleUI/UIRoot/StatusLabel
 @onready var sfx_toggle_button: Button = $BattleUI/UIRoot/SfxToggleButton
 @onready var restart_button: Button = $BattleUI/UIRoot/RestartButton
@@ -79,8 +84,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	battle_fx.update(delta)
 	battle_fx.update_low_hp(RunState.player_hp, RunState.player_max_hp, delta)
+	_update_enemy_idle(delta)
 	_update_charge(delta)
-	battle_fx.update_charge_feedback(charge_power, power_bar, launcher_visual)
+	battle_fx.update_charge_feedback(charge_power, power_bar, _launcher_feedback_node())
 	_update_aim_overlay()
 	_update_ui()
 
@@ -107,6 +113,13 @@ func _load_definitions() -> void:
 
 
 func _connect_scene_nodes() -> void:
+	UI_THEME_SCRIPT.apply_to($BattleUI/UIRoot, feel_config.get("hud", {}))
+	_layout_scene_polish_ui()
+	_add_launcher_ball_sprite()
+	_add_hud_panel()
+	_add_enemy_panel()
+	_add_battle_background()
+	_add_hud_frames()
 	battle_fx.configure(battle_camera, $BattleUI/UIRoot, feel_config)
 	battle_fx.configure_overload(overload_config)
 	battle_fx.set_sfx_enabled(sfx_enabled)
@@ -131,19 +144,232 @@ func _update_enemy_display() -> void:
 	enemy_type_label.text = enemy_type.to_upper()
 	enemy_dialogue_label.text = String(enemy_def.get("dialogue", ""))
 	floor_label.text = "場次：%s / %s" % [RunState.current_battle_index + 1, DataLoader.enemies.size()]
+	var has_portrait := _set_enemy_portrait_texture(String(enemy_def.get("id", "")))
 	match enemy_type:
 		"boss":
-			enemy_portrait.color = Color(0.8, 0.05, 0.08, 0.55)
+			enemy_portrait.color = Color(0.8, 0.05, 0.08, 0.0 if has_portrait else 0.55)
 		"elite":
-			enemy_portrait.color = Color(1.0, 0.42, 0.12, 0.55)
+			enemy_portrait.color = Color(1.0, 0.42, 0.12, 0.0 if has_portrait else 0.55)
 		_:
-			enemy_portrait.color = Color(1.0, 0.18, 0.58, 0.45)
+			enemy_portrait.color = Color(1.0, 0.18, 0.58, 0.0 if has_portrait else 0.45)
+
+
+func _layout_scene_polish_ui() -> void:
+	var hud: Dictionary = feel_config.get("hud", {})
+	var enemy_display: Dictionary = feel_config.get("enemy_display", {})
+	player_hp_label.position = _vector2_from_array(hud.get("player_label_position", [32, 32]), player_hp_label.position)
+	player_hp_label.size = _vector2_from_array(hud.get("player_label_size", [280, 30]), player_hp_label.size)
+	player_hp_bar.position = _vector2_from_array(hud.get("player_bar_position", [32, 66]), player_hp_bar.position)
+	player_hp_bar.size = _vector2_from_array(hud.get("player_bar_size", [252, 16]), player_hp_bar.size)
+	round_label.position = _vector2_from_array(hud.get("round_label_position", [32, 104]), round_label.position)
+	damage_label.position = _vector2_from_array(hud.get("damage_label_position", [32, 138]), damage_label.position)
+	balls_label.position = _vector2_from_array(hud.get("balls_label_position", [32, 172]), balls_label.position)
+	power_label.position = _vector2_from_array(hud.get("power_label_position", [32, 214]), power_label.position)
+	power_bar.position = _vector2_from_array(hud.get("power_bar_position", [32, 248]), power_bar.position)
+	power_bar.size = _vector2_from_array(hud.get("power_bar_size", [252, 16]), power_bar.size)
+	overload_label.position = _vector2_from_array(hud.get("overload_label_position", [32, 286]), overload_label.position)
+	overload_bar.position = _vector2_from_array(hud.get("overload_bar_position", [32, 320]), overload_bar.position)
+	overload_bar.size = _vector2_from_array(hud.get("overload_bar_size", [252, 16]), overload_bar.size)
+	status_label.position = _vector2_from_array(hud.get("status_position", [560, 990]), status_label.position)
+	status_label.size = _vector2_from_array(hud.get("status_size", [520, 36]), status_label.size)
+	sfx_toggle_button.position = _vector2_from_array(hud.get("sfx_button_position", [1536, 24]), sfx_toggle_button.position)
+	sfx_toggle_button.size = _vector2_from_array(hud.get("sfx_button_size", [120, 38]), sfx_toggle_button.size)
+	enemy_portrait.position = _vector2_from_array(enemy_display.get("portrait_position", [746, 112]), enemy_portrait.position)
+	enemy_portrait.size = _vector2_from_array(enemy_display.get("portrait_size", [232, 202]), enemy_portrait.size)
+	_enemy_portrait_base_position = enemy_portrait.position
+	enemy_hp_label.position = _vector2_from_array(enemy_display.get("hp_label_position", [720, 320]), enemy_hp_label.position)
+	enemy_hp_label.size = _vector2_from_array(enemy_display.get("hp_label_size", [280, 48]), enemy_hp_label.size)
+	enemy_hp_bar.position = _vector2_from_array(enemy_display.get("hp_bar_position", [732, 374]), enemy_hp_bar.position)
+	enemy_hp_bar.size = _vector2_from_array(enemy_display.get("hp_bar_size", [252, 16]), enemy_hp_bar.size)
+	enemy_type_label.position = _vector2_from_array(enemy_display.get("type_label_position", [720, 398]), enemy_type_label.position)
+	enemy_type_label.size = _vector2_from_array(enemy_display.get("type_label_size", [280, 28]), enemy_type_label.size)
+	enemy_dialogue_label.position = _vector2_from_array(enemy_display.get("dialogue_position", [690, 432]), enemy_dialogue_label.position)
+	enemy_dialogue_label.size = _vector2_from_array(enemy_display.get("dialogue_size", [318, 56]), enemy_dialogue_label.size)
+	floor_label.position = _vector2_from_array(enemy_display.get("floor_label_position", [734, 58]), floor_label.position)
+	for item in [player_hp_label, player_hp_bar, enemy_hp_label, enemy_hp_bar, round_label, damage_label, balls_label, power_label, power_bar, overload_label, overload_bar, floor_label, enemy_type_label, enemy_dialogue_label, status_label, sfx_toggle_button]:
+		(item as CanvasItem).z_index = 20
+	enemy_portrait.z_index = 10
+	enemy_portrait_texture.z_index = 11
+	_apply_scene_polish_colors()
+
+
+func _add_launcher_ball_sprite() -> void:
+	var path := "res://assets/balls/ball_base.png"
+	if not ResourceLoader.exists(path):
+		return
+	var texture: Texture2D = load(path)
+	if texture == null:
+		return
+	launcher_visual.visible = false
+	_launcher_ball_sprite = Sprite2D.new()
+	_launcher_ball_sprite.name = "LauncherBallArt"
+	_launcher_ball_sprite.texture = texture
+	_launcher_ball_sprite.centered = true
+	_launcher_ball_sprite.position = launcher_position
+	_launcher_ball_sprite.scale = Vector2.ONE * (36.0 / float(max(texture.get_width(), texture.get_height())))
+	_launcher_ball_sprite.modulate = Color(1.0, 0.92, 0.25)
+	_launcher_ball_sprite.z_index = 12
+	$AimOverlay.add_child(_launcher_ball_sprite)
+
+
+func _launcher_feedback_node() -> CanvasItem:
+	return _launcher_ball_sprite if _launcher_ball_sprite != null else launcher_visual
+
+
+func _apply_scene_polish_colors() -> void:
+	var hud: Dictionary = feel_config.get("hud", {})
+	var label_color := Color(String(hud.get("label_color", "#E8FBFF")))
+	for label in [player_hp_label, enemy_hp_label, round_label, damage_label, balls_label, power_label, overload_label, floor_label, enemy_type_label, enemy_dialogue_label, status_label]:
+		(label as Label).modulate = label_color
+	player_hp_bar.modulate = Color(String(hud.get("player_color", "#46FF9B")))
+	enemy_hp_bar.modulate = Color(String(hud.get("enemy_color", "#FF4E87")))
+	power_bar.modulate = Color(String(hud.get("power_color", "#FFE66D")))
+	overload_bar.modulate = Color(String(hud.get("overload_color", "#00E5FF")))
+
+
+func _add_hud_panel() -> void:
+	var ui_root: Control = $BattleUI/UIRoot
+	var hud: Dictionary = feel_config.get("hud", {})
+	var panel := ColorRect.new()
+	panel.name = "ScenePolishHudPanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.z_index = -20
+	panel.position = _vector2_from_array(hud.get("panel_position", [16, 16]), Vector2(16, 16))
+	panel.size = _vector2_from_array(hud.get("panel_size", [328, 336]), Vector2(328, 336))
+	panel.color = Color(String(hud.get("panel_color", "#071019CC")))
+	ui_root.add_child(panel)
+	ui_root.move_child(panel, 0)
+	var border := _make_rect_line("HudPanelBorder", panel.position, panel.size, Color(String(hud.get("panel_border_color", "#00E5FF88"))), 2.0)
+	border.z_index = -19
+	ui_root.add_child(border)
+	ui_root.move_child(border, 1)
+	var tick_color := Color(String(hud.get("panel_tick_color", "#9EF8FFAA")))
+	for y in [64.0, 100.0, 136.0, 172.0, 248.0, 320.0]:
+		var tick := Line2D.new()
+		tick.name = "HudPanelTick"
+		tick.width = 1.0
+		tick.default_color = tick_color
+		tick.points = PackedVector2Array([panel.position + Vector2(12, y), panel.position + Vector2(panel.size.x - 12, y)])
+		tick.z_index = 1
+		ui_root.add_child(tick)
+		ui_root.move_child(tick, 2)
+
+
+func _add_enemy_panel() -> void:
+	var ui_root: Control = $BattleUI/UIRoot
+	var config: Dictionary = feel_config.get("enemy_display", {})
+	var panel := ColorRect.new()
+	panel.name = "ScenePolishEnemyPanel"
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.z_index = -20
+	panel.position = _vector2_from_array(config.get("panel_position", [716, 84]), Vector2(716, 84))
+	panel.size = _vector2_from_array(config.get("panel_size", [292, 366]), Vector2(292, 366))
+	panel.color = Color(String(config.get("panel_color", "#060B12D9")))
+	ui_root.add_child(panel)
+	ui_root.move_child(panel, 0)
+	var border := _make_rect_line("EnemyPanelBorder", panel.position, panel.size, Color(String(config.get("border_color", "#FF2D9588"))), 2.0)
+	border.z_index = -19
+	ui_root.add_child(border)
+	ui_root.move_child(border, 1)
+
+
+func _make_rect_line(node_name: String, position: Vector2, size: Vector2, color: Color, width: float) -> Line2D:
+	var line := Line2D.new()
+	line.name = node_name
+	line.width = width
+	line.default_color = color
+	line.closed = true
+	line.z_index = 1
+	line.points = PackedVector2Array([
+		position,
+		position + Vector2(size.x, 0),
+		position + size,
+		position + Vector2(0, size.y),
+	])
+	return line
+
+
+func _vector2_from_array(value: Variant, fallback: Vector2) -> Vector2:
+	if typeof(value) != TYPE_ARRAY:
+		return fallback
+	var array: Array = value
+	if array.size() < 2:
+		return fallback
+	return Vector2(float(array[0]), float(array[1]))
+
+
+func _update_enemy_idle(delta: float) -> void:
+	if enemy_portrait == null:
+		return
+	var config: Dictionary = feel_config.get("enemy_display", {})
+	_enemy_float_phase += delta * float(config.get("float_speed", 1.4))
+	enemy_portrait.position = _enemy_portrait_base_position + Vector2(0.0, sin(_enemy_float_phase) * float(config.get("float_pixels", 6.0)))
 
 
 func _enemy_hit_position() -> Vector2:
 	if enemy_portrait == null:
 		return Vector2(512, 600)
 	return enemy_portrait.get_global_rect().get_center()
+
+
+func _set_enemy_portrait_texture(enemy_id: String) -> bool:
+	if enemy_portrait_texture == null:
+		return false
+	var path := "res://assets/enemies/%s.png" % enemy_id
+	if not ResourceLoader.exists(path):
+		enemy_portrait_texture.texture = null
+		return false
+	var texture: Texture2D = load(path)
+	enemy_portrait_texture.texture = texture
+	return texture != null
+
+
+func _add_battle_background() -> void:
+	var path := "res://assets/bg/battle_bg.png"
+	if not ResourceLoader.exists(path):
+		return
+	var texture: Texture2D = load(path)
+	if texture == null:
+		return
+	var bg := Sprite2D.new()
+	bg.name = "BattleBackgroundArt"
+	bg.texture = texture
+	bg.centered = true
+	var viewport_size := get_viewport_rect().size
+	bg.position = viewport_size * 0.5
+	bg.scale = Vector2(viewport_size.x / texture.get_width(), viewport_size.y / texture.get_height())
+	bg.modulate = Color(1.0, 1.0, 1.0, 0.38)
+	bg.z_index = -20
+	add_child(bg)
+	move_child(bg, 0)
+
+
+func _add_hud_frames() -> void:
+	var path := "res://assets/ui/bar_frame.png"
+	if not ResourceLoader.exists(path):
+		return
+	var texture: Texture2D = load(path)
+	if texture == null:
+		return
+	for bar in [player_hp_bar, enemy_hp_bar, power_bar, overload_bar]:
+		_add_frame_for_bar(bar, texture)
+
+
+func _add_frame_for_bar(bar: ProgressBar, texture: Texture2D) -> void:
+	if bar == null:
+		return
+	var frame := TextureRect.new()
+	frame.name = "%sFrameArt" % bar.name
+	frame.texture = texture
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.modulate = Color(1.0, 1.0, 1.0, 0.55)
+	frame.position = bar.position - Vector2(8, 7)
+	frame.size = bar.size + Vector2(16, 14)
+	var parent := bar.get_parent()
+	parent.add_child(frame)
+	parent.move_child(frame, bar.get_index())
 
 
 func _spawn_pegs() -> void:
@@ -160,7 +386,7 @@ func _spawn_pegs() -> void:
 		var peg := PEG_SCENE.instantiate()
 		peg_container.add_child(peg)
 		peg.position = Vector2(float((cell as Dictionary)["x"]), float((cell as Dictionary)["y"]))
-		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]))
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]), feel_config)
 		bottom_peg_nodes.append(peg)
 
 
@@ -175,7 +401,7 @@ func _reroll_dynamic_pegs() -> void:
 		var cell := rolled_cells[index] as Dictionary
 		var peg := dynamic_peg_nodes[index]
 		var peg_id := String(cell["id"])
-		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]))
+		peg.configure(peg_id, DataLoader.get_peg(peg_id), float(cell["radius"]), feel_config)
 		battle_fx.flash_reroll_peg(peg, float(index) * stagger)
 
 
@@ -260,7 +486,7 @@ func _fire_ball() -> void:
 		status_label.text = "%s 飛行中" % String(ball_def.get("name", "Ball"))
 	_transition_to(BattleState.LAUNCHED)
 	battle_fx.spawn_launch_feedback(launcher_position)
-	battle_fx.play_launcher_recoil(launcher_visual, launch_direction)
+	battle_fx.play_launcher_recoil(_launcher_feedback_node(), launch_direction)
 	battle_fx.play_sfx("launch", 0.9 + charge_power / 250.0)
 	ball.launch(launch_direction, launch_speed)
 	_update_ui()
@@ -387,7 +613,7 @@ func _on_ball_recovered(ball: RigidBody2D, reason: String) -> void:
 	status_label.text = "球已回收：%s" % reason
 	var drain_config: Dictionary = feel_config.get("drain", {})
 	if hit_count <= int(drain_config.get("miss_hit_threshold", 1)):
-		battle_fx.show_miss_feedback(Vector2(512, 900))
+		battle_fx.show_miss_feedback(Vector2(launcher_position.x, 900))
 	battle_fx.play_sfx("drop")
 	if round_context.balls_in_play > 0:
 		return
@@ -427,7 +653,7 @@ func _settle_round() -> void:
 	_settlement_animating = false
 	enemy_hp = next_enemy_hp
 	_last_enemy_hp = enemy_hp
-	battle_fx.show_floating_text("TOTAL %s" % round_context.damage_accumulator, Vector2(512, 610), Color(1.0, 0.9, 0.35))
+	battle_fx.show_floating_text("TOTAL %s" % round_context.damage_accumulator, Vector2(launcher_position.x, 610), Color(1.0, 0.9, 0.35))
 	await battle_fx.flash_enemy_hit(enemy_portrait)
 	battle_fx.play_sfx("settle")
 	await _wait_pacing("settle_post_delay")
@@ -473,7 +699,7 @@ func _begin_execute_clear() -> void:
 	_settlement_animating = false
 	enemy_hp = 0
 	_last_enemy_hp = enemy_hp
-	battle_fx.show_floating_text("OVERKILL %s" % resolved_damage, Vector2(512, 610), Color(1.0, 0.92, 0.34))
+	battle_fx.show_floating_text("OVERKILL %s" % resolved_damage, Vector2(launcher_position.x, 610), Color(1.0, 0.92, 0.34))
 	await battle_fx.flash_enemy_hit(enemy_portrait)
 	battle_fx.play_sfx("settle", 1.12)
 	_finish_overload_round()
@@ -551,7 +777,7 @@ func _update_ui() -> void:
 	if player_hp_label == null:
 		return
 	player_hp_label.text = "玩家 HP：%s / %s" % [RunState.player_hp, RunState.player_max_hp]
-	enemy_hp_label.text = "敵人 HP：%s / %s  %s" % [enemy_hp, enemy_max_hp, String(enemy_def.get("name", ""))]
+	enemy_hp_label.text = "%s\nHP：%s / %s" % [String(enemy_def.get("name", "")), enemy_hp, enemy_max_hp]
 	round_label.text = "回合：%s" % round_index
 	if not _settlement_animating:
 		damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator

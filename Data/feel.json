@@ -1,192 +1,261 @@
 {
   "_meta": {
-    "description": "Pinball feel / presentation constants. Gameplay rules remain in pegs, balls, enemies, and player data.",
-    "version": "0.1.0"
+	"description": "Pinball feel / presentation constants. Gameplay rules remain in pegs, balls, enemies, and player data.",
+	"version": "0.1.0"
   },
   "feel": {
-    "peg_rehit_cooldown_seconds": 0.2,
-    "shake": {
-      "hit_strength": 2.5,
-      "hit_duration": 0.1,
-      "enemy_attack_strength": 6.0,
-      "enemy_attack_duration": 0.2,
-      "telegraph_strength": 7.0,
-      "telegraph_duration": 0.18,
-      "miss_strength": 1.5,
-      "miss_duration": 0.08
-    },
-    "transitions": {
-      "enabled": true,
-      "fade_out_seconds": 0.16,
-      "fade_in_seconds": 0.18,
-      "color": "#02040A"
-    },
-    "turn_pacing": {
-      "settle_pre_delay": 0.18,
-      "settle_post_delay": 0.28,
-      "enemy_turn_pre_delay": 0.22,
-      "enemy_turn_post_delay": 0.3,
-      "check_delay": 0.18,
-      "round_start_delay": 0.2,
-      "banner_duration": 0.72
-    },
-    "enemy_attack": {
-      "windup_seconds": 0.34,
-      "impact_seconds": 0.12,
-      "recover_seconds": 0.22,
-      "windup_flash_count": 3,
-      "enemy_lunge_pixels": 14.0,
-      "player_hit_flash_seconds": 0.22,
-      "enemy_hit_flash_seconds": 0.18,
-      "enemy_hit_shake_pixels": 6.0
-    },
-    "combo": {
-      "enabled": true,
-      "show_at": 2,
-      "particle_amount_step": 3,
-      "particle_lifetime_step": 0.025,
-      "max_visual_level": 6,
-      "text_color": "#FFE66D",
-      "sfx_pitch_step": 0.06
-    },
-    "telegraph": {
-      "enabled": true,
-      "boss_warning_text": "核心過載 來襲",
-      "banner_duration": 0.95,
-      "flash_alpha": 0.28,
-      "flash_seconds": 0.34
-    },
-    "low_hp": {
-      "enabled": true,
-      "threshold_ratio": 0.25,
-      "pulse_speed": 4.0,
-      "max_alpha": 0.28
-    },
-    "charge": {
-      "bar_min_alpha": 0.55,
-      "bar_max_alpha": 1.0,
-      "launcher_recoil_pixels": 10.0,
-      "launcher_recoil_seconds": 0.11,
-      "sfx_min_interval": 0.16,
-      "sfx_power_step": 25
-    },
-    "drain": {
-      "miss_hit_threshold": 1,
-      "miss_text": "MISS",
-      "miss_color": "#6F748A"
-    },
-    "reroll_flash": {
-      "enabled": true,
-      "duration": 0.18,
-      "scale": 1.18,
-      "stagger_seconds": 0.004
-    },
-    "upgrade_card": {
-      "hover_scale": 1.04,
-      "hover_seconds": 0.1,
-      "select_pulse_scale": 1.08,
-      "select_pulse_seconds": 0.16
-    },
-    "settlement": {
-      "count_up_seconds": 0.42,
-      "enemy_hp_drain_seconds": 0.46
-    },
-    "overkill_cutin": {
-      "enabled": true,
-      "text": "OVERKILL / 強制清除",
-      "flash_color": "#FFE85C",
-      "flash_alpha": 0.82,
-      "flash_seconds": 0.42,
-      "cut_in_seconds": 0.68,
-      "font_size": 68,
-      "start_scale": 0.72,
-      "peak_scale": 1.1,
-      "end_scale": 1.22,
-      "shake_strength": 14.0,
-      "shake_duration": 0.32,
-      "camera_zoom_punch": 0.07,
-      "particle_amount": 46,
-      "particle_lifetime": 0.38
-    },
-    "player_attack": {
-      "enabled": true,
-      "gather_seconds": 0.16,
-      "travel_seconds": 0.18,
-      "impact_hold_seconds": 0.08,
-      "fade_seconds": 0.14,
-      "base_width": 5.0,
-      "max_width": 18.0,
-      "damage_scale_reference": 120.0,
-      "normal_color": "#00E5FF",
-      "overload_color": "#FFC83D",
-      "core_color": "#FFFFFF",
-      "gather_particle_amount": 18,
-      "impact_particle_amount": 26,
-      "particle_lifetime": 0.26,
-      "projectile_radius": 7.0,
-      "projectile_max_scale": 2.4,
-      "sfx_pitch_min": 0.92,
-      "sfx_pitch_max": 1.35
-    },
-    "particles": {
-      "launch_amount": 8,
-      "launch_lifetime": 0.18,
-      "hit_amount": 14,
-      "hit_lifetime": 0.25,
-      "cleanup_extra_delay": 0.15,
-      "emission_radius": 4.0,
-      "direction_x": 0.0,
-      "direction_y": -1.0,
-      "spread_degrees": 180.0,
-      "gravity_y": 180.0,
-      "initial_velocity_min": 60.0,
-      "initial_velocity_max": 130.0,
-      "scale_min": 2.0,
-      "scale_max": 4.0
-    },
-    "trail": {
-      "amount": 14,
-      "lifetime": 0.22,
-      "radius_multiplier": 0.35,
-      "direction_x": 0.0,
-      "direction_y": 0.0,
-      "spread_degrees": 180.0,
-      "gravity_x": 0.0,
-      "gravity_y": 0.0,
-      "initial_velocity_min": 8.0,
-      "initial_velocity_max": 18.0,
-      "scale_min": 1.0,
-      "scale_max": 2.0
-    },
-    "floating_text": {
-      "duration": 0.55,
-      "font_size": 20,
-      "width": 140.0,
-      "height": 30.0,
-      "rise_x": -20.0,
-      "rise_y": -42.0
-    },
-    "aim_preview": {
-      "point_count": 8,
-      "time_step": 0.035
-    },
-    "sfx": {
-      "enabled": true,
-      "mix_rate": 22050.0,
-      "buffer_length": 0.08,
-      "duration": 0.055,
-      "cleanup_delay": 0.12,
-      "volume_db": -16.0,
-      "amplitude": 0.18,
-      "frequencies": {
-        "launch": 660.0,
-        "hit": 920.0,
-        "wall": 420.0,
-        "drop": 240.0,
-        "settle": 520.0,
-        "enemy_attack": 180.0
-      }
-    },
-    "hp_tween_duration": 0.18
+	"peg_rehit_cooldown_seconds": 0.2,
+	"shake": {
+	  "hit_strength": 2.5,
+	  "hit_duration": 0.2,
+	  "enemy_attack_strength": 6.0,
+	  "enemy_attack_duration": 0.3,
+	  "telegraph_strength": 7.0,
+	  "telegraph_duration": 0.18,
+	  "miss_strength": 1.5,
+	  "miss_duration": 0.08
+	},
+	"transitions": {
+	  "enabled": true,
+	  "fade_out_seconds": 0.16,
+	  "fade_in_seconds": 0.18,
+	  "color": "#02040A"
+	},
+	"turn_pacing": {
+	  "settle_pre_delay": 0.18,
+	  "settle_post_delay": 0.28,
+	  "enemy_turn_pre_delay": 0.22,
+	  "enemy_turn_post_delay": 0.3,
+	  "check_delay": 0.18,
+	  "round_start_delay": 0.2,
+	  "banner_duration": 0.92
+	},
+	"enemy_attack": {
+	  "windup_seconds": 0.34,
+	  "impact_seconds": 0.12,
+	  "recover_seconds": 0.22,
+	  "windup_flash_count": 3,
+	  "enemy_lunge_pixels": 14.0,
+	  "player_hit_flash_seconds": 0.22,
+	  "enemy_hit_flash_seconds": 0.18,
+	  "enemy_hit_shake_pixels": 6.0
+	},
+	"combo": {
+	  "enabled": true,
+	  "show_at": 2,
+	  "particle_amount_step": 3,
+	  "particle_lifetime_step": 0.025,
+	  "max_visual_level": 6,
+	  "text_color": "#FFE66D",
+	  "sfx_pitch_step": 0.06
+	},
+	"telegraph": {
+	  "enabled": true,
+	  "boss_warning_text": "核心過載 來襲",
+	  "banner_duration": 1.95,
+	  "flash_alpha": 0.28,
+	  "flash_seconds": 0.34
+	},
+	"low_hp": {
+	  "enabled": true,
+	  "threshold_ratio": 0.25,
+	  "pulse_speed": 4.0,
+	  "max_alpha": 0.28
+	},
+	"charge": {
+	  "bar_min_alpha": 0.55,
+	  "bar_max_alpha": 1.0,
+	  "launcher_recoil_pixels": 10.0,
+	  "launcher_recoil_seconds": 0.11,
+	  "sfx_min_interval": 0.16,
+	  "sfx_power_step": 25
+	},
+	"drain": {
+	  "miss_hit_threshold": 1,
+	  "miss_text": "MISS",
+	  "miss_color": "#6F748A"
+	},
+	"reroll_flash": {
+	  "enabled": true,
+	  "duration": 0.38,
+	  "scale": 1.18,
+	  "stagger_seconds": 0.004
+	},
+	"upgrade_card": {
+	  "hover_scale": 1.04,
+	  "hover_seconds": 0.1,
+	  "select_pulse_scale": 1.08,
+	  "select_pulse_seconds": 0.16
+	},
+	"settlement": {
+	  "count_up_seconds": 0.42,
+	  "enemy_hp_drain_seconds": 0.46
+	},
+	"overkill_cutin": {
+	  "enabled": true,
+	  "text": "OVERKILL / 強制清除",
+	  "flash_color": "#FFE85C",
+	  "flash_alpha": 0.82,
+	  "flash_seconds": 0.42,
+	  "cut_in_seconds": 0.68,
+	  "font_size": 68,
+	  "start_scale": 0.72,
+	  "peak_scale": 1.1,
+	  "end_scale": 1.22,
+	  "shake_strength": 14.0,
+	  "shake_duration": 0.22,
+	  "camera_zoom_punch": 0.07,
+	  "particle_amount": 46,
+	  "particle_lifetime": 0.38
+	},
+	"player_attack": {
+	  "enabled": true,
+	  "gather_seconds": 0.16,
+	  "travel_seconds": 0.18,
+	  "impact_hold_seconds": 0.08,
+	  "fade_seconds": 0.14,
+	  "base_width": 5.0,
+	  "max_width": 18.0,
+	  "damage_scale_reference": 120.0,
+	  "normal_color": "#00E5FF",
+	  "overload_color": "#FFC83D",
+	  "core_color": "#FFFFFF",
+	  "gather_particle_amount": 18,
+	  "impact_particle_amount": 26,
+	  "particle_lifetime": 0.26,
+	  "projectile_radius": 7.0,
+	  "projectile_max_scale": 2.4,
+	  "sfx_pitch_min": 0.92,
+	  "sfx_pitch_max": 1.35
+	},
+	"scene_fx": {
+	  "peg_idle_pulse_enabled": true,
+	  "peg_pulse_speed": 2.4,
+	  "peg_pulse_scale": 0.075,
+	  "peg_halo_radius": 1.75,
+	  "peg_halo_alpha": 0.22,
+	  "peg_core_alpha": 0.72,
+	  "ball_pulse_speed": 3.2,
+	  "ball_pulse_scale": 0.055,
+	  "ball_halo_radius": 1.95,
+	  "ball_halo_alpha": 0.28,
+	  "ball_core_alpha": 0.82,
+	  "ball_trail_amount_multiplier": 1.25,
+	  "ball_trail_lifetime_multiplier": 1.15,
+	  "bumper_ring_radius": 1.45,
+	  "bumper_ring_width": 5.0,
+	  "bumper_halo_alpha": 0.25,
+	  "bumper_hit_pulse_scale": 0.22,
+	  "bumper_tick_count": 8
+	},
+	"hud": {
+	  "default_font_size": 20,
+	  "panel_position": [24, 24],
+	  "panel_size": [352, 336],
+	  "player_label_position": [42, 40],
+	  "player_label_size": [300, 30],
+	  "player_bar_position": [42, 74],
+	  "player_bar_size": [280, 16],
+	  "round_label_position": [42, 112],
+	  "damage_label_position": [42, 146],
+	  "balls_label_position": [42, 180],
+	  "power_label_position": [42, 222],
+	  "power_bar_position": [42, 256],
+	  "power_bar_size": [280, 16],
+	  "overload_label_position": [42, 294],
+	  "overload_bar_position": [42, 328],
+	  "overload_bar_size": [280, 16],
+	  "sfx_button_position": [1536, 24],
+	  "sfx_button_size": [120, 38],
+	  "status_position": [560, 990],
+	  "status_size": [520, 36],
+	  "panel_color": "#071019CC",
+	  "panel_border_color": "#00E5FF88",
+	  "panel_tick_color": "#9EF8FFAA",
+	  "player_color": "#46FF9B",
+	  "enemy_color": "#FF4E87",
+	  "power_color": "#FFE66D",
+	  "overload_color": "#00E5FF",
+	  "label_color": "#E8FBFF"
+	},
+	"enemy_display": {
+	  "panel_position": [1188, 86],
+	  "panel_size": [456, 520],
+	  "floor_label_position": [1340, 64],
+	  "portrait_position": [1238, 118],
+	  "portrait_size": [356, 252],
+	  "hp_label_position": [1216, 392],
+	  "hp_label_size": [400, 52],
+	  "hp_bar_position": [1228, 452],
+	  "hp_bar_size": [376, 16],
+	  "type_label_position": [1216, 484],
+	  "type_label_size": [400, 30],
+	  "dialogue_position": [1216, 528],
+	  "dialogue_size": [400, 62],
+	  "float_pixels": 6.0,
+	  "float_speed": 1.4,
+	  "panel_color": "#060B12D9",
+	  "border_color": "#FF2D9588"
+	},
+	"particles": {
+	  "launch_amount": 8,
+	  "launch_lifetime": 0.18,
+	  "hit_amount": 14,
+	  "hit_lifetime": 0.25,
+	  "cleanup_extra_delay": 0.15,
+	  "emission_radius": 4.0,
+	  "direction_x": 0.0,
+	  "direction_y": -1.0,
+	  "spread_degrees": 180.0,
+	  "gravity_y": 180.0,
+	  "initial_velocity_min": 60.0,
+	  "initial_velocity_max": 130.0,
+	  "scale_min": 2.0,
+	  "scale_max": 4.0
+	},
+	"trail": {
+	  "amount": 14,
+	  "lifetime": 0.22,
+	  "radius_multiplier": 0.35,
+	  "direction_x": 0.0,
+	  "direction_y": 0.0,
+	  "spread_degrees": 180.0,
+	  "gravity_x": 0.0,
+	  "gravity_y": 0.0,
+	  "initial_velocity_min": 8.0,
+	  "initial_velocity_max": 18.0,
+	  "scale_min": 1.0,
+	  "scale_max": 2.0
+	},
+	"floating_text": {
+	  "duration": 0.95,
+	  "font_size": 20,
+	  "width": 140.0,
+	  "height": 30.0,
+	  "rise_x": -20.0,
+	  "rise_y": -42.0
+	},
+	"aim_preview": {
+	  "point_count": 8,
+	  "time_step": 0.035
+	},
+	"sfx": {
+	  "enabled": true,
+	  "mix_rate": 22050.0,
+	  "buffer_length": 0.08,
+	  "duration": 0.055,
+	  "cleanup_delay": 0.12,
+	  "volume_db": -16.0,
+	  "amplitude": 0.18,
+	  "frequencies": {
+		"launch": 660.0,
+		"hit": 920.0,
+		"wall": 420.0,
+		"drop": 240.0,
+		"settle": 520.0,
+		"enemy_attack": 180.0
+	  }
+	},
+	"hp_tween_duration": 0.28
   }
 }
