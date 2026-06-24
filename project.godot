@@ -29,7 +29,3 @@ window/size/viewport_height=1050
 [physics]
 
 3d/physics_engine="Jolt Physics"
-
-[rendering]
-
-rendering_device/driver.windows="vulkan"

@@ -17,9 +17,9 @@
 | 9 | Game Feel（打磨） | `Codex/09_GAME_FEEL.md` | ✅ 完成（人類實機驗證） |
 | 10 | Overload Mode（可玩性擴充） | `Codex/10_OVERLOAD_MODE.md` | ✅ 完成（人類實機驗證） |
 | 11 | Player Attack & Bounce（擴充/打磨） | `Codex/11_PLAYER_ATTACK_AND_BOUNCE.md` | ✅ 完成（人類實機驗證） |
-| 12 | Art Core（美術） | `Codex/12_ART_CORE.md` | ⬜ 待開始（敵人/釘球底圖/背景/logo/外框） |
+| 12 | Art Core（美術） | `Codex/12_ART_CORE.md` | ✅ 完成（人類實機驗證） |
 | 13 | Art Upgrade Icons（美術） | `Codex/13_ART_UPGRADE_ICONS.md` | ⬜ 待開始（升級 icon ×13） |
-| 14 | Scene Polish（場景視覺打磨） | `Codex/14_SCENE_POLISH.md` | ⬜ 待開始（發光 / bumper / HUD 字體 / 敵人區） |
+| 14 | Scene Polish（場景視覺打磨） | `Codex/14_SCENE_POLISH.md` | ✅ 完成（人類實機驗證） |
 
 ---
 

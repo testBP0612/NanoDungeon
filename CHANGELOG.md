@@ -119,6 +119,19 @@
 - Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
 - Windows Desktop Export 已重新產出；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
 
+## [環境修正提交 + 驗收] - 2026-06-14 — vulkan 修正提交、Phase 12/14 人類驗收
+
+- 執行者：人類（驗收）+ Claude（提交 / 留痕）
+
+### Fixed
+- 提交 `project.godot` 的 `rendering_device/driver.windows="vulkan"`（先前僅在工作區未 commit）；git 版本不再是會崩潰的 d3d12。
+
+### Changed
+- 人類實機驗證 Phase 12 核心美術與 Phase 14 場景打磨，確認通過；`ROADMAP.md` 將 Phase 12 / 14 由「待開始」更新為「完成（人類實機驗證）」。
+
+### 備註
+- 美術軌道尚餘 Phase 13（升級 icon ×13）未做。重新 export 後執行檔即帶 vulkan。
+
 ## [環境修正 + Phase 14 規劃] - 2026-06-14 — vulkan 修 d3d12 崩潰 + 場景打磨任務卡
 
 - 執行者：Claude（診斷 / 規格）+ 人類（決策）
