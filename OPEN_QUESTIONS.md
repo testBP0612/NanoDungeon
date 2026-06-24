@@ -85,6 +85,19 @@
 
 ## 已決議
 
+### Q-033：發射機制大改 — 改為柏青哥柱塞彈珠台（取代 Q-031）
+- 提出者：人類（里程碑後靈感）/ Claude 整理
+- 日期：2026-06-24
+- 背景：卡 17 的 direction-only 已上線並穩定，但人類實機後提出新方向：把「頂部置中、球往下掉」的 Peggle 式落球盤，改成「真實彈珠台」——盤面右側設發射軌道，球由**右下角柱塞集氣、上射進場**，靠重力**傾瀉穿過釘海**後由底部 drain。核心情緒由「算角度」轉向「抓力道 + 看傾瀉」，與人類「演出 > 平衡」優先序一致。動到 `Docs/01_GAME_VISION.md` 與 `Docs/02_GAME_DESIGN.md`，屬 ⛔ 核心方向，**取代 Q-031**。
+- 選項：
+  - A. 純 Pachinko：只控力道，球上去後純靠重力亂灑。最爽、最無腦，但幾無技巧軸。
+  - B. 柱塞 Skill-shot：力道決定球從頂部哪個入口/車道灑下，保留一絲規劃空間 + 柱塞爽感。
+  - C. 柱塞 + 微操（nudge / 推台）：複雜度高，demo 不划算。
+- 結論（人類決議）：**採 B（柱塞 Skill-shot）**。力道為唯一主控軸，但映射到「灑下入口」給予輕量策略；以右下柱塞的**空間手勢**承載集氣，解決 Q-031 當初「抽象集氣條 + 瞄準衝突」的病根。
+- 決議日期：2026-06-24
+- 影響範圍：`Docs/01_GAME_VISION.md`、`Docs/02_GAME_DESIGN.md`、`Data/field.json`、`Data/player.json`、`Data/feel.json`、`Scripts/Battle.gd`、`Scripts/FieldGenerator.gd`、`Scenes/Battle.tscn`、`Codex/18`、`Codex/19`。**取代 Q-031。**
+- 狀態：✅ 已決議（於分支 `feature/pinball-table-rework` 實作）
+
 ### Q-031：發射控制方式 — 是否移除力道控制、改為只控方向
 - 提出者：Claude（Review 01 後續 / 實機回饋）
 - 日期：2026-06-24
@@ -96,7 +109,7 @@
 - 結論（人類決議）：**採 A**。最貼 Vision「算好角度」核心幻想、最好讀、消除腦模式衝突、簡報可讀性最高。固定發射速度取 `Data/player.json` 既有 `launch_speed`(900)；玩家可控集氣流程（`launch_speed_min/max`、`charge_cycle_seconds`）停用，資料欄位先保留並標記 deprecated 待後續清理。
 - 決議日期：2026-06-24
 - 影響範圍：`Docs/02_GAME_DESIGN.md`、`Scripts/Battle.gd`、`Data/player.json`、`Data/feel.json`（`charge` 區段）、`Codex/17`（新卡）。
-- 狀態：✅ 已決議（Docs/02 已套用 2026-06-24）
+- 狀態：✅ 已決議（Docs/02 已套用 2026-06-24）→ ⚠️ 已被 **Q-033** 取代（2026-06-24，改為柏青哥柱塞模型）
 
 > **Docs/02 修訂提案（待人類套用，Claude 不擅自改 Docs）**
 > 核心循環現行：「玩家逐顆瞄準並發射（一次一顆）」→ 維持不變（已是只描述瞄準，未強制力道）。
