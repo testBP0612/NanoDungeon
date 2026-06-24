@@ -343,7 +343,7 @@ func play_enemy_recover(enemy_node: CanvasItem) -> void:
 func play_launcher_recoil(launcher_node: Node2D, direction: Vector2) -> void:
 	if launcher_node == null:
 		return
-	var config := _charge_config()
+	var config := _launcher_config()
 	var original_position := launcher_node.position
 	var recoil := -direction.normalized() * float(config.get("launcher_recoil_pixels", 10.0))
 	var tween := create_tween()
@@ -351,13 +351,12 @@ func play_launcher_recoil(launcher_node: Node2D, direction: Vector2) -> void:
 	tween.tween_property(launcher_node, "position", original_position, float(config.get("launcher_recoil_seconds", 0.11)))
 
 
-func update_charge_feedback(power: float, power_bar: Control, launcher_node: CanvasItem) -> void:
-	var config := _charge_config()
-	var alpha: float = lerp(float(config.get("bar_min_alpha", 0.55)), float(config.get("bar_max_alpha", 1.0)), clamp(power / 100.0, 0.0, 1.0))
-	if power_bar != null:
-		power_bar.modulate.a = alpha
+func update_launcher_ready_feedback(launch_bar: Control, launcher_node: CanvasItem) -> void:
+	var config := _launcher_config()
+	if launch_bar != null:
+		launch_bar.modulate.a = float(config.get("fixed_bar_alpha", 0.88))
 	if launcher_node != null:
-		launcher_node.modulate = Color(0.9, 0.25 + power * 0.004, 1.0, 1.0)
+		launcher_node.modulate = Color(String(config.get("ready_color", "#FFE66D")))
 
 
 func animate_settlement(damage_label: Label, hp_bar: ProgressBar, total_damage: int, from_hp: int, to_hp: int) -> void:
@@ -809,8 +808,8 @@ func _low_hp_config() -> Dictionary:
 	return feel_config.get("low_hp", {})
 
 
-func _charge_config() -> Dictionary:
-	return feel_config.get("charge", {})
+func _launcher_config() -> Dictionary:
+	return feel_config.get("launcher", feel_config.get("charge", {}))
 
 
 func _drain_config() -> Dictionary:

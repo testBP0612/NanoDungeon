@@ -11,7 +11,8 @@
       "Bash(python -)",
       "Bash(git commit -m 'Fix: use vulkan rendering driver; mark Phase 12/14 verified' -m '- project.godot: rendering_device/driver.windows d3d12 -> vulkan \\(fixes GUI native crash on Win64; verified on RTX 4080 SUPER\\). *)",
       "Bash(git push *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git commit -m 'Implement cards 15-16: game feel pass 2 + tuning; add Review 01 pipeline' -m '- Card 15: feel.json hitstop/peg_feel/round_heat; per-peg hit feedback, hitstop, cross-ball round heat \\(BattleFX/Battle/Peg/Ball/DataLoader\\) *)"
     ]
   }
 }

@@ -12,9 +12,11 @@ var _launch_speed := 0.0
 var _bounce_multiplier := 1.0
 var _peg_bounce_boost := 1.0
 var _max_ball_speed := 0.0
+var _peg_hit_physics: Dictionary = {}
 var _ball_color := Color(1.0, 0.86, 0.25)
 var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
+var _peg_exit_times: Dictionary = {}
 var _feel_config: Dictionary = {}
 var _scene_fx: Dictionary = {}
 var _ball_squash: Dictionary = {}
@@ -49,6 +51,7 @@ func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dic
 	_bounce_multiplier = float(bottom_row.get("bounce_multiplier", 1.0))
 	_peg_bounce_boost = float(player_config.get("peg_bounce_boost", 1.0))
 	_max_ball_speed = float(player_config.get("max_ball_speed", bottom_row.get("max_ball_speed", 0.0)))
+	_peg_hit_physics = (player_config.get("peg_hit_physics", {}) as Dictionary).duplicate(true)
 	_ball_color = _color_for_ball(ball_id)
 	radius = float(player_config["ball_radius"])
 	gravity_scale = float(player_config["ball_gravity_scale"])
@@ -85,6 +88,16 @@ func launch(direction: Vector2, launch_speed := -1.0) -> void:
 	apply_central_impulse(direction.normalized() * speed)
 
 
+func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	if _recovered or not bool(_peg_hit_physics.get("enabled", true)):
+		return
+	for contact_index in range(state.get_contact_count()):
+		var collider := state.get_contact_collider_object(contact_index)
+		if collider is Node and (collider as Node).has_method("get_peg_id"):
+			if _can_apply_peg_exit(collider as Node):
+				_apply_pachinko_peg_exit(state, collider as Node)
+
+
 func recover(reason: String) -> void:
 	if _recovered:
 		return
@@ -99,10 +112,6 @@ func _on_body_entered(body: Node) -> void:
 	if body.has_method("get_peg_id"):
 		if not _can_hit_peg(body):
 			return
-		if String(body.get_peg_id()) == "bounce_peg":
-			_apply_speed_boost(_bounce_multiplier)
-		else:
-			_apply_speed_boost(_peg_bounce_boost)
 		_play_squash_feedback()
 		if body.has_method("play_hit_feedback"):
 			body.play_hit_feedback()
@@ -117,18 +126,6 @@ func _on_body_entered(body: Node) -> void:
 
 func get_combo_hits() -> int:
 	return _combo_hits
-
-
-func _apply_speed_boost(multiplier: float) -> void:
-	if multiplier <= 0.0:
-		return
-	var current_speed := linear_velocity.length()
-	if current_speed <= 0.01:
-		return
-	var boosted_speed := current_speed * multiplier
-	if _max_ball_speed > 0.0:
-		boosted_speed = min(boosted_speed, _max_ball_speed)
-	linear_velocity = linear_velocity.normalized() * boosted_speed
 
 
 func _play_squash_feedback() -> void:
@@ -188,6 +185,65 @@ func _can_hit_peg(peg: Node) -> bool:
 		return false
 	_peg_hit_times[peg_key] = now
 	return true
+
+
+func _can_apply_peg_exit(peg: Node) -> bool:
+	var cooldown: float = max(0.0, float(_peg_hit_physics.get("exit_cooldown_seconds", 0.035)))
+	var peg_key := str(peg.get_instance_id())
+	var now := Time.get_ticks_msec() / 1000.0
+	var last_hit := float(_peg_exit_times.get(peg_key, -9999.0))
+	if now - last_hit < cooldown:
+		return false
+	_peg_exit_times[peg_key] = now
+	return true
+
+
+func _apply_pachinko_peg_exit(state: PhysicsDirectBodyState2D, peg: Node) -> void:
+	var peg_id := String(peg.get_peg_id())
+	var origin: Vector2 = state.transform.origin
+	var normal: Vector2 = _peg_exit_normal(origin, peg)
+	var velocity: Vector2 = state.linear_velocity
+	var tangent: Vector2 = velocity - normal * velocity.dot(normal)
+	var tangent_retention: float = clamp(float(_peg_hit_physics.get("tangent_retention", 0.42)), 0.0, 1.0)
+	var speed_multiplier := float(_peg_hit_physics.get("exit_speed_multiplier", _peg_bounce_boost))
+	var min_exit_speed := float(_peg_hit_physics.get("min_exit_speed", 720.0))
+	var min_outward_speed := float(_peg_hit_physics.get("min_outward_speed", 520.0))
+	if peg_id == "bounce_peg":
+		speed_multiplier = max(speed_multiplier, _bounce_multiplier)
+		min_exit_speed = max(min_exit_speed, float(_peg_hit_physics.get("bounce_peg_min_exit_speed", min_exit_speed)))
+		min_outward_speed = max(min_outward_speed, float(_peg_hit_physics.get("bounce_peg_min_outward_speed", min_outward_speed)))
+
+	var target_speed: float = max(velocity.length() * speed_multiplier, min_exit_speed)
+	if _max_ball_speed > 0.0:
+		target_speed = min(target_speed, _max_ball_speed)
+
+	var outward_speed: float = max(velocity.dot(normal), min_outward_speed)
+	var new_velocity: Vector2 = tangent * tangent_retention + normal * outward_speed
+	if new_velocity.length() <= 0.01:
+		new_velocity = normal * target_speed
+	elif new_velocity.length() < target_speed:
+		new_velocity = new_velocity.normalized() * target_speed
+	if _max_ball_speed > 0.0 and new_velocity.length() > _max_ball_speed:
+		new_velocity = new_velocity.normalized() * _max_ball_speed
+	state.linear_velocity = new_velocity
+
+	var unstick_distance: float = max(0.0, float(_peg_hit_physics.get("unstick_distance", 1.25)))
+	if unstick_distance > 0.0:
+		var transform: Transform2D = state.transform
+		transform.origin += normal * unstick_distance
+		state.transform = transform
+
+
+func _peg_exit_normal(origin: Vector2, peg: Node) -> Vector2:
+	var peg_position := origin
+	if peg is Node2D:
+		peg_position = (peg as Node2D).global_position
+	var normal := origin - peg_position
+	if normal.length() > 0.001:
+		return normal.normalized()
+	if linear_velocity.length() > 0.001:
+		return -linear_velocity.normalized()
+	return Vector2.UP
 
 
 func _color_for_ball(id: String) -> Color:

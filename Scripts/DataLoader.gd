@@ -168,6 +168,7 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		"ball_friction",
 		"peg_bounce_boost",
 		"max_ball_speed",
+		"peg_hit_physics",
 		"execute",
 	]
 
@@ -178,6 +179,8 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 	for field in required_fields:
 		if not (config as Dictionary).has(field):
 			push_error("Missing player config field: %s" % field)
+	if float(config.get("launch_speed", 0.0)) <= 0.0:
+		push_error("Player launch_speed must be > 0")
 	if float(config.get("launch_speed_min", 0.0)) <= 0.0 or float(config.get("launch_speed_max", 0.0)) <= 0.0:
 		push_error("Player launch_speed_min/max must be > 0")
 	if float(config.get("launch_speed_max", 0.0)) < float(config.get("launch_speed_min", 0.0)):
@@ -188,6 +191,22 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		push_error("Player peg_bounce_boost must be > 0")
 	if float(config.get("max_ball_speed", 0.0)) <= 0.0:
 		push_error("Player max_ball_speed must be > 0")
+	var peg_hit_physics: Dictionary = config.get("peg_hit_physics", {})
+	if typeof(peg_hit_physics) != TYPE_DICTIONARY:
+		push_error("Player peg_hit_physics must be a dictionary")
+	else:
+		if float(peg_hit_physics.get("exit_speed_multiplier", 0.0)) <= 0.0:
+			push_error("Player peg_hit_physics.exit_speed_multiplier must be > 0")
+		if float(peg_hit_physics.get("min_exit_speed", 0.0)) <= 0.0:
+			push_error("Player peg_hit_physics.min_exit_speed must be > 0")
+		if float(peg_hit_physics.get("min_outward_speed", 0.0)) <= 0.0:
+			push_error("Player peg_hit_physics.min_outward_speed must be > 0")
+		if float(peg_hit_physics.get("tangent_retention", -1.0)) < 0.0 or float(peg_hit_physics.get("tangent_retention", 2.0)) > 1.0:
+			push_error("Player peg_hit_physics.tangent_retention must be between 0 and 1")
+		if float(peg_hit_physics.get("unstick_distance", -1.0)) < 0.0:
+			push_error("Player peg_hit_physics.unstick_distance must be >= 0")
+		if float(peg_hit_physics.get("exit_cooldown_seconds", -1.0)) < 0.0:
+			push_error("Player peg_hit_physics.exit_cooldown_seconds must be >= 0")
 	var execute: Dictionary = config.get("execute", {})
 	if typeof(execute) != TYPE_DICTIONARY:
 		push_error("Player execute config must be a dictionary")
@@ -217,6 +236,7 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		"telegraph",
 		"low_hp",
 		"charge",
+		"launcher",
 		"drain",
 		"reroll_flash",
 		"upgrade_card",
@@ -239,6 +259,15 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		push_error("feel.aim_preview.point_count must be >= 2")
 	if float(aim_preview.get("time_step", 0.0)) <= 0.0:
 		push_error("feel.aim_preview.time_step must be > 0")
+	if float(aim_preview.get("line_width", 0.0)) <= 0.0:
+		push_error("feel.aim_preview.line_width must be > 0")
+	if float(aim_preview.get("end_marker_radius", 0.0)) <= 0.0:
+		push_error("feel.aim_preview.end_marker_radius must be > 0")
+	var launcher: Dictionary = config.get("launcher", {})
+	if float(launcher.get("launcher_recoil_pixels", 0.0)) < 0.0:
+		push_error("feel.launcher.launcher_recoil_pixels must be >= 0")
+	if float(launcher.get("launcher_recoil_seconds", 0.0)) <= 0.0:
+		push_error("feel.launcher.launcher_recoil_seconds must be > 0")
 	var overkill_cutin: Dictionary = config.get("overkill_cutin", {})
 	if float(overkill_cutin.get("flash_seconds", 0.0)) <= 0.0:
 		push_error("feel.overkill_cutin.flash_seconds must be > 0")

@@ -39,40 +39,40 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 ~ 15 已完成，卡 15 已加入 hitstop、Peg 查表回饋與 round heat。
-- 實機回饋指出回合切換橫幅太快、球撞釘仍偏重；`OPEN_QUESTIONS.md` Q-032 已採 `⚠️ 暫行假設` C：小幅物理 + 視覺 squash。
-- Q-031 已決議後續移除力道控制，但卡 16 明確禁止碰控制方式；本圈不改發射輸入 / 集氣流程。
+- Phase 1 ~ 16 已完成，卡 16 已完成回合橫幅節奏與球命中 squash / 小幅彈跳手感調整。
+- `OPEN_QUESTIONS.md` Q-031 已由人類決議採 A：發射控制改為只控方向、固定速度、一鍵發射；`Docs/02_GAME_DESIGN.md` 已同步寫入固定 `launch_speed` 與不控制力道。
+- 目前遊戲仍殘留卡 8/9 的兩段式集氣發射流程、power UI 與 charge 表現接線；本圈需忠實移除，不復活力道軸。
 
 # Current Phase
-- **Phase 16 — Feel Tuning（回合節奏 + 彈跳手感微調）**。
+- **Phase 17 — Launch Control Direction Only（只控方向）**。
 
 # Recommended Task
-- 執行 `Codex/16_FEEL_TUNING.md`。
-- 調長 `Data/feel.json` 的回合橫幅停留與必要節奏停頓。
-- 新增 Ball 命中 peg 的視覺 squash-stretch，參數進 `feel.json`，只動視覺 scale。
-- 依 Q-032 C 小幅調 `Data/player.json` 的 `ball_gravity_scale` / `ball_bounce` / `peg_bounce_boost`。
+- 執行 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`。
+- 將 `Scripts/Battle.gd` 發射輸入改為滑鼠 / 方向瞄準後，左鍵或空白鍵單次即用 `Data/player.json.launch_speed` 發射。
+- 移除 / 中性化集氣狀態、power UI、charge SFX 與力道綁定視覺；保留並強化瞄準軌跡與發射瞬間回饋。
+- 將 `Data/player.json` 舊集氣欄位標記 deprecated；將相關 feel 參數資料化且可回退。
 
 # Why
-- `Docs/01_GAME_VISION.md` 要求節奏清楚且命中「爽、脆、亮」；目前 hitstop 已補頓挫，但橫幅與彈跳重量仍需微調。
-- `turn_pacing.banner_duration` 是純表現項，調長能讓「你的回合 / 敵人回合」更有回合制呼吸感。
-- 彈跳物理會牽動命中數與傷害累積，因此只做保守幅度，並用 squash 把更多爽感放在視覺層。
+- Q-031 指出集氣 timing 與角度規劃互相干擾；移除力道軸後，玩家唯一技巧軸是「算好角度」。
+- 固定速度一鍵發射讓控制更可讀，也讓瞄準軌跡承擔主要決策資訊，因此 aim preview 需要更清楚、即時且漂亮。
+- 本卡是已決議的核心方向落地，不涉及平衡 / 物理 / 敵人 / 升級規則調整。
 
 # Risks
-- 橫幅停太久可能拖慢一局 5-10 分鐘節奏；只調到卡片建議約 2.6 秒，並驗證狀態機不卡。
-- 物理微調可能提高命中數與回合傷害；調幅控制在 Q-032 建議值附近，完成後回報需人類實機難度對照。
-- Squash 必須只動視覺 scale，不可改 `CollisionShape2D`、不可改 `linear_velocity`。
-- 新增 `ball_squash` schema 屬表現層擴張；若需要更大物理改動，必須回 Q-032 升級提案。
+- 若只移除集氣而未調整 UI，玩家可能仍以為可控制力道；必須清掉或改名所有 power/charge 文案與顯示。
+- 發射速度必須讀 `player.json.launch_speed`，不得把 900 寫進程式。
+- 瞄準預覽若做太重可能影響效能；只用現有 Line2D / Polygon2D 與 feel 參數強化。
+- 不得碰卡 16 的彈跳物理參數，不改 damage / HP / balls / enemies / upgrade 抽取。
 
 # Dependencies
-- Q-032 已存在並採 C 作為暫行假設，允許小幅物理 + 視覺 squash；本圈不得超出此假設。
-- Q-031 控制方式已決議但留待卡 17，不納入本圈。
+- Q-031 已決議，且 `Docs/02_GAME_DESIGN.md` 已套用。無阻斷性未決問題。
+- Q-028 / Q-029 / Q-030 / Q-032 仍為暫行假設，但本圈不擴張其決策範圍。
 
 # Estimated Scope
-- 小到中。修改 `Data/feel.json`、`Data/player.json`、`Scripts/Ball.gd`、`Scripts/DataLoader.gd`，並更新 `CHANGELOG.md`、`PROGRESS_REPORT.md`、`WORK_PLAN.md`。
+- 中。修改 `Scripts/Battle.gd`、`Scripts/BattleFX.gd`、`Scenes/Battle.tscn`、`Data/player.json`、`Data/feel.json`、`Scripts/DataLoader.gd`，並更新 `CHANGELOG.md`、`PROGRESS_REPORT.md`、`WORK_PLAN.md`。
 
 # Validation Target
-- 對照 `Codex/16_FEEL_TUNING.md` DoD：橫幅約三倍停留、撞釘 squash 可見、squash 不動碰撞 / 速度、物理小幅微調且可回退、JSON / Godot 載入通過。
-- 同步檢查 `VALIDATION_CHECKLIST.md` 的 D/G/H：命中回饋、幀率 / 物理穩定、5-10 分鐘節奏風險、未碰控制方式 / P1 / P2 / 核心方向。
+- 對照 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md` DoD：瞄準方向 + 單鍵、固定 `launch_speed`、無集氣條 / timing、無誤導力道 UI、deprecated 欄位保留、JSON / Godot / export 通過。
+- 同步檢查 `VALIDATION_CHECKLIST.md` D/G/H：發射回饋、Demo 穩定、未改核心方向 / 非目標 / 平衡 / 物理。
 
 ---
 

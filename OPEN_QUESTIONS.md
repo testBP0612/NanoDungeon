@@ -96,7 +96,7 @@
 - 結論（人類決議）：**採 A**。最貼 Vision「算好角度」核心幻想、最好讀、消除腦模式衝突、簡報可讀性最高。固定發射速度取 `Data/player.json` 既有 `launch_speed`(900)；玩家可控集氣流程（`launch_speed_min/max`、`charge_cycle_seconds`）停用，資料欄位先保留並標記 deprecated 待後續清理。
 - 決議日期：2026-06-24
 - 影響範圍：`Docs/02_GAME_DESIGN.md`、`Scripts/Battle.gd`、`Data/player.json`、`Data/feel.json`（`charge` 區段）、`Codex/17`（新卡）。
-- 狀態：✅ 已決議（Docs 修訂待人類套用）
+- 狀態：✅ 已決議（Docs/02 已套用 2026-06-24）
 
 > **Docs/02 修訂提案（待人類套用，Claude 不擅自改 Docs）**
 > 核心循環現行：「玩家逐顆瞄準並發射（一次一顆）」→ 維持不變（已是只描述瞄準，未強制力道）。

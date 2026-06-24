@@ -25,22 +25,18 @@ var field_config: Dictionary = {}
 var dynamic_peg_cells: Array = []
 var dynamic_peg_nodes: Array[Node] = []
 var bottom_peg_nodes: Array[Node] = []
-var is_charging_launch := false
-var charge_elapsed := 0.0
-var charge_power := 0.0
-var _last_charge_sfx_step := -1
 var _settlement_animating := false
 var _overload_triggered_this_round := false
 var _overload_active_this_round := false
 var _execute_in_progress := false
-var launch_direction_locked := false
-var locked_launch_direction := Vector2.DOWN
 var round_context: RefCounted = ROUND_CONTEXT_SCRIPT.new()
 var effect_resolver: RefCounted = EFFECT_RESOLVER_SCRIPT.new()
 var field_generator: RefCounted = FIELD_GENERATOR_SCRIPT.new()
 var _enemy_float_phase := 0.0
 var _enemy_portrait_base_position := Vector2.ZERO
 var _launcher_ball_sprite: Sprite2D
+var _aim_endpoint_marker: Polygon2D
+var _aim_dash_segments: Array[Line2D] = []
 
 @onready var battle_camera: Camera2D = $BattleCamera
 @onready var battle_fx: Node = $BattleFX
@@ -56,8 +52,8 @@ var _launcher_ball_sprite: Sprite2D
 @onready var round_label: Label = $BattleUI/UIRoot/RoundLabel
 @onready var damage_label: Label = $BattleUI/UIRoot/DamageLabel
 @onready var balls_label: Label = $BattleUI/UIRoot/BallsLabel
-@onready var power_label: Label = $BattleUI/UIRoot/PowerLabel
-@onready var power_bar: ProgressBar = $BattleUI/UIRoot/PowerBar
+@onready var launch_label: Label = $BattleUI/UIRoot/LaunchSpeedLabel
+@onready var launch_bar: ProgressBar = $BattleUI/UIRoot/LaunchSpeedBar
 @onready var overload_label: Label = $BattleUI/UIRoot/OverloadLabel
 @onready var overload_bar: ProgressBar = $BattleUI/UIRoot/OverloadBar
 @onready var floor_label: Label = $BattleUI/UIRoot/FloorLabel
@@ -85,8 +81,7 @@ func _process(delta: float) -> void:
 	battle_fx.update(delta)
 	battle_fx.update_low_hp(RunState.player_hp, RunState.player_max_hp, delta)
 	_update_enemy_idle(delta)
-	_update_charge(delta)
-	battle_fx.update_charge_feedback(charge_power, power_bar, _launcher_feedback_node())
+	battle_fx.update_launcher_ready_feedback(launch_bar, _launcher_feedback_node())
 	_update_aim_overlay()
 	_update_ui()
 
@@ -116,6 +111,7 @@ func _connect_scene_nodes() -> void:
 	UI_THEME_SCRIPT.apply_to($BattleUI/UIRoot, feel_config.get("hud", {}))
 	_layout_scene_polish_ui()
 	_add_launcher_ball_sprite()
+	_add_aim_endpoint_marker()
 	_add_hud_panel()
 	_add_enemy_panel()
 	_add_battle_background()
@@ -164,9 +160,9 @@ func _layout_scene_polish_ui() -> void:
 	round_label.position = _vector2_from_array(hud.get("round_label_position", [32, 104]), round_label.position)
 	damage_label.position = _vector2_from_array(hud.get("damage_label_position", [32, 138]), damage_label.position)
 	balls_label.position = _vector2_from_array(hud.get("balls_label_position", [32, 172]), balls_label.position)
-	power_label.position = _vector2_from_array(hud.get("power_label_position", [32, 214]), power_label.position)
-	power_bar.position = _vector2_from_array(hud.get("power_bar_position", [32, 248]), power_bar.position)
-	power_bar.size = _vector2_from_array(hud.get("power_bar_size", [252, 16]), power_bar.size)
+	launch_label.position = _vector2_from_array(hud.get("launch_label_position", [32, 214]), launch_label.position)
+	launch_bar.position = _vector2_from_array(hud.get("launch_bar_position", [32, 248]), launch_bar.position)
+	launch_bar.size = _vector2_from_array(hud.get("launch_bar_size", [252, 16]), launch_bar.size)
 	overload_label.position = _vector2_from_array(hud.get("overload_label_position", [32, 286]), overload_label.position)
 	overload_bar.position = _vector2_from_array(hud.get("overload_bar_position", [32, 320]), overload_bar.position)
 	overload_bar.size = _vector2_from_array(hud.get("overload_bar_size", [252, 16]), overload_bar.size)
@@ -186,7 +182,7 @@ func _layout_scene_polish_ui() -> void:
 	enemy_dialogue_label.position = _vector2_from_array(enemy_display.get("dialogue_position", [690, 432]), enemy_dialogue_label.position)
 	enemy_dialogue_label.size = _vector2_from_array(enemy_display.get("dialogue_size", [318, 56]), enemy_dialogue_label.size)
 	floor_label.position = _vector2_from_array(enemy_display.get("floor_label_position", [734, 58]), floor_label.position)
-	for item in [player_hp_label, player_hp_bar, enemy_hp_label, enemy_hp_bar, round_label, damage_label, balls_label, power_label, power_bar, overload_label, overload_bar, floor_label, enemy_type_label, enemy_dialogue_label, status_label, sfx_toggle_button]:
+	for item in [player_hp_label, player_hp_bar, enemy_hp_label, enemy_hp_bar, round_label, damage_label, balls_label, launch_label, launch_bar, overload_label, overload_bar, floor_label, enemy_type_label, enemy_dialogue_label, status_label, sfx_toggle_button]:
 		(item as CanvasItem).z_index = 20
 	enemy_portrait.z_index = 10
 	enemy_portrait_texture.z_index = 11
@@ -212,18 +208,29 @@ func _add_launcher_ball_sprite() -> void:
 	$AimOverlay.add_child(_launcher_ball_sprite)
 
 
-func _launcher_feedback_node() -> CanvasItem:
+func _launcher_feedback_node() -> Node2D:
 	return _launcher_ball_sprite if _launcher_ball_sprite != null else launcher_visual
+
+
+func _add_aim_endpoint_marker() -> void:
+	var preview_config: Dictionary = feel_config.get("aim_preview", {})
+	_aim_endpoint_marker = Polygon2D.new()
+	_aim_endpoint_marker.name = "AimEndpointMarker"
+	_aim_endpoint_marker.polygon = _circle_points(float(preview_config.get("end_marker_radius", 7.0)), 18)
+	_aim_endpoint_marker.color = Color(String(preview_config.get("end_marker_color", "#00E5FF")))
+	_aim_endpoint_marker.z_index = 13
+	_aim_endpoint_marker.visible = false
+	$AimOverlay.add_child(_aim_endpoint_marker)
 
 
 func _apply_scene_polish_colors() -> void:
 	var hud: Dictionary = feel_config.get("hud", {})
 	var label_color := Color(String(hud.get("label_color", "#E8FBFF")))
-	for label in [player_hp_label, enemy_hp_label, round_label, damage_label, balls_label, power_label, overload_label, floor_label, enemy_type_label, enemy_dialogue_label, status_label]:
+	for label in [player_hp_label, enemy_hp_label, round_label, damage_label, balls_label, launch_label, overload_label, floor_label, enemy_type_label, enemy_dialogue_label, status_label]:
 		(label as Label).modulate = label_color
 	player_hp_bar.modulate = Color(String(hud.get("player_color", "#46FF9B")))
 	enemy_hp_bar.modulate = Color(String(hud.get("enemy_color", "#FF4E87")))
-	power_bar.modulate = Color(String(hud.get("power_color", "#FFE66D")))
+	launch_bar.modulate = Color(String(hud.get("launch_color", "#FFE66D")))
 	overload_bar.modulate = Color(String(hud.get("overload_color", "#00E5FF")))
 
 
@@ -351,7 +358,7 @@ func _add_hud_frames() -> void:
 	var texture: Texture2D = load(path)
 	if texture == null:
 		return
-	for bar in [player_hp_bar, enemy_hp_bar, power_bar, overload_bar]:
+	for bar in [player_hp_bar, enemy_hp_bar, launch_bar, overload_bar]:
 		_add_frame_for_bar(bar, texture)
 
 
@@ -413,8 +420,7 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 		BattleState.ROUND_START:
 			await _begin_round()
 		BattleState.AIMING:
-			_reset_charge()
-			status_label.text = "瞄準後點擊 / 空白鍵開始集氣"
+			status_label.text = "算好角度後點擊 / 空白鍵發射"
 		BattleState.SETTLE:
 			await _settle_round()
 		BattleState.ENEMY_TURN:
@@ -448,14 +454,6 @@ func _begin_round() -> void:
 func _handle_launch_input() -> void:
 	if _execute_in_progress:
 		return
-	if not is_charging_launch:
-		is_charging_launch = true
-		launch_direction_locked = true
-		locked_launch_direction = _aim_direction()
-		charge_elapsed = 0.0
-		charge_power = 0.0
-		status_label.text = "集氣中：再按一次發射"
-		return
 	_fire_ball()
 
 
@@ -465,9 +463,8 @@ func _fire_ball() -> void:
 	if round_context.balls_remaining <= 0:
 		return
 
-	var launch_speed := _launch_speed_for_power(charge_power)
-	var launch_direction := _locked_or_current_aim_direction()
-	is_charging_launch = false
+	var launch_speed := _fixed_launch_speed()
+	var launch_direction := _aim_direction()
 	var ball := BALL_SCENE.instantiate()
 	var ball_id := _ball_id_for_next_launch()
 	var ball_def := DataLoader.get_ball(ball_id)
@@ -487,7 +484,7 @@ func _fire_ball() -> void:
 	_transition_to(BattleState.LAUNCHED)
 	battle_fx.spawn_launch_feedback(launcher_position)
 	battle_fx.play_launcher_recoil(_launcher_feedback_node(), launch_direction)
-	battle_fx.play_sfx("launch", 0.9 + charge_power / 250.0)
+	battle_fx.play_sfx("launch", 1.08)
 	ball.launch(launch_direction, launch_speed)
 	_update_ui()
 
@@ -508,55 +505,96 @@ func _aim_direction() -> Vector2:
 	return direction.normalized()
 
 
-func _locked_or_current_aim_direction() -> Vector2:
-	return locked_launch_direction if launch_direction_locked else _aim_direction()
-
-
 func _update_aim_overlay() -> void:
-	launcher_visual.visible = true
-	aim_line.visible = state == BattleState.AIMING
-	if aim_line.visible:
-		aim_line.points = _aim_trajectory_points()
+	launcher_visual.visible = _launcher_ball_sprite == null
+	var is_aiming := state == BattleState.AIMING
+	if is_aiming:
+		var points := _aim_trajectory_points()
+		var preview_config: Dictionary = feel_config.get("aim_preview", {})
+		if bool(preview_config.get("dashed", false)):
+			aim_line.visible = false
+			_update_aim_dash_segments(points, preview_config)
+		else:
+			_hide_aim_dash_segments()
+			aim_line.visible = true
+			aim_line.points = points
+			aim_line.width = float(preview_config.get("line_width", aim_line.width))
+			aim_line.default_color = Color(String(preview_config.get("line_color", "#FFE66D")))
+		_update_aim_endpoint_marker(points, preview_config)
+	else:
+		aim_line.visible = false
+		_hide_aim_dash_segments()
+		if _aim_endpoint_marker != null:
+			_aim_endpoint_marker.visible = false
 
 
-func _update_charge(delta: float) -> void:
-	if state != BattleState.AIMING or not is_charging_launch:
+func _update_aim_dash_segments(points: PackedVector2Array, preview_config: Dictionary) -> void:
+	var segment_count: int = max(0, points.size() - 1)
+	_ensure_aim_dash_segment_count(segment_count)
+	var color := Color(String(preview_config.get("line_color", "#FFE66D88")))
+	var width := float(preview_config.get("line_width", 3.0))
+	for index in range(_aim_dash_segments.size()):
+		var segment := _aim_dash_segments[index]
+		var visible := index < segment_count and index % 2 == 0
+		segment.visible = visible
+		if visible:
+			segment.points = PackedVector2Array([points[index], points[index + 1]])
+			segment.width = width
+			segment.default_color = color
+
+
+func _ensure_aim_dash_segment_count(count: int) -> void:
+	while _aim_dash_segments.size() < count:
+		var segment := Line2D.new()
+		segment.name = "AimDashSegment"
+		segment.z_index = 11
+		segment.joint_mode = Line2D.LINE_JOINT_ROUND
+		segment.begin_cap_mode = Line2D.LINE_CAP_ROUND
+		segment.end_cap_mode = Line2D.LINE_CAP_ROUND
+		$AimOverlay.add_child(segment)
+		_aim_dash_segments.append(segment)
+
+
+func _hide_aim_dash_segments() -> void:
+	for segment in _aim_dash_segments:
+		segment.visible = false
+
+
+func _update_aim_endpoint_marker(points: PackedVector2Array, preview_config: Dictionary) -> void:
+	if _aim_endpoint_marker == null:
 		return
-	var cycle_seconds: float = max(0.01, float(player_config.get("charge_cycle_seconds", 1.0)))
-	charge_elapsed = fmod(charge_elapsed + delta, cycle_seconds)
-	var half_cycle: float = cycle_seconds * 0.5
-	var normalized: float = charge_elapsed / half_cycle
-	if normalized > 1.0:
-		normalized = 2.0 - normalized
-	charge_power = clamp(normalized * 100.0, 0.0, 100.0)
-	var charge_config: Dictionary = feel_config.get("charge", {})
-	var step_size: int = max(1, int(charge_config.get("sfx_power_step", 25)))
-	var current_step: int = int(int(charge_power) / step_size)
-	if current_step != _last_charge_sfx_step:
-		_last_charge_sfx_step = current_step
-		battle_fx.play_sfx("launch", 0.55 + charge_power / 180.0)
+	if points.is_empty():
+		_aim_endpoint_marker.visible = false
+		return
+	var radius := float(preview_config.get("end_marker_radius", 7.0))
+	_aim_endpoint_marker.polygon = _circle_points(radius, 18)
+	_aim_endpoint_marker.color = Color(String(preview_config.get("end_marker_color", "#00E5FF")))
+	_aim_endpoint_marker.position = points[points.size() - 1]
+	var pulse_speed := float(preview_config.get("end_marker_pulse_speed", 5.0))
+	var pulse_scale := float(preview_config.get("end_marker_pulse_scale", 0.12))
+	var pulse := 1.0 + sin(Time.get_ticks_msec() * 0.001 * pulse_speed) * pulse_scale
+	_aim_endpoint_marker.scale = Vector2.ONE * pulse
+	_aim_endpoint_marker.visible = true
 
 
-func _reset_charge() -> void:
-	is_charging_launch = false
-	launch_direction_locked = false
-	locked_launch_direction = Vector2.DOWN
-	charge_elapsed = 0.0
-	charge_power = 0.0
-	_last_charge_sfx_step = -1
+func _circle_points(radius: float, point_count: int) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var safe_count: int = max(6, point_count)
+	for index in range(safe_count):
+		var angle := TAU * float(index) / float(safe_count)
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
 
 
-func _launch_speed_for_power(power: float) -> float:
-	var launch_speed_min := float(player_config.get("launch_speed_min", player_config.get("launch_speed", 900.0)))
-	var launch_speed_max := float(player_config.get("launch_speed_max", player_config.get("launch_speed", 900.0)))
-	return lerp(launch_speed_min, launch_speed_max, clamp(power / 100.0, 0.0, 1.0))
+func _fixed_launch_speed() -> float:
+	return max(1.0, float(player_config.get("launch_speed", 1.0)))
 
 
 func _aim_trajectory_points() -> PackedVector2Array:
 	var preview_config: Dictionary = feel_config.get("aim_preview", {})
 	var point_count: int = max(2, int(preview_config.get("point_count", 18)))
 	var time_step: float = max(0.01, float(preview_config.get("time_step", 0.06)))
-	var velocity := _locked_or_current_aim_direction() * _aim_preview_speed()
+	var velocity := _aim_direction() * _aim_preview_speed()
 	var gravity := Vector2.DOWN * float(ProjectSettings.get_setting("physics/2d/default_gravity")) * float(player_config.get("ball_gravity_scale", 1.0))
 	var points := PackedVector2Array()
 	for index in range(point_count):
@@ -566,7 +604,7 @@ func _aim_trajectory_points() -> PackedVector2Array:
 
 
 func _aim_preview_speed() -> float:
-	return float(player_config.get("launch_speed", player_config.get("launch_speed_min", 900.0)))
+	return _fixed_launch_speed()
 
 
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int) -> void:
@@ -683,7 +721,6 @@ func _begin_execute_clear() -> void:
 		return
 	_execute_in_progress = true
 	state = BattleState.SETTLE
-	_reset_charge()
 	round_context.balls_remaining = 0
 	status_label.text = "強制清除序列啟動"
 	for child in ball_container.get_children():
@@ -787,8 +824,10 @@ func _update_ui() -> void:
 	if not _settlement_animating:
 		damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator
 	balls_label.text = "剩餘球：%s｜場上球：%s" % [round_context.balls_remaining, round_context.balls_in_play]
-	power_label.text = "POWER：%03d" % int(round(charge_power))
-	power_bar.value = charge_power
+	var fixed_speed := _fixed_launch_speed()
+	launch_label.text = "固定初速：%s｜單鍵發射" % int(round(fixed_speed))
+	launch_bar.max_value = fixed_speed
+	launch_bar.value = fixed_speed
 	battle_fx.update_overload_gauge(
 		overload_bar,
 		overload_label,

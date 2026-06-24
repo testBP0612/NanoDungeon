@@ -162,16 +162,16 @@ offset_right = 302.0
 offset_bottom = 208.0
 theme_override_font_sizes/font_size = 18
 
-[node name="PowerLabel" type="Label" parent="BattleUI/UIRoot"]
+[node name="LaunchSpeedLabel" type="Label" parent="BattleUI/UIRoot"]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 222.0
-offset_right = 242.0
+offset_right = 342.0
 offset_bottom = 250.0
 theme_override_font_sizes/font_size = 18
-text = "POWER：000"
+text = "固定初速：900｜單鍵發射"
 
-[node name="PowerBar" type="ProgressBar" parent="BattleUI/UIRoot"]
+[node name="LaunchSpeedBar" type="ProgressBar" parent="BattleUI/UIRoot"]
 layout_mode = 0
 offset_left = 42.0
 offset_top = 256.0

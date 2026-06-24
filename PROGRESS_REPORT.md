@@ -33,37 +33,56 @@
 ## 最新報告
 
 # Summary
-完成 `Codex/16_FEEL_TUNING.md`：回合切換橫幅停留調長到 2.6 秒，並依 Q-032 暫行假設 C 做保守彈跳微調與球命中視覺 squash-stretch。控制方式、卡 17、Review P1/P2 均未處理；未改傷害、HP、敵人、升級、球 / 釘種類或結算規則。
+完成 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`，並依人類後續回饋補上 peg hit 物理手感、瞄準預覽降噪與 timeout 調整。發射已改為只控方向、固定 `Data/player.json.launch_speed`、左鍵 / 空白鍵一鍵發射；peg 命中加入柏青哥式外彈模型；瞄準預覽改為約半長、較淡的虛線；球回收限制由 8 秒延長為 15 秒。未改傷害、HP、球數、敵人、升級或抽取規則。
 
 # Completed
-- `Data/feel.json`：`turn_pacing.banner_duration 0.92 → 2.6`；`enemy_turn_pre_delay 0.22 → 0.35`；`check_delay 0.18 → 0.24`。
-- `Data/feel.json`：新增 `ball_squash`，目前為 `squash_scale [1.22, 0.78]`、`stretch_scale [0.86, 1.16]`、`squash_seconds 0.045`、`stretch_seconds 0.06`、`recover_seconds 0.08`。
-- `Data/player.json`：依 Q-032 C 小幅調整物理，`ball_gravity_scale 1.0 → 0.9`、`ball_bounce 0.9 → 0.94`、`peg_bounce_boost 1.15 → 1.2`。
-- `Scripts/Ball.gd`：命中 peg 時播放視覺 squash；只改 `_visual_squash_scale`，由 Sprite scale 與 `_draw()` transform 呈現，不動 `CollisionShape2D`、不在 squash 路徑改 `linear_velocity`。
-- `Scripts/DataLoader.gd`：新增 `feel.ball_squash` 欄位存在與基本範圍驗證。
-- `WORK_PLAN.md`、`CHANGELOG.md` 已更新為卡 16。
+- `Scripts/Battle.gd`：刪除 `is_charging_launch`、`charge_elapsed`、`charge_power`、方向鎖定與 `_launch_speed_for_power()`；`_handle_launch_input()` 現在直接 `_fire_ball()`。
+- `Scripts/Battle.gd`：發射速度由 `_fixed_launch_speed()` 讀 `player_config.launch_speed`；發射方向即當下 `_aim_direction()`。
+- `Scripts/Battle.gd`：瞄準線改讀 `feel.aim_preview` 的線寬 / 顏色 / 點數，並新增 `AimEndpointMarker` 端點脈動準星。
+- `Scripts/BattleFX.gd`：將力道綁定的 charge feedback 改為固定態 launcher ready feedback；發射後座力改讀 `feel.launcher`。
+- `Scenes/Battle.tscn`：`PowerLabel` / `PowerBar` 改名為 `LaunchSpeedLabel` / `LaunchSpeedBar`，文字顯示「固定初速 / 單鍵發射」。
+- `Data/player.json`：`launch_speed_min`、`launch_speed_max`、`charge_cycle_seconds` 已於 `_meta.deprecated_fields` 標記 deprecated，欄位保留未刪。
+- `Data/feel.json`：新增 `launcher`；`charge` 區段標記 deprecated；`aim_preview` 增強為 18 點軌跡、5px 線寬、端點準星。
+- `Scripts/DataLoader.gd`：新增 `launch_speed`、`feel.launcher` 與擴充後 `aim_preview` 的基本驗證。
+- `Scripts/Ball.gd`：新增 `_integrate_forces()` 內的 peg exit 解算；命中 peg 後用 peg→ball 外側法線、最低離開速度、最低外向速度、切線保留與微量外推，避免低速擦邊黏住。
+- `Data/player.json`：新增 `peg_hit_physics`，可調 `exit_speed_multiplier`、`min_exit_speed`、`min_outward_speed`、`tangent_retention`、`unstick_distance`、`exit_cooldown_seconds` 與底排 bumper 下限。
+- `Scripts/DataLoader.gd`：新增 `player.peg_hit_physics` schema 與範圍驗證。
+- `Scripts/Battle.gd`：新增 `AimDashSegment` pool；`feel.aim_preview.dashed` 啟用時用多段短線顯示虛線預覽。
+- `Data/feel.json`：`aim_preview.point_count 18 → 10`，線寬 `5 → 3`，線色與端點準星改為半透明低干擾版本。
+- `Data/player.json`：`ball_timeout_seconds 8.0 → 15.0`。
+- `WORK_PLAN.md`、`CHANGELOG.md` 已更新為卡 17。
 
 # Validation Results
 - ✅ JSON 驗證：`Data/*.json` 全部可由 PowerShell `ConvertFrom-Json` 解析。
 - ✅ Godot 驗證：Godot 4.6.3 headless 載入專案通過。
-- ✅ Battle 場景驗證：`Scenes/Battle.tscn` headless 載入通過。
-- ✅ Export 驗證：Windows Desktop Export 成功，log 確認 `Data/feel.json`、`Data/player.json`、`Scripts/Ball.gd` 已打包。
+- ✅ 場景驗證：`Scenes/Battle.tscn` 與 `Scenes/UpgradeScreen.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功，log 確認 `Data/feel.json`、`Data/player.json`、`Scripts/Battle.gd`、`Scripts/BattleFX.gd`、`Scripts/DataLoader.gd` 已打包。
 - ✅ Build smoke：`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
-- ✅ 禁止偏離：未修改控制方式、未做 P1/P2、未新增 Peg / Ball / Enemy 種類、未改傷害 / HP / 倍率 / 抽取 / 球池。
-- ✅ Squash 護欄：squash 只改視覺比例；碰撞半徑仍只在 configure 時按 `ball_radius` 設定，未因 squash 改變；速度仍只由既有 `_apply_speed_boost()` 物理路徑依 JSON 參數處理。
-- ⚠️ 實機難度對照：Codex 無法在 headless/export smoke 中等同人類實機打一局。可確認的是物理調幅保守（gravity -10%、bounce 約 +4.4%、peg boost 約 +4.3%）、穩定載入與可匯出；「命中數 / 傷害是否明顯暴走」仍需人類用同一路線實機前後對照。
+- ✅ 卡 17 DoD：發射是「瞄準方向 + 單鍵」一步完成；無兩段式集氣、無 timing、無 power-to-speed 映射。
+- ✅ 固定速度：程式發射路徑只讀 `player_config.launch_speed`；`launch_speed_min/max` 不再參與發射。
+- ✅ 瞄準回饋：軌跡點數、線寬、線色、端點準星皆資料化於 `feel.aim_preview`。
+- ✅ UI 護欄：`PowerLabel` / `PowerBar` / `POWER` 已從正式場景與腳本移除；畫面改顯示固定初速與單鍵發射。
+- ✅ Deprecated 欄位：`launch_speed_min`、`launch_speed_max`、`charge_cycle_seconds` 均保留並於 `_meta.deprecated_fields` 標記。
+- ✅ Peg 防黏物理：已從單純速度乘法改為物理步內 outward exit velocity；所有新物理參數資料化，並以 `max_ball_speed` 封頂。
+- ✅ 瞄準預覽降噪：瞄準線改為資料化虛線，視覺長度約半長，端點準星更小更淡。
+- ✅ Timeout 調整：球超時回收限制已從 `8.0` 秒延長到 `15.0` 秒。
+- ✅ 禁止偏離：未改 Docs/、未做 Review P1/P2、未新增 Peg / Ball / Enemy 種類、未改傷害 / HP / 倍率 / 抽取 / 球池。
+- ⚠️ 完整實機一局：Codex 已完成 headless / export / exe smoke，可確認載入、打包與啟動穩定；「可視化完整打一局」與新控制手感仍需人類用匯出版實機確認。
 
 # Open Questions
-- 沿用 Q-032 `⚠️ 暫行假設`：小幅物理 + 視覺 squash。若實機發現難度漂移過大，優先回調 `Data/player.json` 三個物理值；若需要更大改動，應回 Q-032 升級提案。
-- Q-031 已決議但本圈未處理；控制方式留待卡 17。
+- 無新增。
+- Q-031 已依人類決議 A 實作。
+- Q-028 / Q-029 / Q-030 / Q-032 維持既有暫行狀態；本圈未擴張其決策範圍。
 
 # Risks
-- `banner_duration = 2.6` 會讓每次回合 banner 更有存在感，但若完整一局時間接近 10 分鐘，可只調回 `Data/feel.json`。
-- 物理微調可能增加單球命中數；目前未改平衡數值，但實機若輸出偏高，建議先回調 `peg_bounce_boost` 到 1.17~1.18，而不是改敵人 HP。
-- Squash 依球貼圖與 fallback draw 都有視覺縮放；若覺得太彈，可只調 `ball_squash` 的 scale / seconds。
+- 新控制移除 timing 後，玩家會更依賴角度資訊；若實機覺得預覽太亮 / 太長 / 太短，優先只調 `Data/feel.json` 的 `aim_preview`。
+- `feel.charge` 仍保留作 deprecated fallback，避免破壞舊 schema；後續若要清理欄位，需另開資料清理卡並由人類確認。
+- `LaunchSpeedBar` 是固定態資訊條，不是可控力道條；若實機仍覺得像 power bar，可直接隱藏或改成純文字，仍不需動玩法。
+- `peg_hit_physics` 會提高 peg 接觸後的離開速度，可能增加命中數與回合傷害；若實機太彈，優先下修 `min_exit_speed` / `min_outward_speed` / `exit_speed_multiplier`。
+- `ball_timeout_seconds = 15.0` 會讓少數長球多停留一段時間；若一局節奏變拖，可回調到 12 秒作中間值。
 
 # Recommended Next Task
-- 建議下一張卡執行 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`：依 Q-031 決議移除集氣力道、改為只控方向的固定速度發射。這是控制方式變更，應獨立驗收，不和本輪物理手感混在一起。
+- 建議下一張卡做 Review P1：「敵人存在感與結算因果」：讓敵人在球飛行 / 傷害累積 / 結算時有更清楚反應，接續本卡已收斂的角度操作核心，但不和控制模型混在一起。
 
 ## 歷史報告 — Phase 15 Game Feel Pass 2
 

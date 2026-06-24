@@ -138,12 +138,19 @@
 	  "max_alpha": 0.28
 	},
 	"charge": {
+	  "deprecated": "Q-031 / Codex 17: player-controlled charge is disabled; retained as compatibility fallback only.",
 	  "bar_min_alpha": 0.55,
 	  "bar_max_alpha": 1.0,
 	  "launcher_recoil_pixels": 10.0,
 	  "launcher_recoil_seconds": 0.11,
 	  "sfx_min_interval": 0.16,
 	  "sfx_power_step": 25
+	},
+	"launcher": {
+	  "fixed_bar_alpha": 0.9,
+	  "ready_color": "#FFE66D",
+	  "launcher_recoil_pixels": 16.0,
+	  "launcher_recoil_seconds": 0.13
 	},
 	"drain": {
 	  "miss_hit_threshold": 1,
@@ -234,9 +241,9 @@
 	  "round_label_position": [42, 112],
 	  "damage_label_position": [42, 146],
 	  "balls_label_position": [42, 180],
-	  "power_label_position": [42, 222],
-	  "power_bar_position": [42, 256],
-	  "power_bar_size": [280, 16],
+	  "launch_label_position": [42, 222],
+	  "launch_bar_position": [42, 256],
+	  "launch_bar_size": [280, 16],
 	  "overload_label_position": [42, 294],
 	  "overload_bar_position": [42, 328],
 	  "overload_bar_size": [280, 16],
@@ -249,7 +256,7 @@
 	  "panel_tick_color": "#9EF8FFAA",
 	  "player_color": "#46FF9B",
 	  "enemy_color": "#FF4E87",
-	  "power_color": "#FFE66D",
+	  "launch_color": "#FFE66D",
 	  "overload_color": "#00E5FF",
 	  "label_color": "#E8FBFF"
 	},
@@ -311,8 +318,15 @@
 	  "rise_y": -42.0
 	},
 	"aim_preview": {
-	  "point_count": 8,
-	  "time_step": 0.035
+	  "point_count": 10,
+	  "time_step": 0.04,
+	  "line_width": 3.0,
+	  "line_color": "#FFE66D99",
+	  "dashed": true,
+	  "end_marker_radius": 5.5,
+	  "end_marker_color": "#00E5FF88",
+	  "end_marker_pulse_speed": 5.5,
+	  "end_marker_pulse_scale": 0.08
 	},
 	"sfx": {
 	  "enabled": true,

@@ -39,6 +39,74 @@
 
 ---
 
+## [Phase 17 / 1.12.2] - 2026-06-24 — 瞄準預覽降噪與球 timeout 延長
+
+- 執行者：Codex
+- 任務卡：`Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md` follow-up
+
+### Added
+- `Battle.gd` 新增瞄準虛線 segment pool，`feel.aim_preview.dashed = true` 時以多段短 `Line2D` 顯示，不再使用整條實線。
+
+### Changed
+- `Data/feel.json` 將 `aim_preview.point_count` 由 `18` 調為 `10`，瞄準軌跡視覺長度約縮短一半。
+- `Data/feel.json` 將瞄準線改為更細、更淡的半透明虛線，端點準星同步縮小並降低 alpha。
+- `Data/player.json` 將 `ball_timeout_seconds` 由 `8.0` 延長到 `15.0`。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+## [Phase 17 / 1.12.1] - 2026-06-24 — Peg Hit 物理修正：柏青哥式外彈防黏
+
+- 執行者：Codex
+- 任務卡：`Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md` follow-up（人類允許物理層手感修正）
+
+### Added
+- `Data/player.json` 新增 `peg_hit_physics`，資料化控制 peg 命中後的外彈模型：最低離開速度、最低外向速度、切線保留、微量外推距離、物理冷卻與底排 bumper 下限。
+- `Ball.gd` 新增 `_integrate_forces()` 內的 pachinko peg exit：依 peg 中心到球中心的外側法線，保證球命中 peg 後向外離開，避免低速擦邊時黏住。
+
+### Changed
+- `Ball.gd` 將原本 `body_entered` 內單純乘速的 peg bounce 改為物理步內解算：外推一點點、保證 outward velocity、保留部分 tangent，並以 `max_ball_speed` 封頂。
+- `DataLoader.gd` 新增 `player.peg_hit_physics` schema 與基本範圍驗證。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 無新增。此 follow-up 依使用者明確授權改物理；若實機覺得過彈，優先回調 `Data/player.json` 的 `peg_hit_physics`。
+
+## [Phase 17 / 1.12.0] - 2026-06-24 — Launch Control：只控方向、固定速度、一鍵發射
+
+- 執行者：Codex
+- 任務卡：`Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`
+
+### Added
+- `Data/feel.json` 新增 `launcher` 區段，將固定速度發射的 ready glow、launcher 後座力距離與時間資料化。
+- `Data/feel.json` 強化 `aim_preview`：增加軌跡點數、線寬、線色與端點脈動準星參數，讓角度成為更清楚的唯一技巧軸。
+- `Battle.gd` 新增 `AimEndpointMarker`，在瞄準軌跡遠端顯示可調脈動準星。
+
+### Changed
+- `Battle.gd` 發射流程改為左鍵 / 空白鍵單次即以 `Data/player.json` 的 `launch_speed` 發射；移除方向鎖定、集氣狀態、power-to-speed 映射與集氣 SFX。
+- `BattleFX.gd` 將力道綁定的 `update_charge_feedback()` 改為固定態 `update_launcher_ready_feedback()`；保留並加強發射後座力。
+- `Scenes/Battle.tscn` 將 `PowerLabel` / `PowerBar` 改為 `LaunchSpeedLabel` / `LaunchSpeedBar`，畫面顯示固定初速與單鍵發射，不再暗示可控力道。
+
+### Data
+- `Data/player.json` 在 `_meta.deprecated_fields` 標記 `launch_speed_min`、`launch_speed_max`、`charge_cycle_seconds` 為 Q-031 deprecated；欄位保留未刪除。
+- `Data/feel.json` 將既有 `charge` 區段標記 deprecated，僅作相容 fallback；正式發射演出改讀 `launcher`。
+- `DataLoader.gd` 新增 `launch_speed`、`feel.launcher` 與擴充後 `aim_preview` 的基本驗證。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- 靜態掃描確認 `Scripts/` / `Scenes/` 無可執行集氣流程、無 `PowerLabel` / `PowerBar` / `POWER` UI；僅保留 deprecated JSON 欄位。
+- Godot 4.6.3 headless 載入專案、`Scenes/Battle.tscn`、`Scenes/UpgradeScreen.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 無新增。Q-031 已依人類決議 A 實作；Q-028 / Q-029 / Q-030 / Q-032 維持既有暫行狀態，未在本圈擴張。
+
 ## [Phase 16 / 1.11.1] - 2026-06-24 — 修正回合橫幅提前消失並補退場重音
 
 - 執行者：Codex
