@@ -33,11 +33,76 @@
 
 ## 目前待決策問題
 
-（目前無。Q-001~Q-013 皆已決議；下方暫行假設已於 Phase 4 後一次定案。若 Phase 5 平衡微調需要新的取捨，再依模板新增。）
+### Q-028：Hitstop 節奏與凍結上限
+- 提出者：Codex
+- 日期：2026-06-24
+- 背景：`Reviews/01_GAME_FEEL_REVIEW.md` 指出目前命中缺少瞬間頓挫，全 `Scripts/` 無全域 hitstop。任務卡 15 要做 P0-1，但 hitstop 會改變回合內體感節奏，需確認凍結時長上限與是否依 peg 分級。
+- 選項：
+  - A. 引入全域 hitstop，單次上限 ≤ 0.08 秒，依 `Data/feel.json` 的 `peg_feel` 查表分級；可由 `hitstop.enabled` 關閉。
+  - B. 引入極弱固定 hitstop，不分 peg，僅作命中重音。
+  - C. 不引入 hitstop，維持現有粒子 / shake / SFX 回饋。
+- AI 建議：⚠️ 暫行假設 — 採 A。理由：能補上 Review 指出的最大缺口，且以 `feel.json` 控制上限與開關，不改傷害、HP、球數、敵人或抽取規則；單次 ≤ 0.08 秒可降低拖慢一局 5–10 分鐘節奏的風險。
+- 影響範圍：`Data/feel.json`、`Scripts/BattleFX.gd`、`Scripts/Battle.gd`；純表現層，不更動 `Docs/01_GAME_VISION.md` / `Docs/02_GAME_DESIGN.md` / 平衡資料。
+- 狀態：⚠️ 暫行假設
+
+### Q-029：跨球累積熱度 round heat
+- 提出者：Codex
+- 日期：2026-06-24
+- 背景：Review 指出 combo 每顆球歸零，`damage_accumulator` 雖跨球存在但只顯示在 HUD，回合內缺少「越打越熱」的爬升感。任務卡 15 要做 P0-3，但此會改變回合內情緒節奏，需確認不偏離「回合一次結算」精神。
+- 選項：
+  - A. 新增純表現 round heat：以既有 `round_context.damage_accumulator` / 敵人 HP 比值映射場邊框亮度、傷害文字亮度與 hit SFX pitch 微幅增強；combo 仍每球重置。
+  - B. 只用跨球命中數驅動熱度，不讀傷害累積，避免和傷害數值產生感知綁定。
+  - C. 不做跨球熱度，維持目前每球 combo 歸零與 HUD 顯示。
+- AI 建議：⚠️ 暫行假設 — 採 A。理由：`damage_accumulator` 已是回合核心暫存，讀取它做視聽映射不新增玩法欄位，也最能讓玩家感覺到「本回合正在堆傷害」；結算仍只在 SETTLE 套用，規則不變。
+- 影響範圍：`Data/feel.json`、`Scripts/BattleFX.gd`、`Scripts/Battle.gd`；純表現層，不影響傷害公式、倍率、敵人 HP 或結算時機。
+- 狀態：⚠️ 暫行假設
+
+### Q-030：feel.json schema 擴張（hitstop / peg_feel / round_heat）
+- 提出者：Codex
+- 日期：2026-06-24
+- 背景：任務卡 15 要新增 `hitstop`、`peg_feel`、`round_heat` 三個 presentation 區塊。依 `Codex/00_MASTER_PROMPT.md` 權限矩陣，Data Schema 新欄位結構需提案；但本卡要求先標暫行假設並繼續實作。
+- 選項：
+  - A. 在 `Data/feel.json` 的既有 `feel` 物件內新增 `hitstop` / `peg_feel` / `round_heat`；`DataLoader` 驗證必要欄位與基本範圍。
+  - B. 只新增一個 `hit_feedback` 大區塊，將 hitstop、peg 個性化與 heat 都放入同一層，減少頂層欄位。
+  - C. 暫不擴張 schema，改用既有 `shake` / `combo` / `scene_fx` 欄位塞入參數。
+- AI 建議：⚠️ 暫行假設 — 採 A。理由：三個概念邊界清楚，和 Review 的落點一致，未來只調手感時可讀性最好；缺 key 仍需 fallback，不得因 schema 暫行而讓遊戲崩潰。
+- 影響範圍：`Data/feel.json`、`Scripts/DataLoader.gd`、`Scripts/BattleFX.gd`、`Scripts/Battle.gd`、`Scripts/Peg.gd`；屬 presentation schema 擴張，不改 gameplay data schema 或核心規格。
+- 狀態：⚠️ 暫行假設
+
+### Q-032：彈珠物理手感調校（更輕盈 / 彈更高）— 牽動平衡
+- 提出者：Claude（Review 01 / 實機回饋）
+- 日期：2026-06-24
+- 背景：實機後人類回饋撞釘彈跳感不足、彈珠偏重，希望更輕盈、撞釘彈更高。可調旋鈕 `ball_gravity_scale`(1.0) / `ball_bounce`(0.9) / `peg_bounce_boost`(1.15) / `bottom_row.bounce_multiplier`(2.0) 全在 `player.json` / `field.json`。問題：這些直接改變球的行進路徑 → 命中釘子數 → `damage_accumulator` → 傷害經濟學，屬「偽裝成手感的平衡調整」，依 `Docs/04_BALANCE_RULES.md` 不可悄改。
+- 選項：
+  - A. 只動物理旋鈕（gravity↓ / bounce↑ / peg_bounce_boost↑），明確標「會改平衡」，要求實機前後對照同一局難度。
+  - B. 先不改物理，只靠卡 15 的 hitstop 放大彈跳知覺，觀察是否已足夠。
+  - C. 小幅微調物理 + 補命中時 ball squash-stretch，分離「視覺彈跳感」與「實際路徑改變」，把難度漂移壓到最小。
+- AI 建議：⚠️ 暫行假設 — 採 C。理由：hitstop 剛上線可能已放大彈跳知覺，C 以視覺 squash 補足「爽感」、只小幅動 gravity/bounce，避免在體感未定前大幅改平衡；任何物理改動須實機驗收難度未失控。
+- 影響範圍：`Data/player.json`、`Data/field.json`、`Docs/04_BALANCE_RULES.md`、`Scripts/Ball.gd`（squash）、`Codex/16`。
+- 狀態：⚠️ 暫行假設
 
 ---
 
 ## 已決議
+
+### Q-031：發射控制方式 — 是否移除力道控制、改為只控方向
+- 提出者：Claude（Review 01 後續 / 實機回饋）
+- 日期：2026-06-24
+- 背景：實機後人類回饋現行「瞄準鎖方向 → 擺動集氣條 timing 發射」（`Scripts/Battle.gd` `_handle_launch_input`）同時要求空間瞄準（慢、分析）與 timing 反射（快），兩種操作腦模式衝突；且在釘海中角度資訊量遠大於力道，力道軸為低資訊量的認知稅，稀釋 `Docs/01_GAME_VISION.md`「算好角度」的核心幻想。屬核心互動，動到 `Docs/02_GAME_DESIGN.md`，依權限矩陣為 ⛔ 人類職責。
+- 選項：
+  - A. 只控方向：移除集氣力道軸，固定發射速度，瞄準 + 一鍵發射（Peggle / Peglin 模型）。
+  - B. 只控力道：方向半隨機、控柱塞力道（Pachinko 模型）。
+  - C. 統一拉弓手勢：單一拖曳，方向=拉的反向、力道=拉距，放開發射（彈弓模型）。
+- 結論（人類決議）：**採 A**。最貼 Vision「算好角度」核心幻想、最好讀、消除腦模式衝突、簡報可讀性最高。固定發射速度取 `Data/player.json` 既有 `launch_speed`(900)；玩家可控集氣流程（`launch_speed_min/max`、`charge_cycle_seconds`）停用，資料欄位先保留並標記 deprecated 待後續清理。
+- 決議日期：2026-06-24
+- 影響範圍：`Docs/02_GAME_DESIGN.md`、`Scripts/Battle.gd`、`Data/player.json`、`Data/feel.json`（`charge` 區段）、`Codex/17`（新卡）。
+- 狀態：✅ 已決議（Docs 修訂待人類套用）
+
+> **Docs/02 修訂提案（待人類套用，Claude 不擅自改 Docs）**
+> 核心循環現行：「玩家逐顆瞄準並發射（一次一顆）」→ 維持不變（已是只描述瞄準，未強制力道）。
+> 發射階段現行第 2 點：「**發射階段**：玩家逐顆瞄準發射。球受重力與彈跳物理影響…」
+> 建議改為：「**發射階段**：玩家逐顆**瞄準方向**並一鍵發射（**固定發射速度，不控制力道**；發射速度見 `Data/player.json`）。球受重力與彈跳物理影響…」
+> 並於文末或 Ball/控制相關段補一句：「**控制方式（Q-031 決議 A）**：玩家僅控制發射方向，發射速度固定。不採力道集氣，以契合『算好角度』的核心幻想。」
 
 ### Q-008：Battle 場地 / UI 採場景節點或程式化生成
 - 提出者：Claude（Phase 1.5 Architecture Review）

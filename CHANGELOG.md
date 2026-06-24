@@ -39,6 +39,70 @@
 
 ---
 
+## [Phase 16 / 1.11.1] - 2026-06-24 — 修正回合橫幅提前消失並補退場重音
+
+- 執行者：Codex
+- 任務卡：`Codex/16_FEEL_TUNING.md` follow-up
+
+### Added
+- `Data/feel.json` 的 `turn_pacing` 新增 banner 退場參數：flicker 次數 / 秒數、shake 像素、punch scale、fade out 秒數，做出接近格鬥遊戲 round callout 的退場重音。
+
+### Fixed
+- `BattleFX.gd` 的 `show_turn_banner()` 改用明確 `chain()` 串接淡入 → 停留 → 淡出，修正 `parallel()` 讓淡出與停留重疊，導致文字閃一下消失但流程仍等待的問題。
+- 新增 `_turn_banner_tween` 保存目前 banner tween；新 banner 播放前會 kill 舊 tween，避免舊 tween 把新文字 alpha 淡掉。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+## [Phase 16 / 1.11.0] - 2026-06-24 — Feel Tuning：回合橫幅放慢與彈跳手感微調
+
+- 執行者：Codex
+- 任務卡：`Codex/16_FEEL_TUNING.md`
+
+### Added
+- `Data/feel.json` 新增 `ball_squash` 表現參數，控制球命中 peg 時的 squash / stretch / recover 時長與視覺比例。
+- `Ball.gd` 新增命中 peg 的視覺 squash-stretch；只改 `_visual_squash_scale`，套用在 Sprite scale / `_draw()` transform，不改碰撞形狀、不直接改 `linear_velocity`。
+
+### Changed
+- `Data/feel.json` 將 `turn_pacing.banner_duration` 由 `0.92` 調為 `2.6`，並小幅增加 `enemy_turn_pre_delay` / `check_delay`，讓回合切換更有呼吸感。
+- 依 Q-032 暫行假設 C，小幅調整 `Data/player.json`：`ball_gravity_scale 1.0 → 0.9`、`ball_bounce 0.9 → 0.94`、`peg_bounce_boost 1.15 → 1.2`。
+- `DataLoader.gd` 新增 `feel.ball_squash` 基本驗證。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- 靜態檢查確認 squash 路徑不改 `CollisionShape2D` 或 `linear_velocity`；物理變更只在 `player.json` 小幅資料調整。
+
+### 未解問題
+- 沿用 Q-032 `⚠️ 暫行假設`。物理微調牽動難度，仍需人類實機確認命中數 / 傷害沒有明顯暴走。
+
+## [Phase 15 / 1.10.0] - 2026-06-24 — Game Feel Pass 2：hitstop、Peg 查表回饋與 round heat
+
+- 執行者：Codex
+- 任務卡：`Codex/15_GAME_FEEL_PASS_2.md`
+
+### Added
+- `Data/feel.json` 新增 `hitstop`、`peg_feel`、`round_heat` 區塊，集中控制命中頓挫、Peg 個性化 shake / SFX / flash / particle、回合熱度視聽爬升。
+- `BattleFX.gd` 新增非阻塞 `apply_hitstop()`，以 token 防止連續命中把凍結時間累加；離開節點時會復原 `Engine.time_scale = 1.0`。
+- `BattleFX.gd` 新增 `peg_feedback_config()` 與 `update_round_heat()`，由 `feel.json` 查表後驅動命中粒子倍率、shake、SFX pitch、場邊框與傷害 Label 熱度。
+
+### Changed
+- `Battle.gd` 的 Peg 命中流程改為讀取 `peg_feel` 查表結果，讓 `normal_peg` / `burst_peg` / `heal_peg` / `double_peg` / `bounce_peg` 有不同命中重量；不新增 peg-id 回饋分支。
+- `Peg.gd` 的命中白閃時長改由 `peg_feel.flash_seconds` 控制。
+- `DataLoader.gd` 驗證新增 feel 區塊與基本範圍。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- 靜態掃描確認未新增 `if peg_id == ...` 類型回饋分支；新回饋路徑走 `peg_feel` 查表。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- Windows Desktop Export 成功；`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+
+### 未解問題
+- 新增 Q-028（Hitstop 節奏）、Q-029（跨球累積熱度）、Q-030（feel.json schema 擴張），皆標記為 `⚠️ 暫行假設` 並依建議繼續實作。
+
 ## [Phase 14 / 1.9.2] - 2026-06-14 — 修正發射球顯示、敵人框層級、寬版 UI 與光束層級
 
 - 執行者：Codex

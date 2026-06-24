@@ -210,6 +210,10 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		"turn_pacing",
 		"enemy_attack",
 		"combo",
+		"hitstop",
+		"peg_feel",
+		"round_heat",
+		"ball_squash",
 		"telegraph",
 		"low_hp",
 		"charge",
@@ -249,6 +253,32 @@ func _validate_feel_config(data: Dictionary) -> Dictionary:
 		push_error("feel.player_attack.damage_scale_reference must be > 0")
 	if float(player_attack.get("max_width", 0.0)) < float(player_attack.get("base_width", 0.0)):
 		push_error("feel.player_attack.max_width must be >= base_width")
+	var hitstop: Dictionary = config.get("hitstop", {})
+	if float(hitstop.get("base_seconds", 0.0)) < 0.0:
+		push_error("feel.hitstop.base_seconds must be >= 0")
+	if float(hitstop.get("max_seconds", 0.0)) < float(hitstop.get("base_seconds", 0.0)):
+		push_error("feel.hitstop.max_seconds must be >= base_seconds")
+	if float(hitstop.get("time_scale", 1.0)) <= 0.0 or float(hitstop.get("time_scale", 1.0)) > 1.0:
+		push_error("feel.hitstop.time_scale must be in (0, 1]")
+	var peg_feel: Dictionary = config.get("peg_feel", {})
+	if typeof(peg_feel.get("default", {})) != TYPE_DICTIONARY:
+		push_error("feel.peg_feel.default must be a dictionary")
+	var round_heat: Dictionary = config.get("round_heat", {})
+	if float(round_heat.get("reference_ratio", 0.0)) <= 0.0:
+		push_error("feel.round_heat.reference_ratio must be > 0")
+	if float(round_heat.get("lerp_speed", 0.0)) < 0.0:
+		push_error("feel.round_heat.lerp_speed must be >= 0")
+	var ball_squash: Dictionary = config.get("ball_squash", {})
+	if float(ball_squash.get("squash_seconds", 0.0)) < 0.0:
+		push_error("feel.ball_squash.squash_seconds must be >= 0")
+	if float(ball_squash.get("stretch_seconds", 0.0)) < 0.0:
+		push_error("feel.ball_squash.stretch_seconds must be >= 0")
+	if float(ball_squash.get("recover_seconds", 0.0)) < 0.0:
+		push_error("feel.ball_squash.recover_seconds must be >= 0")
+	for scale_field in ["squash_scale", "stretch_scale"]:
+		var scale_value: Variant = ball_squash.get(scale_field, [])
+		if typeof(scale_value) != TYPE_ARRAY or (scale_value as Array).size() < 2:
+			push_error("feel.ball_squash.%s must be an array with 2 numbers" % scale_field)
 
 	return config.duplicate(true)
 

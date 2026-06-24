@@ -21,6 +21,8 @@ var _low_hp_phase := 0.0
 var _overload_phase := 0.0
 var _overload_config: Dictionary = {}
 var _overload_active_visual := false
+var _hitstop_token := 0
+var _turn_banner_tween: Tween
 
 
 func configure(camera: Camera2D, ui_root: Control, new_feel_config: Dictionary) -> void:
@@ -39,6 +41,10 @@ func configure_overload(new_overload_config: Dictionary) -> void:
 func update(delta: float) -> void:
 	_update_screen_shake(delta)
 	_update_overload_overlay(delta)
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
 
 
 func update_low_hp(player_hp: int, player_max_hp: int, delta: float) -> void:
@@ -69,7 +75,7 @@ func spawn_launch_feedback(position: Vector2) -> void:
 	)
 
 
-func spawn_hit_particles(position: Vector2, color: Color, combo_count := 1) -> void:
+func spawn_hit_particles(position: Vector2, color: Color, combo_count := 1, particle_scale := 1.0) -> void:
 	var particles := _particles_config()
 	var combo := _combo_config()
 	var visual_level = min(max(combo_count - 1, 0), int(combo.get("max_visual_level", 6)))
@@ -77,8 +83,8 @@ func spawn_hit_particles(position: Vector2, color: Color, combo_count := 1) -> v
 	spawn_particles(
 		position,
 		color,
-		int(round(float(int(particles["hit_amount"]) + visual_level * int(combo.get("particle_amount_step", 0))) * overload_multiplier)),
-		float(particles["hit_lifetime"]) + float(visual_level) * float(combo.get("particle_lifetime_step", 0.0))
+		int(round(float(int(particles["hit_amount"]) + visual_level * int(combo.get("particle_amount_step", 0))) * overload_multiplier * max(0.0, particle_scale))),
+		(float(particles["hit_lifetime"]) + float(visual_level) * float(combo.get("particle_lifetime_step", 0.0))) * max(0.1, particle_scale)
 	)
 
 
@@ -143,9 +149,35 @@ func show_miss_feedback(world_position: Vector2) -> void:
 	start_screen_shake(float(shake.get("miss_strength", 1.5)), float(shake.get("miss_duration", 0.08)))
 
 
-func start_hit_shake() -> void:
+func start_hit_shake(shake_mult := 1.0) -> void:
 	var shake := _shake_config()
-	start_screen_shake(float(shake["hit_strength"]), float(shake["hit_duration"]))
+	start_screen_shake(float(shake["hit_strength"]) * max(0.0, shake_mult), float(shake["hit_duration"]))
+
+
+func apply_hitstop(hitstop_mult := 1.0) -> void:
+	var config := _hitstop_config()
+	if not bool(config.get("enabled", true)):
+		return
+	var duration: float = min(float(config.get("max_seconds", 0.08)), float(config.get("base_seconds", 0.045)) * max(0.0, hitstop_mult))
+	if duration <= 0.0:
+		return
+	_hitstop_token += 1
+	var token := _hitstop_token
+	Engine.time_scale = clamp(float(config.get("time_scale", 0.08)), 0.01, 1.0)
+	var timer := get_tree().create_timer(duration, true, false, true)
+	timer.timeout.connect(func() -> void:
+		if token == _hitstop_token:
+			Engine.time_scale = 1.0
+	)
+
+
+func peg_feedback_config(peg_id: String) -> Dictionary:
+	var table := _peg_feel_config()
+	var defaults: Dictionary = table.get("default", {})
+	var result := defaults.duplicate(true)
+	var specific: Dictionary = table.get(peg_id, {})
+	result.merge(specific, true)
+	return result
 
 
 func start_enemy_attack_shake() -> void:
@@ -198,22 +230,62 @@ func play_sfx(event_id: String, pitch_scale := 1.0) -> void:
 	timer.timeout.connect(player.queue_free)
 
 
+func update_round_heat(field_border: Line2D, damage_label: Label, damage_accumulator: int, reference_hp: int, delta: float) -> float:
+	var config: Dictionary = _round_heat_config()
+	if not bool(config.get("enabled", true)):
+		return 0.0
+	var reference: float = max(1.0, float(reference_hp) * float(config.get("reference_ratio", 1.0)))
+	var heat: float = clamp(float(damage_accumulator) / reference, 0.0, 1.0)
+	var lerp_weight: float = min(1.0, max(0.0, delta) * float(config.get("lerp_speed", 8.0)))
+	if field_border != null and not _overload_active_visual:
+		var idle_color := Color(String(config.get("border_idle_color", "#00E5FF")))
+		var hot_color := Color(String(config.get("border_hot_color", "#FFE66D")))
+		var target_color: Color = idle_color.lerp(hot_color, heat)
+		target_color.a = max(field_border.default_color.a, target_color.a)
+		field_border.default_color = field_border.default_color.lerp(target_color, lerp_weight)
+		var target_width: float = lerp(float(config.get("border_width_idle", 2.0)), float(config.get("border_width_hot", 5.0)), heat)
+		field_border.width = lerp(field_border.width, target_width, lerp_weight)
+	if damage_label != null:
+		var label_idle := Color(String(config.get("label_idle_color", "#E8FBFF")))
+		var label_hot := Color(String(config.get("label_hot_color", "#FFE66D")))
+		damage_label.modulate = damage_label.modulate.lerp(label_idle.lerp(label_hot, heat), lerp_weight)
+	return heat
+
+
 func show_turn_banner(text: String, color: Color, duration := -1.0) -> void:
 	if _turn_banner == null:
 		return
-	var config := _turn_pacing_config()
-	var show_duration := float(config.get("banner_duration", 0.72)) if duration < 0.0 else duration
+	if _turn_banner_tween != null and _turn_banner_tween.is_valid():
+		_turn_banner_tween.kill()
+	var config: Dictionary = _turn_pacing_config()
+	var show_duration: float = float(config.get("banner_duration", 0.72)) if duration < 0.0 else duration
+	var base_position: Vector2 = _turn_banner.position
+	var flicker_count: int = max(0, int(config.get("banner_exit_flicker_count", 0)))
+	var flicker_seconds: float = max(0.01, float(config.get("banner_exit_flicker_seconds", 0.055)))
+	var shake_pixels: float = float(config.get("banner_exit_shake_pixels", 0.0))
+	var punch_scale: float = float(config.get("banner_exit_punch_scale", 1.0))
+	var fade_out_seconds: float = max(0.01, float(config.get("banner_fade_out_seconds", 0.18)))
 	_turn_banner.text = text
 	_turn_banner.modulate = color
 	_turn_banner.modulate.a = 0.0
+	_turn_banner.position = base_position
 	_turn_banner.scale = Vector2(0.96, 0.96)
-	var tween := create_tween()
-	tween.parallel().tween_property(_turn_banner, "modulate:a", 1.0, 0.12)
-	tween.parallel().tween_property(_turn_banner, "scale", Vector2.ONE, 0.12)
-	tween.tween_interval(show_duration)
-	tween.parallel().tween_property(_turn_banner, "modulate:a", 0.0, 0.18)
-	tween.parallel().tween_property(_turn_banner, "scale", Vector2(1.02, 1.02), 0.18)
-	await tween.finished
+	_turn_banner_tween = create_tween()
+	_turn_banner_tween.tween_property(_turn_banner, "modulate:a", 1.0, 0.12)
+	_turn_banner_tween.parallel().tween_property(_turn_banner, "scale", Vector2.ONE, 0.12)
+	_turn_banner_tween.chain().tween_interval(show_duration)
+	for index in range(flicker_count):
+		var shake_direction := -1.0 if index % 2 == 0 else 1.0
+		_turn_banner_tween.chain().tween_property(_turn_banner, "modulate:a", 0.42, flicker_seconds)
+		_turn_banner_tween.parallel().tween_property(_turn_banner, "position", base_position + Vector2(shake_pixels * shake_direction, 0.0), flicker_seconds)
+		_turn_banner_tween.parallel().tween_property(_turn_banner, "scale", Vector2.ONE * punch_scale, flicker_seconds)
+		_turn_banner_tween.chain().tween_property(_turn_banner, "modulate:a", 1.0, flicker_seconds)
+		_turn_banner_tween.parallel().tween_property(_turn_banner, "position", base_position, flicker_seconds)
+		_turn_banner_tween.parallel().tween_property(_turn_banner, "scale", Vector2.ONE, flicker_seconds)
+	_turn_banner_tween.chain().tween_property(_turn_banner, "modulate:a", 0.0, fade_out_seconds)
+	_turn_banner_tween.parallel().tween_property(_turn_banner, "scale", Vector2(1.02, 1.02), fade_out_seconds)
+	_turn_banner_tween.parallel().tween_property(_turn_banner, "position", base_position, fade_out_seconds)
+	await _turn_banner_tween.finished
 
 
 func show_boss_telegraph() -> void:
@@ -715,6 +787,18 @@ func _enemy_attack_config() -> Dictionary:
 
 func _combo_config() -> Dictionary:
 	return feel_config.get("combo", {})
+
+
+func _hitstop_config() -> Dictionary:
+	return feel_config.get("hitstop", {})
+
+
+func _peg_feel_config() -> Dictionary:
+	return feel_config.get("peg_feel", {})
+
+
+func _round_heat_config() -> Dictionary:
+	return feel_config.get("round_heat", {})
 
 
 func _telegraph_config() -> Dictionary:

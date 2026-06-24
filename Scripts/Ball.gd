@@ -17,10 +17,13 @@ var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
 var _feel_config: Dictionary = {}
 var _scene_fx: Dictionary = {}
+var _ball_squash: Dictionary = {}
 var _combo_hits := 0
 var _sprite: Sprite2D
 var _texture: Texture2D
 var _pulse_phase := 0.0
+var _visual_squash_scale := Vector2.ONE
+var _squash_tween: Tween
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -39,6 +42,8 @@ func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dic
 	_feel_config = feel_config.duplicate(true)
 	var scene_fx_config: Dictionary = _feel_config.get("scene_fx", {})
 	_scene_fx = scene_fx_config.duplicate(true)
+	var squash_config: Dictionary = _feel_config.get("ball_squash", {})
+	_ball_squash = squash_config.duplicate(true)
 	_peg_rehit_cooldown = float(_feel_config["peg_rehit_cooldown_seconds"])
 	var bottom_row: Dictionary = field_config.get("bottom_row", {})
 	_bounce_multiplier = float(bottom_row.get("bounce_multiplier", 1.0))
@@ -98,6 +103,7 @@ func _on_body_entered(body: Node) -> void:
 			_apply_speed_boost(_bounce_multiplier)
 		else:
 			_apply_speed_boost(_peg_bounce_boost)
+		_play_squash_feedback()
 		if body.has_method("play_hit_feedback"):
 			body.play_hit_feedback()
 		var hit_color := Color(0.2, 0.85, 1.0)
@@ -123,6 +129,35 @@ func _apply_speed_boost(multiplier: float) -> void:
 	if _max_ball_speed > 0.0:
 		boosted_speed = min(boosted_speed, _max_ball_speed)
 	linear_velocity = linear_velocity.normalized() * boosted_speed
+
+
+func _play_squash_feedback() -> void:
+	if not bool(_ball_squash.get("enabled", true)):
+		return
+	if _squash_tween != null and _squash_tween.is_valid():
+		_squash_tween.kill()
+	var squash_scale := _vector2_from_array(_ball_squash.get("squash_scale", [1.18, 0.82]), Vector2(1.18, 0.82))
+	var stretch_scale := _vector2_from_array(_ball_squash.get("stretch_scale", [0.88, 1.12]), Vector2(0.88, 1.12))
+	_squash_tween = create_tween()
+	_squash_tween.tween_method(_set_visual_squash_scale, squash_scale, stretch_scale, float(_ball_squash.get("squash_seconds", 0.04)))
+	_squash_tween.tween_method(_set_visual_squash_scale, stretch_scale, Vector2.ONE, float(_ball_squash.get("stretch_seconds", 0.06)))
+	_squash_tween.tween_interval(float(_ball_squash.get("recover_seconds", 0.08)))
+	_squash_tween.tween_callback(func() -> void: _set_visual_squash_scale(Vector2.ONE))
+
+
+func _set_visual_squash_scale(value: Vector2) -> void:
+	_visual_squash_scale = value
+	_update_sprite()
+	queue_redraw()
+
+
+func _vector2_from_array(value: Variant, fallback: Vector2) -> Vector2:
+	if typeof(value) != TYPE_ARRAY:
+		return fallback
+	var array := value as Array
+	if array.size() < 2:
+		return fallback
+	return Vector2(float(array[0]), float(array[1]))
 
 
 func _add_trail() -> void:
@@ -169,6 +204,7 @@ func _draw() -> void:
 	if radius <= 0.0:
 		return
 	var pulse := _pulse_amount()
+	draw_set_transform(Vector2.ZERO, 0.0, _visual_squash_scale)
 	var halo := _ball_color
 	halo.a = float(_scene_fx.get("ball_halo_alpha", 0.28))
 	draw_circle(Vector2.ZERO, radius * float(_scene_fx.get("ball_halo_radius", 1.95)) * pulse, halo)
@@ -176,9 +212,11 @@ func _draw() -> void:
 	core.a = float(_scene_fx.get("ball_core_alpha", 0.82))
 	draw_circle(Vector2.ZERO, radius * 0.42 * pulse, core)
 	if _texture != null:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
 	draw_circle(Vector2.ZERO, radius, _ball_color)
 	draw_circle(Vector2.ZERO, radius * 0.45, Color(1.0, 1.0, 0.9))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _load_texture() -> void:
@@ -201,7 +239,7 @@ func _update_sprite() -> void:
 		return
 	var target_diameter := radius * 2.45 * _pulse_amount()
 	var texture_diameter := float(max(_texture.get_width(), _texture.get_height()))
-	_sprite.scale = Vector2.ONE * (target_diameter / texture_diameter)
+	_sprite.scale = _visual_squash_scale * (target_diameter / texture_diameter)
 	_sprite.modulate = _ball_color
 
 

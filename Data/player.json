@@ -13,10 +13,10 @@
 	"launch_speed_max": 1150.0,
 	"charge_cycle_seconds": 1.4,
 	"ball_radius": 5.0,
-	"ball_gravity_scale": 1.0,
-	"ball_bounce": 0.9,
+	"ball_gravity_scale": 0.9,
+	"ball_bounce": 0.94,
 	"ball_friction": 0.0,
-	"peg_bounce_boost": 1.15,
+	"peg_bounce_boost": 1.2,
 	"max_ball_speed": 1600.0,
 	"execute": {
 	  "enabled": true,

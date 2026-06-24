@@ -39,39 +39,40 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 ~ 12 已完成，核心美術資產、背景、logo 圖徽、敵人立繪、釘 / 球中性底圖與 fallback 接線已落地。
-- 人類已確認主選單 GUI crash 根因是 Godot 4.6.3 `d3d12` 後端 bug，專案改用 `vulkan`；本圈不再改渲染相關設定。
-- Q-027 已決議：Phase 14 只做純程序化場景 polish，字體使用 `assets/fonts/JiangChengJianRenHei.ttf`，表現參數集中於 `Data/feel.json`，不改玩法數值。
+- Phase 1 ~ 15 已完成，卡 15 已加入 hitstop、Peg 查表回饋與 round heat。
+- 實機回饋指出回合切換橫幅太快、球撞釘仍偏重；`OPEN_QUESTIONS.md` Q-032 已採 `⚠️ 暫行假設` C：小幅物理 + 視覺 squash。
+- Q-031 已決議後續移除力道控制，但卡 16 明確禁止碰控制方式；本圈不改發射輸入 / 集氣流程。
 
 # Current Phase
-- **Phase 14 — Scene Polish（場景視覺打磨）**。
+- **Phase 16 — Feel Tuning（回合節奏 + 彈跳手感微調）**。
 
 # Recommended Task
-- 執行 `Codex/14_SCENE_POLISH.md`。
-- 以 shader / draw / Line2D / Tween / 粒子等純程序化方式完成：釘球發光、底排 bumper 霓虹環、HUD 資料面板 + 字體、敵人區整合。
-- 全 UI 套用 `assets/fonts/JiangChengJianRenHei.ttf`，缺字體時回到 Godot 預設字體。
+- 執行 `Codex/16_FEEL_TUNING.md`。
+- 調長 `Data/feel.json` 的回合橫幅停留與必要節奏停頓。
+- 新增 Ball 命中 peg 的視覺 squash-stretch，參數進 `feel.json`，只動視覺 scale。
+- 依 Q-032 C 小幅調 `Data/player.json` 的 `ball_gravity_scale` / `ball_bounce` / `peg_bounce_boost`。
 
 # Why
-- Phase 12 圖像已接線，但場景仍需要更完整的發光、資料化 HUD 與敵人區視覺整合，才能符合 `Docs/05_ART_DIRECTION.md` 的低對比資料層與霓虹核心感。
-- Q-027 已收斂工具與護欄：不用外部新圖、不做逐釘 Light2D、不碰 gameplay / physics / render settings。
-- 這一圈是純表現層，可在不破壞 Phase 12 fallback 的前提下提升可視讀性。
+- `Docs/01_GAME_VISION.md` 要求節奏清楚且命中「爽、脆、亮」；目前 hitstop 已補頓挫，但橫幅與彈跳重量仍需微調。
+- `turn_pacing.banner_duration` 是純表現項，調長能讓「你的回合 / 敵人回合」更有回合制呼吸感。
+- 彈跳物理會牽動命中數與傷害累積，因此只做保守幅度，並用 squash 把更多爽感放在視覺層。
 
 # Risks
-- 發光若使用大量 Light2D 會有性能風險；本圈改用 `_draw()` / Line2D / ColorRect，不逐釘加燈。
-- HUD runtime 重排需避免遮擋彈珠場與互動輸入；UI 背景節點必須 `MOUSE_FILTER_IGNORE`。
-- 字體缺失時不能 crash；字體套用需保守，以節點 override 為主。
-- MainMenu 背景 / logo 載入需維持正常，不因 polish 重做而短路。
+- 橫幅停太久可能拖慢一局 5-10 分鐘節奏；只調到卡片建議約 2.6 秒，並驗證狀態機不卡。
+- 物理微調可能提高命中數與回合傷害；調幅控制在 Q-032 建議值附近，完成後回報需人類實機難度對照。
+- Squash 必須只動視覺 scale，不可改 `CollisionShape2D`、不可改 `linear_velocity`。
+- 新增 `ball_squash` schema 屬表現層擴張；若需要更大物理改動，必須回 Q-032 升級提案。
 
 # Dependencies
-- Q-027 已決議，無阻斷性未決問題。
-- `assets/fonts/JiangChengJianRenHei.ttf` 已存在；Phase 12 圖像資產與 fallback 接線已存在。
+- Q-032 已存在並採 C 作為暫行假設，允許小幅物理 + 視覺 squash；本圈不得超出此假設。
+- Q-031 控制方式已決議但留待卡 17，不納入本圈。
 
 # Estimated Scope
-- 中。修改 `Data/feel.json`、`Scripts/Peg.gd`、`Scripts/Ball.gd`、`Scripts/Battle.gd`、全 UI 入口腳本，新增 `Scripts/UITheme.gd`，並更新 CHANGELOG / PROGRESS_REPORT / WORK_PLAN。
+- 小到中。修改 `Data/feel.json`、`Data/player.json`、`Scripts/Ball.gd`、`Scripts/DataLoader.gd`，並更新 `CHANGELOG.md`、`PROGRESS_REPORT.md`、`WORK_PLAN.md`。
 
 # Validation Target
-- 對照 `Codex/14_SCENE_POLISH.md` DoD：釘 / 球發光與 idle pulse、底排 bumper 霓虹環與 hit pulse、HUD 字體 / 面板 / 刻度、敵人 portrait 放大與 HP/name 下移、fallback、無逐釘 Light2D。
-- 同步檢查 `VALIDATION_CHECKLIST.md` 的 G/H：視覺一致、未改玩法 / 數值 / 種類、Godot 載入、JSON 解析、export smoke。
+- 對照 `Codex/16_FEEL_TUNING.md` DoD：橫幅約三倍停留、撞釘 squash 可見、squash 不動碰撞 / 速度、物理小幅微調且可回退、JSON / Godot 載入通過。
+- 同步檢查 `VALIDATION_CHECKLIST.md` 的 D/G/H：命中回饋、幀率 / 物理穩定、5-10 分鐘節奏風險、未碰控制方式 / P1 / P2 / 核心方向。
 
 ---
 

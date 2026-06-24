@@ -24,11 +24,16 @@
 	"turn_pacing": {
 	  "settle_pre_delay": 0.18,
 	  "settle_post_delay": 0.28,
-	  "enemy_turn_pre_delay": 0.22,
+	  "enemy_turn_pre_delay": 0.35,
 	  "enemy_turn_post_delay": 0.3,
-	  "check_delay": 0.18,
+	  "check_delay": 0.24,
 	  "round_start_delay": 0.2,
-	  "banner_duration": 0.92
+	  "banner_duration": 1.6,
+	  "banner_exit_flicker_count": 3,
+	  "banner_exit_flicker_seconds": 0.055,
+	  "banner_exit_shake_pixels": 8.0,
+	  "banner_exit_punch_scale": 1.08,
+	  "banner_fade_out_seconds": 0.18
 	},
 	"enemy_attack": {
 	  "windup_seconds": 0.34,
@@ -48,6 +53,76 @@
 	  "max_visual_level": 6,
 	  "text_color": "#FFE66D",
 	  "sfx_pitch_step": 0.06
+	},
+	"hitstop": {
+	  "enabled": true,
+	  "base_seconds": 0.045,
+	  "max_seconds": 0.08,
+	  "time_scale": 0.08
+	},
+	"peg_feel": {
+	  "default": {
+		"shake_mult": 1.0,
+		"hitstop_mult": 1.0,
+		"sfx_pitch_mult": 1.0,
+		"flash_seconds": 0.16,
+		"particle_scale": 1.0
+	  },
+	  "normal_peg": {
+		"shake_mult": 0.72,
+		"hitstop_mult": 0.45,
+		"sfx_pitch_mult": 0.94,
+		"flash_seconds": 0.11,
+		"particle_scale": 0.82
+	  },
+	  "burst_peg": {
+		"shake_mult": 1.45,
+		"hitstop_mult": 1.45,
+		"sfx_pitch_mult": 1.12,
+		"flash_seconds": 0.2,
+		"particle_scale": 1.45
+	  },
+	  "heal_peg": {
+		"shake_mult": 0.92,
+		"hitstop_mult": 0.75,
+		"sfx_pitch_mult": 1.04,
+		"flash_seconds": 0.18,
+		"particle_scale": 1.05
+	  },
+	  "double_peg": {
+		"shake_mult": 1.28,
+		"hitstop_mult": 1.22,
+		"sfx_pitch_mult": 1.2,
+		"flash_seconds": 0.22,
+		"particle_scale": 1.28
+	  },
+	  "bounce_peg": {
+		"shake_mult": 0.62,
+		"hitstop_mult": 0.0,
+		"sfx_pitch_mult": 0.86,
+		"flash_seconds": 0.1,
+		"particle_scale": 0.75
+	  }
+	},
+	"round_heat": {
+	  "enabled": true,
+	  "reference_ratio": 1.0,
+	  "border_idle_color": "#00E5FF",
+	  "border_hot_color": "#FFE66D",
+	  "border_width_idle": 2.0,
+	  "border_width_hot": 5.0,
+	  "label_idle_color": "#E8FBFF",
+	  "label_hot_color": "#FFE66D",
+	  "sfx_pitch_bonus": 0.16,
+	  "lerp_speed": 8.0
+	},
+	"ball_squash": {
+	  "enabled": true,
+	  "squash_scale": [1.22, 0.78],
+	  "stretch_scale": [0.86, 1.16],
+	  "squash_seconds": 0.045,
+	  "stretch_seconds": 0.06,
+	  "recover_seconds": 0.08
 	},
 	"telegraph": {
 	  "enabled": true,

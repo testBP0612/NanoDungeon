@@ -33,6 +33,78 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/16_FEEL_TUNING.md`：回合切換橫幅停留調長到 2.6 秒，並依 Q-032 暫行假設 C 做保守彈跳微調與球命中視覺 squash-stretch。控制方式、卡 17、Review P1/P2 均未處理；未改傷害、HP、敵人、升級、球 / 釘種類或結算規則。
+
+# Completed
+- `Data/feel.json`：`turn_pacing.banner_duration 0.92 → 2.6`；`enemy_turn_pre_delay 0.22 → 0.35`；`check_delay 0.18 → 0.24`。
+- `Data/feel.json`：新增 `ball_squash`，目前為 `squash_scale [1.22, 0.78]`、`stretch_scale [0.86, 1.16]`、`squash_seconds 0.045`、`stretch_seconds 0.06`、`recover_seconds 0.08`。
+- `Data/player.json`：依 Q-032 C 小幅調整物理，`ball_gravity_scale 1.0 → 0.9`、`ball_bounce 0.9 → 0.94`、`peg_bounce_boost 1.15 → 1.2`。
+- `Scripts/Ball.gd`：命中 peg 時播放視覺 squash；只改 `_visual_squash_scale`，由 Sprite scale 與 `_draw()` transform 呈現，不動 `CollisionShape2D`、不在 squash 路徑改 `linear_velocity`。
+- `Scripts/DataLoader.gd`：新增 `feel.ball_squash` 欄位存在與基本範圍驗證。
+- `WORK_PLAN.md`、`CHANGELOG.md` 已更新為卡 16。
+
+# Validation Results
+- ✅ JSON 驗證：`Data/*.json` 全部可由 PowerShell `ConvertFrom-Json` 解析。
+- ✅ Godot 驗證：Godot 4.6.3 headless 載入專案通過。
+- ✅ Battle 場景驗證：`Scenes/Battle.tscn` headless 載入通過。
+- ✅ Export 驗證：Windows Desktop Export 成功，log 確認 `Data/feel.json`、`Data/player.json`、`Scripts/Ball.gd` 已打包。
+- ✅ Build smoke：`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ✅ 禁止偏離：未修改控制方式、未做 P1/P2、未新增 Peg / Ball / Enemy 種類、未改傷害 / HP / 倍率 / 抽取 / 球池。
+- ✅ Squash 護欄：squash 只改視覺比例；碰撞半徑仍只在 configure 時按 `ball_radius` 設定，未因 squash 改變；速度仍只由既有 `_apply_speed_boost()` 物理路徑依 JSON 參數處理。
+- ⚠️ 實機難度對照：Codex 無法在 headless/export smoke 中等同人類實機打一局。可確認的是物理調幅保守（gravity -10%、bounce 約 +4.4%、peg boost 約 +4.3%）、穩定載入與可匯出；「命中數 / 傷害是否明顯暴走」仍需人類用同一路線實機前後對照。
+
+# Open Questions
+- 沿用 Q-032 `⚠️ 暫行假設`：小幅物理 + 視覺 squash。若實機發現難度漂移過大，優先回調 `Data/player.json` 三個物理值；若需要更大改動，應回 Q-032 升級提案。
+- Q-031 已決議但本圈未處理；控制方式留待卡 17。
+
+# Risks
+- `banner_duration = 2.6` 會讓每次回合 banner 更有存在感，但若完整一局時間接近 10 分鐘，可只調回 `Data/feel.json`。
+- 物理微調可能增加單球命中數；目前未改平衡數值，但實機若輸出偏高，建議先回調 `peg_bounce_boost` 到 1.17~1.18，而不是改敵人 HP。
+- Squash 依球貼圖與 fallback draw 都有視覺縮放；若覺得太彈，可只調 `ball_squash` 的 scale / seconds。
+
+# Recommended Next Task
+- 建議下一張卡執行 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`：依 Q-031 決議移除集氣力道、改為只控方向的固定速度發射。這是控制方式變更，應獨立驗收，不和本輪物理手感混在一起。
+
+## 歷史報告 — Phase 15 Game Feel Pass 2
+
+# Summary
+完成 `Codex/15_GAME_FEEL_PASS_2.md` 的 P0 三項：新增全域 hitstop、Peg 回饋查表分級、round heat 跨球累積熱度。所有新增參數集中於 `Data/feel.json`，未改傷害、HP、倍率、抽取、球池、敵人或核心規則；Q-028～Q-030 已依卡片要求寫入 `OPEN_QUESTIONS.md` 並標為 `⚠️ 暫行假設`。
+
+# Completed
+- `OPEN_QUESTIONS.md`：新增 Q-028（Hitstop 節奏）、Q-029（跨球累積熱度）、Q-030（feel.json schema 擴張），三題皆含背景、選項、Codex 建議、影響範圍與暫行假設狀態。
+- `Data/feel.json`：新增 `hitstop`、`peg_feel`、`round_heat`；`normal_peg` 較輕、`burst_peg` 較重，`double_peg` 偏亮偏強，`bounce_peg` 幾乎不 hitstop。
+- `Scripts/BattleFX.gd`：新增非阻塞 `apply_hitstop()`、`peg_feedback_config()`、`update_round_heat()`；hitstop 用 token 防止時間凍結累加，離開節點時復原 `Engine.time_scale`。
+- `Scripts/Battle.gd`：命中時以 `peg_feel` 查表驅動粒子倍率、shake、hitstop 與 hit SFX pitch；round heat 讀 `round_context.damage_accumulator` 映射場邊框、傷害 Label 與命中音高。
+- `Scripts/Peg.gd`：命中白閃時長改讀 `peg_feel.flash_seconds`。
+- `Scripts/DataLoader.gd`：新增 feel schema 必要欄位與基本範圍驗證。
+- `WORK_PLAN.md`、`CHANGELOG.md` 已更新為本圈內容。
+
+# Validation Results
+- ✅ Q-028 / Q-029 / Q-030 已寫入 `OPEN_QUESTIONS.md`，皆標記 `⚠️ 暫行假設`。
+- ✅ JSON 驗證：`Data/*.json` 全部可由 PowerShell `ConvertFrom-Json` 解析。
+- ✅ Godot 驗證：Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- ✅ Export 驗證：Windows Desktop Export 成功，log 確認 `Data/feel.json` 與更新後腳本打包。
+- ✅ Build smoke：`Builds/NanoDungeon.exe --headless --quit` 可獨立啟動。
+- ✅ 查表護欄：靜態掃描確認本圈未新增 `if peg_id == ...` 回饋分支；Peg 個性化走 `feel.peg_feel`。
+- ✅ 平衡護欄：未修改 `Data/player.json`、`Data/pegs.json`、`Data/balls.json`、`Data/enemies.json`、`Data/upgrades.json` 的玩法數值；傷害仍由既有 `EffectResolver` / `RoundContext` 流程處理。
+- ⚠️ 體感驗收：headless / export 可驗證載入與穩定性；hitstop 時長、Peg 重量差異與 heat 強度仍需人類實機確認。
+
+# Open Questions
+- Q-028：Hitstop 節奏與凍結上限，暫行採「全域 hitstop、單次 ≤ 0.08 秒、依 peg 查表分級、可關閉」。
+- Q-029：跨球累積熱度，暫行採「讀既有 `damage_accumulator` 做純視聽爬升，combo 仍每球重置」。
+- Q-030：feel.json schema 擴張，暫行採「新增 `hitstop` / `peg_feel` / `round_heat` 三區塊」。
+
+# Risks
+- Hitstop 與 heat 是體感項；若實機覺得節奏拖慢或過亮，優先只調 `Data/feel.json` 的 `hitstop.base_seconds/max_seconds/time_scale` 與 `round_heat` 強度。
+- Round heat 目前用敵人 max HP 作 reference，Boss 戰爬升會較慢；這是表現比例，可只調 `round_heat.reference_ratio`。
+- Overclock 啟動時場邊框仍優先顯示 Overclock 狀態，round heat 不覆蓋 active overclock border，避免兩套高亮打架。
+
+# Recommended Next Task
+- 建議下一張卡做 Review P1：敵人在球飛行中的漸進反應、結算因果化、Boss 舞台感。這三項能接續本卡的「爬升」成果，但應另開卡，避免把 P1 混進本輪。
+
+## 歷史報告 — Phase 14 Follow-up 2
+
+# Summary
 完成 Phase 14 第二次 follow-up：修正發射點仍顯示舊紫色圓形、敵人名稱 / HP / 血條被資料框覆蓋、Overclock 與升級畫面仍偏 1024 版型、玩家攻擊光束被 UI 框遮住等問題。未改玩法、物理、數值或渲染後端。
 
 # Completed

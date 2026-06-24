@@ -572,6 +572,7 @@ func _aim_preview_speed() -> float:
 func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, combo_count: int) -> void:
 	if _execute_in_progress:
 		return
+	var peg_feel: Dictionary = battle_fx.peg_feedback_config(peg_id)
 	var peg_def := RunState.get_modified_peg_def(DataLoader.get_peg(peg_id))
 	var damage_multiplier := _overload_damage_multiplier()
 	var result: Dictionary = effect_resolver.apply_peg_effect(peg_def, round_context, damage_multiplier)
@@ -589,12 +590,16 @@ func _on_ball_peg_hit(peg_id: String, hit_position: Vector2, hit_color: Color, c
 		battle_fx.show_floating_text(feedback_text, hit_position, Color(0.22, 1.0, 0.08))
 	if multiplier_applied:
 		battle_fx.show_floating_text(feedback_text, hit_position, Color(1.0, 0.78, 0.24))
-	battle_fx.spawn_hit_particles(hit_position, hit_color, combo_count)
+	battle_fx.spawn_hit_particles(hit_position, hit_color, combo_count, float(peg_feel.get("particle_scale", 1.0)))
 	battle_fx.show_combo_feedback(combo_count, hit_position)
-	battle_fx.start_hit_shake()
+	battle_fx.start_hit_shake(float(peg_feel.get("shake_mult", 1.0)))
+	battle_fx.apply_hitstop(float(peg_feel.get("hitstop_mult", 1.0)))
 	var combo_config: Dictionary = feel_config.get("combo", {})
+	var round_heat_config: Dictionary = feel_config.get("round_heat", {})
+	var heat_pitch_bonus := _round_heat_ratio() * float(round_heat_config.get("sfx_pitch_bonus", 0.0))
 	var overload_pitch_bonus := float(overload_config.get("sfx", {}).get("active_hit_pitch_bonus", 0.0)) if RunState.is_overload_active() else 0.0
-	battle_fx.play_sfx("hit", 1.0 + overload_pitch_bonus + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06)))
+	var pitch_scale := (1.0 + overload_pitch_bonus + heat_pitch_bonus + float(max(combo_count - 1, 0)) * float(combo_config.get("sfx_pitch_step", 0.06))) * float(peg_feel.get("sfx_pitch_mult", 1.0))
+	battle_fx.play_sfx("hit", pitch_scale)
 	_update_ui()
 	_try_trigger_execute()
 
@@ -792,6 +797,7 @@ func _update_ui() -> void:
 		RunState.overload_rounds_remaining,
 		get_process_delta_time()
 	)
+	battle_fx.update_round_heat(field_border, damage_label, round_context.damage_accumulator, enemy_max_hp, get_process_delta_time())
 	sfx_toggle_button.text = "SFX: %s" % ("ON" if sfx_enabled else "OFF")
 	if not _settlement_animating:
 		_update_hp_bars()
@@ -812,6 +818,14 @@ func _tween_bar(bar: ProgressBar, value: int) -> void:
 	var duration := float(feel_config["hp_tween_duration"])
 	var tween := create_tween()
 	tween.tween_property(bar, "value", value, duration)
+
+
+func _round_heat_ratio() -> float:
+	var config: Dictionary = feel_config.get("round_heat", {})
+	if not bool(config.get("enabled", true)):
+		return 0.0
+	var reference: float = max(1.0, float(enemy_max_hp) * float(config.get("reference_ratio", 1.0)))
+	return clamp(float(round_context.damage_accumulator) / reference, 0.0, 1.0)
 
 
 func _on_sfx_toggle_pressed() -> void:

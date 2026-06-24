@@ -8,6 +8,7 @@ var _flash := 0.0
 var _sprite: Sprite2D
 var _texture: Texture2D
 var _scene_fx: Dictionary = {}
+var _peg_feel: Dictionary = {}
 var _pulse_phase := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -24,6 +25,7 @@ func configure(new_peg_id: String, new_peg_def: Dictionary, new_radius: float, f
 	radius = new_radius
 	var scene_fx_config: Dictionary = feel_config.get("scene_fx", {})
 	_scene_fx = scene_fx_config.duplicate(true)
+	_peg_feel = _peg_feel_config_for(feel_config, peg_id)
 	_base_color = _color_for_peg(peg_id)
 	if collision_shape != null:
 		var shape := CircleShape2D.new()
@@ -47,7 +49,7 @@ func get_peg_id() -> String:
 
 func play_hit_feedback() -> void:
 	var tween := create_tween()
-	tween.tween_method(_set_flash, 1.0, 0.0, 0.16)
+	tween.tween_method(_set_flash, 1.0, 0.0, float(_peg_feel.get("flash_seconds", 0.16)))
 
 
 func play_reroll_feedback(duration: float, scale_multiplier: float) -> void:
@@ -68,6 +70,15 @@ func _set_flash(value: float) -> void:
 	_flash = value
 	_update_sprite()
 	queue_redraw()
+
+
+func _peg_feel_config_for(feel_config: Dictionary, id: String) -> Dictionary:
+	var table: Dictionary = feel_config.get("peg_feel", {})
+	var defaults: Dictionary = table.get("default", {})
+	var result := defaults.duplicate(true)
+	var specific: Dictionary = table.get(id, {})
+	result.merge(specific, true)
+	return result
 
 
 func _color_for_peg(id: String) -> Color:
