@@ -151,6 +151,15 @@ func _duplicate_dictionary_array(collection: Array) -> Array:
 	return duplicated
 
 
+func _vector2_from_array(value: Variant, fallback: Vector2) -> Vector2:
+	if typeof(value) != TYPE_ARRAY:
+		return fallback
+	var array: Array = value
+	if array.size() < 2:
+		return fallback
+	return Vector2(float(array[0]), float(array[1]))
+
+
 func _validate_player_config(data: Dictionary) -> Dictionary:
 	var config: Dictionary = data.get("player", {})
 	var required_fields := [
@@ -159,6 +168,7 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		"starting_ball_id",
 		"ball_timeout_seconds",
 		"launch_speed",
+		"plunger_launch_speed",
 		"launch_speed_min",
 		"launch_speed_max",
 		"charge_cycle_seconds",
@@ -169,6 +179,7 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		"peg_bounce_boost",
 		"max_ball_speed",
 		"peg_hit_physics",
+		"wall_hit_physics",
 		"execute",
 	]
 
@@ -181,6 +192,8 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 			push_error("Missing player config field: %s" % field)
 	if float(config.get("launch_speed", 0.0)) <= 0.0:
 		push_error("Player launch_speed must be > 0")
+	if float(config.get("plunger_launch_speed", 0.0)) <= 0.0:
+		push_error("Player plunger_launch_speed must be > 0")
 	if float(config.get("launch_speed_min", 0.0)) <= 0.0 or float(config.get("launch_speed_max", 0.0)) <= 0.0:
 		push_error("Player launch_speed_min/max must be > 0")
 	if float(config.get("launch_speed_max", 0.0)) < float(config.get("launch_speed_min", 0.0)):
@@ -207,6 +220,17 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 			push_error("Player peg_hit_physics.unstick_distance must be >= 0")
 		if float(peg_hit_physics.get("exit_cooldown_seconds", -1.0)) < 0.0:
 			push_error("Player peg_hit_physics.exit_cooldown_seconds must be >= 0")
+	var wall_hit_physics: Dictionary = config.get("wall_hit_physics", {})
+	if typeof(wall_hit_physics) != TYPE_DICTIONARY:
+		push_error("Player wall_hit_physics must be a dictionary")
+	else:
+		_validate_wall_hit_profile(wall_hit_physics.get("default_profile", {}), "default_profile")
+		var wall_profiles: Dictionary = wall_hit_physics.get("profiles", {})
+		if typeof(wall_profiles) != TYPE_DICTIONARY:
+			push_error("Player wall_hit_physics.profiles must be a dictionary")
+		else:
+			for profile_name in wall_profiles.keys():
+				_validate_wall_hit_profile(wall_profiles[profile_name], "profiles.%s" % String(profile_name))
 	var execute: Dictionary = config.get("execute", {})
 	if typeof(execute) != TYPE_DICTIONARY:
 		push_error("Player execute config must be a dictionary")
@@ -214,6 +238,19 @@ func _validate_player_config(data: Dictionary) -> Dictionary:
 		push_error("Player execute.margin must be >= 0")
 
 	return (config as Dictionary).duplicate(true)
+
+
+func _validate_wall_hit_profile(profile: Variant, label: String) -> void:
+	if typeof(profile) != TYPE_DICTIONARY:
+		push_error("Player wall_hit_physics.%s must be a dictionary" % label)
+		return
+	var profile_dict: Dictionary = profile
+	if float(profile_dict.get("speed_multiplier", 0.0)) <= 0.0:
+		push_error("Player wall_hit_physics.%s.speed_multiplier must be > 0" % label)
+	if float(profile_dict.get("min_exit_speed", -1.0)) < 0.0:
+		push_error("Player wall_hit_physics.%s.min_exit_speed must be >= 0" % label)
+	if float(profile_dict.get("exit_cooldown_seconds", -1.0)) < 0.0:
+		push_error("Player wall_hit_physics.%s.exit_cooldown_seconds must be >= 0" % label)
 
 
 func _validate_feel_config(data: Dictionary) -> Dictionary:
@@ -322,6 +359,8 @@ func _validate_field_config(data: Dictionary) -> Dictionary:
 	var default_radius := float(config.get("default_peg_radius", 0.0))
 	var generator: Dictionary = config.get("generator", {})
 	var bottom_row: Dictionary = config.get("bottom_row", {})
+	var plunger: Dictionary = config.get("plunger", {})
+	var launch_lane: Dictionary = config.get("launch_lane", {})
 	var required_bounds := ["left", "right", "top", "bottom"]
 
 	if typeof(bounds) != TYPE_DICTIONARY:
@@ -330,6 +369,10 @@ func _validate_field_config(data: Dictionary) -> Dictionary:
 		push_error("Missing field generator in Data/field.json")
 	if typeof(bottom_row) != TYPE_DICTIONARY:
 		push_error("Missing field bottom_row in Data/field.json")
+	if typeof(plunger) != TYPE_DICTIONARY:
+		push_error("Missing field plunger in Data/field.json")
+	if typeof(launch_lane) != TYPE_DICTIONARY:
+		push_error("Missing field launch_lane in Data/field.json")
 	for field in required_bounds:
 		if not bounds.has(field):
 			push_error("Missing field bounds value: %s" % field)
@@ -340,14 +383,67 @@ func _validate_field_config(data: Dictionary) -> Dictionary:
 	var right := float(bounds.get("right", 0.0))
 	var top := float(bounds.get("top", 0.0))
 	var bottom := float(bounds.get("bottom", 0.0))
-	_validate_field_generator(generator, left, right, top, bottom)
+	if float(config.get("wall_thickness", 0.0)) <= 0.0:
+		push_error("Field wall_thickness must be > 0")
+	if float(config.get("bottom_sensor_height", 0.0)) <= 0.0:
+		push_error("Field bottom_sensor_height must be > 0")
+	_validate_plunger(plunger, left, right, top, bottom)
+	_validate_launch_lane(launch_lane, left, right, top, bottom)
+	_validate_field_generator(generator, left, right, top, bottom, default_radius, launch_lane)
 	_validate_bottom_row(bottom_row, left, right, top, bottom)
 
 	var normalized := config.duplicate(true)
 	return normalized
 
 
-func _validate_field_generator(generator: Dictionary, left: float, right: float, top: float, bottom: float) -> void:
+func _validate_plunger(plunger: Dictionary, left: float, right: float, top: float, bottom: float) -> void:
+	var position := _vector2_from_array(plunger.get("position", []), Vector2(INF, INF))
+	var launch_direction := _vector2_from_array(plunger.get("launch_direction", []), Vector2.ZERO)
+	if position.x < left or position.x > right or position.y < top or position.y > bottom:
+		push_error("Field plunger.position must be inside bounds")
+	if launch_direction.length() <= 0.01:
+		push_error("Field plunger.launch_direction must be non-zero")
+
+
+func _validate_launch_lane(launch_lane: Dictionary, left: float, right: float, top: float, bottom: float) -> void:
+	var lane_left := float(launch_lane.get("left", INF))
+	var lane_right := float(launch_lane.get("right", -INF))
+	var lane_top := float(launch_lane.get("top", INF))
+	var lane_bottom := float(launch_lane.get("bottom", -INF))
+	var wall_thickness := float(launch_lane.get("wall_thickness", 0.0))
+	var peg_clearance := float(launch_lane.get("peg_clearance", -1.0))
+	var inner_wall: Dictionary = launch_lane.get("inner_wall", {})
+	var deflector: Dictionary = launch_lane.get("deflector", {})
+	if lane_left <= left or lane_right > right or lane_right <= lane_left:
+		push_error("Field launch_lane horizontal bounds are invalid")
+	if lane_top < top or lane_bottom > bottom or lane_bottom <= lane_top:
+		push_error("Field launch_lane vertical bounds are invalid")
+	if wall_thickness <= 0.0:
+		push_error("Field launch_lane.wall_thickness must be > 0")
+	if peg_clearance < 0.0:
+		push_error("Field launch_lane.peg_clearance must be >= 0")
+	if typeof(inner_wall) != TYPE_DICTIONARY:
+		push_error("Field launch_lane.inner_wall must be a dictionary")
+	else:
+		var inner_x := float(inner_wall.get("x", NAN))
+		var inner_top := float(inner_wall.get("top", NAN))
+		var inner_bottom := float(inner_wall.get("bottom", NAN))
+		if is_nan(inner_x) or inner_x < lane_left or inner_x > lane_right:
+			push_error("Field launch_lane.inner_wall.x must be inside lane")
+		if is_nan(inner_top) or is_nan(inner_bottom) or inner_top < lane_top or inner_bottom > lane_bottom or inner_bottom <= inner_top:
+			push_error("Field launch_lane.inner_wall vertical range is invalid")
+	if typeof(deflector) != TYPE_DICTIONARY:
+		push_error("Field launch_lane.deflector must be a dictionary")
+	else:
+		var deflector_position := _vector2_from_array(deflector.get("position", []), Vector2(INF, INF))
+		var deflector_size := _vector2_from_array(deflector.get("size", []), Vector2.ZERO)
+		if deflector_position.x < left or deflector_position.x > right or deflector_position.y < top or deflector_position.y > bottom:
+			push_error("Field launch_lane.deflector.position must be inside bounds")
+		if deflector_size.x <= 0.0 or deflector_size.y <= 0.0:
+			push_error("Field launch_lane.deflector.size must be > 0")
+
+
+func _validate_field_generator(generator: Dictionary, left: float, right: float, top: float, bottom: float, default_peg_radius: float, launch_lane: Dictionary) -> void:
 	var required_fields := [
 		"top_y",
 		"row_count",
@@ -399,7 +495,12 @@ func _validate_field_generator(generator: Dictionary, left: float, right: float,
 	var max_guaranteed_double := int(generator.get("max_guaranteed_double_peg_count", 0))
 	var cell_count := 0
 	for row in range(row_count):
-		cell_count += int(wide_cols if row % 2 == 0 else narrow_cols)
+		var columns := int(wide_cols if row % 2 == 0 else narrow_cols)
+		for column in range(columns):
+			var cell_x := center_x + (float(column) - (float(columns - 1) * 0.5)) * col_spacing
+			var cell_y := top_y + float(row) * row_spacing
+			if not _point_inside_launch_lane(launch_lane, cell_x, cell_y, default_peg_radius):
+				cell_count += 1
 	if guaranteed_double < 0:
 		push_error("Field guaranteed_double_peg_count must be >= 0")
 	if max_guaranteed_double < guaranteed_double:
@@ -413,6 +514,17 @@ func _validate_field_generator(generator: Dictionary, left: float, right: float,
 		var max_x := center_x + float(columns - 1) * 0.5 * col_spacing
 		if min_x < left or max_x > right:
 			push_error("Field generator x range out of bounds")
+
+
+func _point_inside_launch_lane(launch_lane: Dictionary, x: float, y: float, radius: float) -> bool:
+	if launch_lane.is_empty():
+		return false
+	var clearance := float(launch_lane.get("peg_clearance", 0.0))
+	var left := float(launch_lane.get("left", INF)) - radius - clearance
+	var right := float(launch_lane.get("right", -INF)) + radius + clearance
+	var top := float(launch_lane.get("top", INF)) - radius - clearance
+	var bottom := float(launch_lane.get("bottom", -INF)) + radius + clearance
+	return x >= left and x <= right and y >= top and y <= bottom
 
 
 func _validate_bottom_row(bottom_row: Dictionary, left: float, right: float, top: float, bottom: float) -> void:

@@ -1,7 +1,7 @@
 {
   "_meta": {
-	"description": "彈珠場程序佈局：位置骨架由 generator 公式產生，ROUND_START 只重抽動態釘類型；底排 bounce_peg 固定。",
-	"version": "0.3.0"
+	"description": "彈珠場程序佈局：位置骨架由 generator 公式產生，ROUND_START 只重抽動態釘類型；底排 bounce_peg 固定。Q-033 起右側保留柱塞發射軌道。",
+	"version": "0.4.0"
   },
   "field": {
 	"bounds": {
@@ -10,15 +10,39 @@
 	  "top": 72,
 	  "bottom": 960
 	},
+	"wall_thickness": 40,
+	"bottom_sensor_height": 52,
 	"default_peg_radius": 9,
+	"plunger": {
+	  "position": [1100, 852],
+	  "launch_direction": [0, -1]
+	},
+	"launch_lane": {
+	  "left": 1064,
+	  "right": 1132,
+	  "top": 72,
+	  "bottom": 960,
+	  "wall_thickness": 24,
+	  "peg_clearance": 12,
+	  "inner_wall": {
+		"x": 1064,
+		"top": 230,
+		"bottom": 822
+	  },
+	  "deflector": {
+		"position": [1042, 128],
+		"size": [178, 24],
+		"rotation_degrees": -30
+	  }
+	},
 	"generator": {
-	  "top_y": 210,
-	  "row_count": 9,
+	  "top_y": 190,
+	  "row_count": 10,
 	  "row_spacing": 64,
 	  "wide_cols": 5,
 	  "narrow_cols": 4,
 	  "col_spacing": 88,
-	  "center_x": 816,
+	  "center_x": 790,
 	  "type_weights": {
 		"normal_peg": 60,
 		"heal_peg": 22,

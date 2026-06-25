@@ -15,6 +15,12 @@ size = Vector2(672, 40)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bottom_sensor"]
 size = Vector2(632, 52)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_launch_lane_inner"]
+size = Vector2(24, 592)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_launch_lane_deflector"]
+size = Vector2(178, 24)
+
 [node name="Battle" type="Node2D" unique_id=2100557890]
 script = ExtResource("1_battle")
 
@@ -64,6 +70,27 @@ shape = SubResource("RectangleShape2D_top_wall")
 color = Color(0.09, 0.14, 0.2, 1)
 polygon = PackedVector2Array(-336, -20, 336, -20, 336, 20, -336, 20)
 
+[node name="LaunchLaneInnerWall" type="StaticBody2D" parent="PinballField/Walls"]
+position = Vector2(1064, 526)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/LaunchLaneInnerWall"]
+shape = SubResource("RectangleShape2D_launch_lane_inner")
+
+[node name="Visual" type="Polygon2D" parent="PinballField/Walls/LaunchLaneInnerWall"]
+color = Color(0.09, 0.14, 0.2, 1)
+polygon = PackedVector2Array(-12, -296, 12, -296, 12, 296, -12, 296)
+
+[node name="LaunchLaneDeflector" type="StaticBody2D" parent="PinballField/Walls"]
+position = Vector2(1042, 128)
+rotation = -0.523599
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PinballField/Walls/LaunchLaneDeflector"]
+shape = SubResource("RectangleShape2D_launch_lane_deflector")
+
+[node name="Visual" type="Polygon2D" parent="PinballField/Walls/LaunchLaneDeflector"]
+color = Color(0.09, 0.14, 0.2, 1)
+polygon = PackedVector2Array(-89, -12, 89, -12, 89, 12, -89, 12)
+
 [node name="PegContainer" type="Node2D" parent="PinballField" unique_id=69516438]
 
 [node name="BottomSensor" type="Area2D" parent="PinballField" unique_id=1921909966]
@@ -73,7 +100,7 @@ position = Vector2(816, 986)
 shape = SubResource("RectangleShape2D_bottom_sensor")
 
 [node name="Launcher" type="Node2D" parent="PinballField" unique_id=371040683]
-position = Vector2(816, 118)
+position = Vector2(1100, 852)
 
 [node name="BallContainer" type="Node2D" parent="PinballField" unique_id=2050505875]
 
@@ -81,12 +108,13 @@ position = Vector2(816, 118)
 z_index = 10
 
 [node name="AimLine" type="Line2D" parent="AimOverlay" unique_id=1124369905]
+visible = false
 points = PackedVector2Array(816, 118, 816, 233)
 width = 3.0
 default_color = Color(1, 0.9, 0.35, 1)
 
 [node name="LauncherVisual" type="Polygon2D" parent="AimOverlay" unique_id=1446668512]
-position = Vector2(816, 118)
+position = Vector2(1100, 852)
 color = Color(0.9, 0.25, 1, 1)
 polygon = PackedVector2Array(13, 0, 12.0104, 4.97488, 9.19239, 9.19239, 4.97488, 12.0104, 0, 13, -4.97488, 12.0104, -9.19239, 9.19239, -12.0104, 4.97488, -13, 0, -12.0104, -4.97488, -9.19239, -9.19239, -4.97488, -12.0104, 0, -13, 4.97488, -12.0104, 9.19239, -9.19239, 12.0104, -4.97488)
 
@@ -169,7 +197,7 @@ offset_top = 222.0
 offset_right = 342.0
 offset_bottom = 250.0
 theme_override_font_sizes/font_size = 18
-text = "固定初速：900｜單鍵發射"
+text = "柱塞測試力道：1320｜單鍵上射"
 
 [node name="LaunchSpeedBar" type="ProgressBar" parent="BattleUI/UIRoot"]
 layout_mode = 0

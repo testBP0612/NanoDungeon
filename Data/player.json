@@ -1,11 +1,12 @@
 {
   "_meta": {
 	"description": "玩家與彈珠場基礎數值（HP、球數、起始球、球超時、發射力與物理參數）。Q-007 已定案：此檔為專案標準資料檔，程式不得寫死這些值。",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"deprecated_fields": {
-	  "launch_speed_min": "deprecated by Q-031 / Codex 17. Retained for schema compatibility; launch uses player.launch_speed only.",
-	  "launch_speed_max": "deprecated by Q-031 / Codex 17. Retained for schema compatibility; launch uses player.launch_speed only.",
-	  "charge_cycle_seconds": "deprecated by Q-031 / Codex 17. Player-controlled charge timing is disabled."
+	  "launch_speed": "deprecated by Q-033 / Codex 18. Retained for schema compatibility; plunger launch uses player.plunger_launch_speed.",
+	  "launch_speed_min": "deprecated by Q-031 and superseded by Q-033. Retained for schema compatibility; card 18 does not use player charge.",
+	  "launch_speed_max": "deprecated by Q-031 and superseded by Q-033. Retained for schema compatibility; card 18 does not use player charge.",
+	  "charge_cycle_seconds": "deprecated by Q-031 and superseded by Q-033. Player-controlled charge timing is card 19 scope."
 	}
   },
   "player": {
@@ -14,6 +15,7 @@
 	"starting_ball_id": "normal_ball",
 	"ball_timeout_seconds": 15.0,
 	"launch_speed": 900.0,
+	"plunger_launch_speed": 1320.0,
 	"launch_speed_min": 650.0,
 	"launch_speed_max": 1150.0,
 	"charge_cycle_seconds": 1.4,
@@ -33,6 +35,21 @@
 	  "exit_cooldown_seconds": 0.035,
 	  "bounce_peg_min_exit_speed": 980.0,
 	  "bounce_peg_min_outward_speed": 760.0
+	},
+	"wall_hit_physics": {
+	  "enabled": true,
+	  "default_profile": {
+		"speed_multiplier": 0.96,
+		"min_exit_speed": 0.0,
+		"exit_cooldown_seconds": 0.04
+	  },
+	  "profiles": {
+		"LaunchLaneDeflector": {
+		  "speed_multiplier": 1.0,
+		  "min_exit_speed": 1120.0,
+		  "exit_cooldown_seconds": 0.08
+		}
+	  }
 	},
 	"execute": {
 	  "enabled": true,

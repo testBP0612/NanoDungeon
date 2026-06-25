@@ -39,6 +39,95 @@
 
 ---
 
+## [Phase 18 / 1.13.4] - 2026-06-25 — 牆面反彈改為材質 profile
+
+- 執行者：Codex
+- 任務卡：`Codex/18_PINBALL_TABLE_LAYOUT.md` follow-up
+
+### Changed
+- `Data/player.json` 的 `wall_hit_physics` 改為 `default_profile + profiles`：一般牆 `speed_multiplier = 0.96`、不主動補最低速；`LaunchLaneDeflector` 才以 `min_exit_speed = 1120.0` 做低速入場補償。
+- `Ball.gd` 依碰撞牆體節點名稱選擇 wall profile，避免全場牆面都像 bumper 一樣加速。
+- `DataLoader.gd` 驗證 `wall_hit_physics` 的 default / named profiles。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+
+## [Phase 18 / 1.13.3] - 2026-06-25 — 增加牆面反彈速度補償
+
+- 執行者：Codex
+- 任務卡：`Codex/18_PINBALL_TABLE_LAYOUT.md` follow-up
+
+### Added
+- `Data/player.json` 新增 `wall_hit_physics`，資料化牆面 / deflector 撞擊後的速度補償：`speed_multiplier = 1.18`、`min_exit_speed = 1180.0`、`exit_cooldown_seconds = 0.05`。
+
+### Changed
+- `Ball.gd` 在物理步內對非 peg 碰撞套用牆面 speed boost，並仍以 `max_ball_speed` 封頂；peg 命中仍走既有 `peg_hit_physics` 外彈模型。
+- `DataLoader.gd` 新增 `player.wall_hit_physics` schema 與基本範圍驗證。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+
+## [Phase 18 / 1.13.2] - 2026-06-25 — 修正柱塞上射撞內牆上端
+
+- 執行者：Codex
+- 任務卡：`Codex/18_PINBALL_TABLE_LAYOUT.md` follow-up
+
+### Changed
+- `Data/field.json` 將柱塞發射方向由 `[-0.08, -1]` 改回 `[0, -1]`，讓球在右側軌道內純垂直上射，避免提前切向內牆。
+- `Data/field.json` 將右側內牆上端由 `158` 下移到 `230`，擴大頂端入場開口，讓 deflector 負責把球導入主盤。
+- `Scenes/Battle.tscn` 同步更新 `LaunchLaneInnerWall` 預覽尺寸與位置。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- 靜態 lane-clear smoke 通過。
+
+## [Phase 18 / 1.13.1] - 2026-06-25 — 修正柱塞球看似射不出與軌道入口卡住
+
+- 執行者：Codex
+- 任務卡：`Codex/18_PINBALL_TABLE_LAYOUT.md` follow-up
+
+### Changed
+- `Data/field.json` 將柱塞口由 `[1100, 900]` 上移到 `[1100, 852]`，避開底排 `bounce_peg` 同高區域。
+- `Data/field.json` 將柱塞發射方向由垂直上射 `[0, -1]` 改為微左上 `[-0.08, -1]`，增加進入主盤的容錯。
+- `Data/field.json` 將右側內牆底部由 `946` 打開到 `822`，避免柱塞起點附近形成太窄的封閉通道。
+- `Battle.gd` 讓 `LauncherBallArt` 只在 AIMING 顯示，發射後隱藏，避免待發球圖留在柱塞口造成「球沒射出去」的錯覺。
+- `Battle.gd` 將 AIMING 狀態提示改為柱塞上射文案，不再顯示「算好角度」。
+- `Scenes/Battle.tscn` 同步更新柱塞與內牆預覽幾何。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- 靜態 lane-clear smoke 通過。
+
+## [Phase 18 / 1.13.0] - 2026-06-25 — 柏青哥柱塞場地地基與右側發射軌道
+
+- 執行者：Codex
+- 任務卡：`Codex/18_PINBALL_TABLE_LAYOUT.md`
+
+### Added
+- `Data/field.json` 新增 `plunger`、`launch_lane`、`wall_thickness`、`bottom_sensor_height`，資料化右下柱塞位置、上射方向、右側軌道、內牆、頂端 deflector、peg clearance 與底部 sensor 幾何。
+- `Data/player.json` 新增 `plunger_launch_speed = 1320.0`，作為卡 18 固定測試力道；舊 `launch_speed` 保留為相容欄位並標記 Q-033 deprecated。
+- `Scenes/Battle.tscn` 新增右側 `LaunchLaneInnerWall` 與 `LaunchLaneDeflector` 預覽節點，並把 launcher 預覽移到右下柱塞口。
+
+### Changed
+- `Battle.gd` 啟動時依 `field.json` 佈局場地外牆、底部 sensor、右側發射軌道內牆與頂端 deflector；發射方向改讀 `field.plunger.launch_direction`，發射力道改讀 `player.plunger_launch_speed`。
+- `Battle.gd` 停用舊滑鼠方向瞄準線 / endpoint marker 顯示；左鍵或空白鍵只作「單鍵柱塞上射」，不再保留頂部方向瞄準。
+- `FieldGenerator.gd` 依 `launch_lane` 與 `peg_clearance` 排除右側發射軌道，動態釘與底排 `bounce_peg` 都不生成進軌道。
+- `Data/field.json` 將釘海主體左移並增加第 10 排，右側清出發射軌道；底排 `bounce_peg` 仍固定存在，位置改在主盤範圍內均分。
+- `DataLoader.gd` 新增 `plunger_launch_speed`、`plunger`、`launch_lane`、deflector、peg clearance 與實際可用動態 cell 數驗證。
+
+### 驗收
+- `Data/*.json` 解析通過。
+- Godot 4.6.3 headless 載入專案與 `Scenes/Battle.tscn` 通過。
+- 靜態 lane-clear smoke 通過：動態釘與底排 `bounce_peg` 皆不落入右側軌道與 `peg_clearance` 範圍。
+- 臨時物理路徑 smoke 嘗試以 headless 場景實發一球，但 Godot 原生 signal 11 crash，未取得可用腳本結果；需人類用 Vulkan GUI / 匯出版實機確認「上射 → 傾瀉 → 回收」體感。
+
+### 未解問題
+- 無新增。Q-033 已決議；卡 19 的集氣手感與 skill-shot 映射仍留待下一張任務卡。
+
 ## [Phase 17 / 1.12.2] - 2026-06-24 — 瞄準預覽降噪與球 timeout 延長
 
 - 執行者：Codex

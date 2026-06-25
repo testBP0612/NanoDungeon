@@ -33,6 +33,48 @@
 ## 最新報告
 
 # Summary
+完成 `Codex/18_PINBALL_TABLE_LAYOUT.md` 的地基改造與實機回饋修正：右下柱塞、右側上射軌道、頂端 deflector、主盤釘海讓道與底部 drain 都已接上資料化設定。發射不再讀滑鼠方向，改為 `field.plunger.launch_direction` 固定上射，力道讀 `player.plunger_launch_speed = 1320.0`。依「球完全射不出去」回饋，柱塞口已上移、內牆底部打開，並修掉待發球圖發射後留在柱塞口造成的視覺誤判；依「撞到上方柱子」回饋，發射方向改回純垂直、內牆上端下移；依「牆壁反彈力道不夠 / 全牆太彈」回饋，牆面物理改為 profile：一般牆微吃速，只有 `LaunchLaneDeflector` 做低速入場補償。本圈未做卡 19 的集氣、蓄力動畫、力道入口映射或軌跡預覽，也未改傷害、HP、球數、倍率、抽取、敵人或結算規則。
+
+# Completed
+- `Data/field.json`：新增 `plunger`、`launch_lane`、`wall_thickness`、`bottom_sensor_height`；軌道最終數值為 lane x `1064–1132`、y `72–960`，inner wall x `1064` / y `230–822`，deflector position `[1042,128]`、size `[178,24]`、rotation `-30°`，peg clearance `12`。
+- `Data/field.json`：柱塞最終位置 `[1100,852]`，發射方向 `[0,-1]`，讓球沿右側軌道垂直上射，頂端再由 deflector 導入主盤。
+- `Data/player.json`：新增 `plunger_launch_speed = 1320.0`；`launch_speed` 標記為 Q-033 deprecated 相容欄位。
+- `Data/player.json`：新增 `wall_hit_physics.default_profile` 與 `wall_hit_physics.profiles`；一般牆 `speed_multiplier = 0.96`、`min_exit_speed = 0.0`，`LaunchLaneDeflector` 則 `speed_multiplier = 1.0`、`min_exit_speed = 1120.0`，仍受 `max_ball_speed` 封頂。
+- `Scripts/Battle.gd`：啟動時依 `field.json` 佈局外牆、bottom sensor、右側內牆與 deflector；launcher 移到 `[1100,852]`；發射方向固定讀 `[0,-1]`。
+- `Scripts/Battle.gd`：停用舊 AimLine / endpoint marker 顯示，避免保留頂部方向瞄準或軌跡預覽；`LauncherBallArt` 只在 AIMING 顯示，發射後隱藏。
+- `Scripts/Ball.gd`：非 peg 碰撞依牆體節點名稱選擇 `wall_hit_physics` profile；peg 仍走既有 `peg_hit_physics`。
+- `Scripts/FieldGenerator.gd`：動態釘與底排 `bounce_peg` 都依 `launch_lane + peg_clearance` 讓出右側軌道；底排仍固定存在，每回合重抽動態釘類型流程保留。
+- `Scripts/DataLoader.gd`：驗證 `plunger_launch_speed`、`wall_hit_physics` default / named profiles、`plunger`、`launch_lane`、inner wall、deflector、peg clearance，並以排除軌道後的實際 cell 數檢查 `max_guaranteed_double_peg_count`。
+- `Scenes/Battle.tscn`：加入 `LaunchLaneInnerWall` / `LaunchLaneDeflector` 預覽節點，launcher 預覽移到右下柱塞口。
+- `WORK_PLAN.md`、`CHANGELOG.md` 已更新為卡 18。
+
+# Validation Results
+- ✅ JSON 驗證：`Data/*.json` 全部可由 PowerShell `ConvertFrom-Json` 解析。
+- ✅ Godot 載入：Godot 4.6.3 headless 載入專案通過。
+- ✅ Battle 場景：Godot 4.6.3 headless 載入 `Scenes/Battle.tscn` 通過。
+- ✅ 右側軌道清空：靜態 lane-clear smoke 通過，動態釘與底排 `bounce_peg` 都不落入 lane x `1064–1132` 加 clearance 範圍。
+- ✅ 資料驅動：場地幾何、柱塞位置、上射方向、deflector、peg clearance、柱塞力道皆從 `Data/field.json` / `Data/player.json` 讀取。
+- ✅ 禁止偏離：未改 Docs/、ROADMAP、傷害 / HP / 球數 / 倍率 / 抽取 / 敵人 / 結算規則；未實作卡 19 集氣、蓄力動畫、skill-shot 映射或軌跡預覽。
+- ⚠️ 物理路徑 smoke：嘗試用臨時 headless 場景實發一球檢查「上射 → 入主盤 → drain」，但 Godot 原生 signal 11 crash，無 GDScript 錯誤輸出；臨時測試檔已刪除。需人類用 Vulkan GUI / 匯出版實機確認。
+- ⚠️ 整局 5 場 + 4 升級：本圈完成載入與幾何/資料自驗；完整可視化打一局仍需實機驗收。
+
+# Open Questions
+- 無新增。
+- Q-033 已決議且本圈依決議 B 執行；Q-031 不再作為當前控制模型。
+- Q-028 / Q-029 / Q-030 / Q-032 維持既有暫行狀態，本圈未擴張其決策範圍。
+
+# Risks
+- 上射 → 傾瀉 → 回收的真實體感仍需實機確認；headless 腳本實發測試被 Godot 原生 crash 擋住。
+- 目前 deflector 是單片斜牆，卡球風險主要在頂端 deflector 與 inner wall 開口附近；若實機仍卡球，優先只調 `Data/field.json.launch_lane.deflector` 的 `position / size / rotation_degrees`、`field.plunger.position`、`field.plunger.launch_direction` 或 `plunger_launch_speed`。
+- `plunger_launch_speed = 1320.0` 是卡 18 固定測試力道，為了穩定打到頂端而設；卡 19 接集氣時應以此為中高力道基準，再資料化 min/max 與入口映射。
+- 舊 `AimLine` / aim dash 程式碼仍保留但 runtime 隱藏，作為卡 19 可能重用的視覺基礎；若 Reviewer 認為這會誤導，可在卡 19 一併整理。
+
+# Recommended Next Task
+- 建議下一張執行 `Codex/19`：接柱塞集氣手感與 skill-shot 映射。切入點是沿用本圈 `field.plunger.position`、`field.plunger.launch_direction`、`player.plunger_launch_speed`，新增資料化 min/max 力道與「力道 → 頂部入口/高度」映射；先做可讀 UI 與穩定入口，再做蓄力動畫與預覽。
+
+## 歷史報告 — Phase 17 Launch Control Direction Only
+
+# Summary
 完成 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`，並依人類後續回饋補上 peg hit 物理手感、瞄準預覽降噪與 timeout 調整。發射已改為只控方向、固定 `Data/player.json.launch_speed`、左鍵 / 空白鍵一鍵發射；peg 命中加入柏青哥式外彈模型；瞄準預覽改為約半長、較淡的虛線；球回收限制由 8 秒延長為 15 秒。未改傷害、HP、球數、敵人、升級或抽取規則。
 
 # Completed

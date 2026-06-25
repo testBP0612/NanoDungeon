@@ -43,6 +43,10 @@ var _aim_dash_segments: Array[Line2D] = []
 @onready var peg_container: Node2D = $PinballField/PegContainer
 @onready var ball_container: Node2D = $PinballField/BallContainer
 @onready var bottom_sensor: Area2D = $PinballField/BottomSensor
+@onready var field_fill: Polygon2D = $PinballField/FieldFill
+@onready var left_wall: StaticBody2D = $PinballField/Walls/LeftWall
+@onready var right_wall: StaticBody2D = $PinballField/Walls/RightWall
+@onready var top_wall: StaticBody2D = $PinballField/Walls/TopWall
 @onready var launcher_visual: Polygon2D = $AimOverlay/LauncherVisual
 @onready var aim_line: Line2D = $AimOverlay/AimLine
 @onready var player_hp_label: Label = $BattleUI/UIRoot/PlayerHPLabel
@@ -108,6 +112,7 @@ func _load_definitions() -> void:
 
 
 func _connect_scene_nodes() -> void:
+	_layout_pinball_table_from_field_config()
 	UI_THEME_SCRIPT.apply_to($BattleUI/UIRoot, feel_config.get("hud", {}))
 	_layout_scene_polish_ui()
 	_add_launcher_ball_sprite()
@@ -124,6 +129,114 @@ func _connect_scene_nodes() -> void:
 	menu_button.pressed.connect(_on_menu_pressed)
 	sfx_toggle_button.pressed.connect(_on_sfx_toggle_pressed)
 	launcher_visual.position = launcher_position
+
+
+func _layout_pinball_table_from_field_config() -> void:
+	var bounds: Dictionary = field_config["bounds"]
+	var plunger: Dictionary = field_config["plunger"]
+	var wall_thickness := float(field_config["wall_thickness"])
+	var bottom_sensor_height := float(field_config["bottom_sensor_height"])
+	var left := float(bounds["left"])
+	var right := float(bounds["right"])
+	var top := float(bounds["top"])
+	var bottom := float(bounds["bottom"])
+	var width := right - left
+	var height := bottom - top
+	var center := Vector2((left + right) * 0.5, (top + bottom) * 0.5)
+
+	launcher_position = _vector2_from_array(plunger["position"], launcher_position)
+	var launcher_node := $PinballField.get_node_or_null("Launcher")
+	if launcher_node is Node2D:
+		(launcher_node as Node2D).position = launcher_position
+	field_fill.polygon = _field_rect_points(left, right, top, bottom)
+	field_border.points = PackedVector2Array([
+		Vector2(left, top),
+		Vector2(right, top),
+		Vector2(right, bottom),
+		Vector2(left, bottom),
+		Vector2(left, top),
+	])
+	_set_static_rect(left_wall, Vector2(left - wall_thickness * 0.5, center.y), Vector2(wall_thickness, height))
+	_set_static_rect(right_wall, Vector2(right + wall_thickness * 0.5, center.y), Vector2(wall_thickness, height))
+	_set_static_rect(top_wall, Vector2(center.x, top - wall_thickness * 0.5), Vector2(width + wall_thickness, wall_thickness))
+	_set_area_rect(bottom_sensor, Vector2(center.x, bottom + bottom_sensor_height * 0.5), Vector2(width, bottom_sensor_height))
+	_layout_launch_lane_geometry()
+
+
+func _layout_launch_lane_geometry() -> void:
+	var launch_lane: Dictionary = field_config["launch_lane"]
+	var lane_wall_thickness := float(launch_lane["wall_thickness"])
+	var inner_wall_config: Dictionary = launch_lane["inner_wall"]
+	var inner_top := float(inner_wall_config["top"])
+	var inner_bottom := float(inner_wall_config["bottom"])
+	var inner_wall_node := _ensure_static_rect("LaunchLaneInnerWall")
+	_set_static_rect(
+		inner_wall_node,
+		Vector2(float(inner_wall_config["x"]), (inner_top + inner_bottom) * 0.5),
+		Vector2(lane_wall_thickness, inner_bottom - inner_top)
+	)
+
+	var deflector_config: Dictionary = launch_lane["deflector"]
+	var deflector_node := _ensure_static_rect("LaunchLaneDeflector")
+	_set_static_rect(
+		deflector_node,
+		_vector2_from_array(deflector_config["position"], deflector_node.position),
+		_vector2_from_array(deflector_config["size"], Vector2.ONE)
+	)
+	deflector_node.rotation_degrees = float(deflector_config["rotation_degrees"])
+
+
+func _ensure_static_rect(node_name: String) -> StaticBody2D:
+	var existing := $PinballField/Walls.get_node_or_null(node_name)
+	if existing is StaticBody2D:
+		return existing
+	var body := StaticBody2D.new()
+	body.name = node_name
+	var shape := CollisionShape2D.new()
+	shape.name = "CollisionShape2D"
+	shape.shape = RectangleShape2D.new()
+	body.add_child(shape)
+	var visual := Polygon2D.new()
+	visual.name = "Visual"
+	visual.color = Color(0.09, 0.14, 0.2, 1.0)
+	body.add_child(visual)
+	$PinballField/Walls.add_child(body)
+	return body
+
+
+func _set_area_rect(area: Area2D, position: Vector2, size: Vector2) -> void:
+	area.position = position
+	var shape_node := area.get_node_or_null("CollisionShape2D")
+	if shape_node is CollisionShape2D:
+		var rect_shape := (shape_node as CollisionShape2D).shape
+		if rect_shape is RectangleShape2D:
+			(rect_shape as RectangleShape2D).size = size
+
+
+func _set_static_rect(body: StaticBody2D, position: Vector2, size: Vector2) -> void:
+	body.position = position
+	var shape_node := body.get_node_or_null("CollisionShape2D")
+	if shape_node is CollisionShape2D:
+		var rect_shape := (shape_node as CollisionShape2D).shape
+		if rect_shape is RectangleShape2D:
+			(rect_shape as RectangleShape2D).size = size
+	var visual := body.get_node_or_null("Visual")
+	if visual is Polygon2D:
+		(visual as Polygon2D).polygon = PackedVector2Array([
+			Vector2(-size.x * 0.5, -size.y * 0.5),
+			Vector2(size.x * 0.5, -size.y * 0.5),
+			Vector2(size.x * 0.5, size.y * 0.5),
+			Vector2(-size.x * 0.5, size.y * 0.5),
+		])
+
+
+func _field_rect_points(left: float, right: float, top: float, bottom: float) -> PackedVector2Array:
+	return PackedVector2Array([
+		Vector2(left, top),
+		Vector2(right, top),
+		Vector2(right, bottom),
+		Vector2(left, bottom),
+	])
 
 
 func _load_enemy_from_run_state() -> void:
@@ -420,7 +533,7 @@ func _transition_to(next_state: BattleState, message := "") -> void:
 		BattleState.ROUND_START:
 			await _begin_round()
 		BattleState.AIMING:
-			status_label.text = "算好角度後點擊 / 空白鍵發射"
+			status_label.text = "柱塞就緒：點擊 / 空白鍵上射"
 		BattleState.SETTLE:
 			await _settle_round()
 		BattleState.ENEMY_TURN:
@@ -497,35 +610,22 @@ func _ball_id_for_next_launch() -> String:
 
 
 func _aim_direction() -> Vector2:
-	var direction := get_global_mouse_position() - launcher_position
+	var plunger: Dictionary = field_config.get("plunger", {})
+	var direction := _vector2_from_array(plunger.get("launch_direction", []), Vector2.UP)
 	if direction.length() <= 0.01:
-		return Vector2.DOWN
-	if direction.y < 0.2:
-		direction.y = 0.2
+		return Vector2.UP
 	return direction.normalized()
 
 
 func _update_aim_overlay() -> void:
-	launcher_visual.visible = _launcher_ball_sprite == null
 	var is_aiming := state == BattleState.AIMING
-	if is_aiming:
-		var points := _aim_trajectory_points()
-		var preview_config: Dictionary = feel_config.get("aim_preview", {})
-		if bool(preview_config.get("dashed", false)):
-			aim_line.visible = false
-			_update_aim_dash_segments(points, preview_config)
-		else:
-			_hide_aim_dash_segments()
-			aim_line.visible = true
-			aim_line.points = points
-			aim_line.width = float(preview_config.get("line_width", aim_line.width))
-			aim_line.default_color = Color(String(preview_config.get("line_color", "#FFE66D")))
-		_update_aim_endpoint_marker(points, preview_config)
-	else:
-		aim_line.visible = false
-		_hide_aim_dash_segments()
-		if _aim_endpoint_marker != null:
-			_aim_endpoint_marker.visible = false
+	launcher_visual.visible = is_aiming and _launcher_ball_sprite == null
+	if _launcher_ball_sprite != null:
+		_launcher_ball_sprite.visible = is_aiming
+	aim_line.visible = false
+	_hide_aim_dash_segments()
+	if _aim_endpoint_marker != null:
+		_aim_endpoint_marker.visible = false
 
 
 func _update_aim_dash_segments(points: PackedVector2Array, preview_config: Dictionary) -> void:
@@ -587,7 +687,7 @@ func _circle_points(radius: float, point_count: int) -> PackedVector2Array:
 
 
 func _fixed_launch_speed() -> float:
-	return max(1.0, float(player_config.get("launch_speed", 1.0)))
+	return max(1.0, float(player_config.get("plunger_launch_speed", 1.0)))
 
 
 func _aim_trajectory_points() -> PackedVector2Array:
@@ -825,7 +925,7 @@ func _update_ui() -> void:
 		damage_label.text = "本回合傷害：%s" % round_context.damage_accumulator
 	balls_label.text = "剩餘球：%s｜場上球：%s" % [round_context.balls_remaining, round_context.balls_in_play]
 	var fixed_speed := _fixed_launch_speed()
-	launch_label.text = "固定初速：%s｜單鍵發射" % int(round(fixed_speed))
+	launch_label.text = "柱塞測試力道：%s｜單鍵上射" % int(round(fixed_speed))
 	launch_bar.max_value = fixed_speed
 	launch_bar.value = fixed_speed
 	battle_fx.update_overload_gauge(

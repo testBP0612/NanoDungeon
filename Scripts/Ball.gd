@@ -13,10 +13,12 @@ var _bounce_multiplier := 1.0
 var _peg_bounce_boost := 1.0
 var _max_ball_speed := 0.0
 var _peg_hit_physics: Dictionary = {}
+var _wall_hit_physics: Dictionary = {}
 var _ball_color := Color(1.0, 0.86, 0.25)
 var _peg_rehit_cooldown := 0.0
 var _peg_hit_times: Dictionary = {}
 var _peg_exit_times: Dictionary = {}
+var _wall_exit_times: Dictionary = {}
 var _feel_config: Dictionary = {}
 var _scene_fx: Dictionary = {}
 var _ball_squash: Dictionary = {}
@@ -52,6 +54,7 @@ func configure(new_ball_id: String, new_ball_def: Dictionary, player_config: Dic
 	_peg_bounce_boost = float(player_config.get("peg_bounce_boost", 1.0))
 	_max_ball_speed = float(player_config.get("max_ball_speed", bottom_row.get("max_ball_speed", 0.0)))
 	_peg_hit_physics = (player_config.get("peg_hit_physics", {}) as Dictionary).duplicate(true)
+	_wall_hit_physics = (player_config.get("wall_hit_physics", {}) as Dictionary).duplicate(true)
 	_ball_color = _color_for_ball(ball_id)
 	radius = float(player_config["ball_radius"])
 	gravity_scale = float(player_config["ball_gravity_scale"])
@@ -89,13 +92,17 @@ func launch(direction: Vector2, launch_speed := -1.0) -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
-	if _recovered or not bool(_peg_hit_physics.get("enabled", true)):
+	if _recovered:
 		return
 	for contact_index in range(state.get_contact_count()):
 		var collider := state.get_contact_collider_object(contact_index)
 		if collider is Node and (collider as Node).has_method("get_peg_id"):
-			if _can_apply_peg_exit(collider as Node):
+			if bool(_peg_hit_physics.get("enabled", true)) and _can_apply_peg_exit(collider as Node):
 				_apply_pachinko_peg_exit(state, collider as Node)
+		elif collider is Node:
+			var wall_profile := _wall_profile_for(collider as Node)
+			if bool(_wall_hit_physics.get("enabled", false)) and bool(wall_profile.get("enabled", true)) and _can_apply_wall_exit(collider as Node, wall_profile):
+				_apply_wall_exit_boost(state, wall_profile)
 
 
 func recover(reason: String) -> void:
@@ -196,6 +203,41 @@ func _can_apply_peg_exit(peg: Node) -> bool:
 		return false
 	_peg_exit_times[peg_key] = now
 	return true
+
+
+func _wall_profile_for(wall: Node) -> Dictionary:
+	var default_profile: Dictionary = _wall_hit_physics.get("default_profile", {})
+	var profiles: Dictionary = _wall_hit_physics.get("profiles", {})
+	var profile: Dictionary = default_profile.duplicate(true)
+	var wall_name := String(wall.name)
+	if profiles.has(wall_name) and typeof(profiles[wall_name]) == TYPE_DICTIONARY:
+		for key in (profiles[wall_name] as Dictionary).keys():
+			profile[key] = (profiles[wall_name] as Dictionary)[key]
+	return profile
+
+
+func _can_apply_wall_exit(wall: Node, wall_profile: Dictionary) -> bool:
+	var cooldown: float = max(0.0, float(wall_profile.get("exit_cooldown_seconds", 0.05)))
+	var wall_key := str(wall.get_instance_id())
+	var now := Time.get_ticks_msec() / 1000.0
+	var last_hit := float(_wall_exit_times.get(wall_key, -9999.0))
+	if now - last_hit < cooldown:
+		return false
+	_wall_exit_times[wall_key] = now
+	return true
+
+
+func _apply_wall_exit_boost(state: PhysicsDirectBodyState2D, wall_profile: Dictionary) -> void:
+	var velocity: Vector2 = state.linear_velocity
+	if velocity.length() <= 0.01:
+		return
+	var target_speed: float = max(
+		velocity.length() * float(wall_profile.get("speed_multiplier", 1.0)),
+		float(wall_profile.get("min_exit_speed", 0.0))
+	)
+	if _max_ball_speed > 0.0:
+		target_speed = min(target_speed, _max_ball_speed)
+	state.linear_velocity = velocity.normalized() * target_speed
 
 
 func _apply_pachinko_peg_exit(state: PhysicsDirectBodyState2D, peg: Node) -> void:

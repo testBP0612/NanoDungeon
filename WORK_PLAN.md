@@ -39,40 +39,40 @@
 ## 當前工作計畫
 
 # Current State
-- Phase 1 ~ 16 已完成，卡 16 已完成回合橫幅節奏與球命中 squash / 小幅彈跳手感調整。
-- `OPEN_QUESTIONS.md` Q-031 已由人類決議採 A：發射控制改為只控方向、固定速度、一鍵發射；`Docs/02_GAME_DESIGN.md` 已同步寫入固定 `launch_speed` 與不控制力道。
-- 目前遊戲仍殘留卡 8/9 的兩段式集氣發射流程、power UI 與 charge 表現接線；本圈需忠實移除，不復活力道軸。
+- Phase 1 ~ 17 已完成；目前發射模型仍是卡 17 的頂部方向瞄準、固定速度、一鍵發射。
+- `OPEN_QUESTIONS.md` Q-033 已由人類決議採 B：改為柏青哥柱塞 skill-shot，取代 Q-031。Docs/01 / Docs/02 / Docs/04 已同步為右下柱塞、右側上射軌道、重力傾瀉。
+- 本圈只做卡 18 地基：穩定上射 → 頂端導引散入釘海 → 向下傾瀉 → 底部 drain 回收；卡 19 才做集氣手感、蓄力動畫、力道映射入口與軌跡預覽。
 
 # Current Phase
-- **Phase 17 — Launch Control Direction Only（只控方向）**。
+- **Phase 18 — Pinball Table Layout（柏青哥柱塞場地地基）**。
 
 # Recommended Task
-- 執行 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md`。
-- 將 `Scripts/Battle.gd` 發射輸入改為滑鼠 / 方向瞄準後，左鍵或空白鍵單次即用 `Data/player.json.launch_speed` 發射。
-- 移除 / 中性化集氣狀態、power UI、charge SFX 與力道綁定視覺；保留並強化瞄準軌跡與發射瞬間回饋。
-- 將 `Data/player.json` 舊集氣欄位標記 deprecated；將相關 feel 參數資料化且可回退。
+- 執行 `Codex/18_PINBALL_TABLE_LAYOUT.md`。
+- 在 `Data/field.json` 增加 `launch_lane` / `plunger` / 頂端 deflector 幾何，並調整 generator 讓釘海主體置中且右側軌道無釘。
+- 在 `Data/player.json` 增加本卡固定上射用 `plunger_launch_speed`，不接玩家集氣。
+- 修改 `Scripts/FieldGenerator.gd`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd` 與 `Scenes/Battle.tscn`，讓球從右下柱塞口沿右側軌道上射、經頂端導引壁入場後回到底部 drain。
 
 # Why
-- Q-031 指出集氣 timing 與角度規劃互相干擾；移除力道軸後，玩家唯一技巧軸是「算好角度」。
-- 固定速度一鍵發射讓控制更可讀，也讓瞄準軌跡承擔主要決策資訊，因此 aim preview 需要更清楚、即時且漂亮。
-- 本卡是已決議的核心方向落地，不涉及平衡 / 物理 / 敵人 / 升級規則調整。
+- Q-033 是人類核心方向決議，本卡是改向真實彈珠台的第 1/2 張，必須先把物理路徑跑穩。
+- 場地幾何與發射力道必須資料化，讓後續卡 19 可以只調 JSON / 接集氣，不需要重寫地基。
+- 本卡不改傷害、HP、球數、倍率、抽取、敵人、結算規則與數值，避免把場地重構混成平衡改版。
 
 # Risks
-- 若只移除集氣而未調整 UI，玩家可能仍以為可控制力道；必須清掉或改名所有 power/charge 文案與顯示。
-- 發射速度必須讀 `player.json.launch_speed`，不得把 900 寫進程式。
-- 瞄準預覽若做太重可能影響效能；只用現有 Line2D / Polygon2D 與 feel 參數強化。
-- 不得碰卡 16 的彈跳物理參數，不改 damage / HP / balls / enemies / upgrade 抽取。
+- 軌道 / 頂端導引壁若角度不對，球可能卡在右側、頂端或反覆回軌道；需用 timeout 與實機 / headless 載入驗證降低風險。
+- `FieldGenerator` 讓道若只靠視覺不靠資料，後續調寬軌道會生成釘子到軌道內；需由 `field.json.launch_lane` 驅動排除。
+- 場景牆體與 runtime 位置若不同步，Godot 編輯器預覽與遊戲實際碰撞會分裂；本圈需同步更新 `Battle.tscn`。
+- 不得復活頂部方向瞄準，也不得提前做卡 19 的力道 skill-shot。
 
 # Dependencies
-- Q-031 已決議，且 `Docs/02_GAME_DESIGN.md` 已套用。無阻斷性未決問題。
+- Q-033 已決議，無阻斷性未決問題。
 - Q-028 / Q-029 / Q-030 / Q-032 仍為暫行假設，但本圈不擴張其決策範圍。
 
 # Estimated Scope
-- 中。修改 `Scripts/Battle.gd`、`Scripts/BattleFX.gd`、`Scenes/Battle.tscn`、`Data/player.json`、`Data/feel.json`、`Scripts/DataLoader.gd`，並更新 `CHANGELOG.md`、`PROGRESS_REPORT.md`、`WORK_PLAN.md`。
+- 中。修改 `Data/field.json`、`Data/player.json`、`Scripts/FieldGenerator.gd`、`Scripts/DataLoader.gd`、`Scripts/Battle.gd`、`Scenes/Battle.tscn`，並更新 `CHANGELOG.md`、`PROGRESS_REPORT.md`、`WORK_PLAN.md`。
 
 # Validation Target
-- 對照 `Codex/17_LAUNCH_CONTROL_DIRECTION_ONLY.md` DoD：瞄準方向 + 單鍵、固定 `launch_speed`、無集氣條 / timing、無誤導力道 UI、deprecated 欄位保留、JSON / Godot / export 通過。
-- 同步檢查 `VALIDATION_CHECKLIST.md` D/G/H：發射回饋、Demo 穩定、未改核心方向 / 非目標 / 平衡 / 物理。
+- 對照 `Codex/18_PINBALL_TABLE_LAYOUT.md` DoD：右下柱塞穩定上射、右側軌道無釘、頂端導引入釘海、重力傾瀉、底部回收、整局流程不破。
+- 同步檢查 `VALIDATION_CHECKLIST.md` C/D/E/F/G/H 中與可運行、回合閉環、整局穩定、禁止偏離與資料驅動相關項目。
 
 ---
 

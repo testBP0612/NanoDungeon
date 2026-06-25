@@ -20,13 +20,18 @@ func build_dynamic_cells(field_config: Dictionary) -> Array:
 	var row_count := int(generator["row_count"])
 	var top_y := float(generator["top_y"])
 	var row_spacing := float(generator["row_spacing"])
+	var default_radius := float(field_config["default_peg_radius"])
 	for row in range(row_count):
 		var is_wide := row % 2 == 0
 		var column_count := int(generator["wide_cols"] if is_wide else generator["narrow_cols"])
 		for column in range(column_count):
+			var x := _column_x(generator, column, column_count)
+			var y := top_y + float(row) * row_spacing
+			if _is_inside_launch_lane(field_config, x, y, default_radius):
+				continue
 			cells.append({
-				"x": _column_x(generator, column, column_count),
-				"y": top_y + float(row) * row_spacing,
+				"x": x,
+				"y": y,
 			})
 	return cells
 
@@ -37,7 +42,8 @@ func build_bottom_cells(field_config: Dictionary) -> Array:
 	var cells := []
 	var count := int(bottom_row["count"])
 	var left := float(bounds["left"])
-	var right := float(bounds["right"])
+	var radius := float(bottom_row["radius"])
+	var right := _peg_generation_right(field_config, radius)
 	var y := float(bottom_row["y"])
 	var spacing := 0.0
 	if count > 1:
@@ -47,7 +53,7 @@ func build_bottom_cells(field_config: Dictionary) -> Array:
 			"id": String(bottom_row["id"]),
 			"x": left + spacing * float(index),
 			"y": y,
-			"radius": float(bottom_row["radius"]),
+			"radius": radius,
 			"fixed": true,
 		})
 	return cells
@@ -86,6 +92,28 @@ func _column_x(generator: Dictionary, column: int, column_count: int) -> float:
 	var center_x := float(generator["center_x"])
 	var col_spacing := float(generator["col_spacing"])
 	return center_x + (float(column) - (float(column_count - 1) * 0.5)) * col_spacing
+
+
+func _peg_generation_right(field_config: Dictionary, radius: float) -> float:
+	var bounds: Dictionary = field_config["bounds"]
+	var right := float(bounds["right"])
+	var launch_lane: Dictionary = field_config.get("launch_lane", {})
+	if launch_lane.is_empty():
+		return right
+	var clearance := float(launch_lane.get("peg_clearance", 0.0))
+	return min(right, float(launch_lane["left"]) - radius - clearance)
+
+
+func _is_inside_launch_lane(field_config: Dictionary, x: float, y: float, radius: float) -> bool:
+	var launch_lane: Dictionary = field_config.get("launch_lane", {})
+	if launch_lane.is_empty():
+		return false
+	var clearance := float(launch_lane.get("peg_clearance", 0.0))
+	var left := float(launch_lane["left"]) - radius - clearance
+	var right := float(launch_lane["right"]) + radius + clearance
+	var top := float(launch_lane["top"]) - radius - clearance
+	var bottom := float(launch_lane["bottom"]) + radius + clearance
+	return x >= left and x <= right and y >= top and y <= bottom
 
 
 func _weighted_peg_id(type_weights: Dictionary) -> String:
